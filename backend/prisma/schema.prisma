@@ -44,6 +44,10 @@ model User {
 
   attendance Attendance[] // one user → many attendance days (a "relation")
 
+  // Two relations to Task, so each needs a name: tasks I own vs tasks I assigned to others.
+  tasks         Task[] @relation("TaskOwner")
+  assignedTasks Task[] @relation("TaskAssigner")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -78,4 +82,41 @@ model Break {
   attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   start        DateTime
   end          DateTime?
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  POSTPONED
+}
+
+// One task: replaces a row in someone's tab of the Task List sheet.
+model Task {
+  id     String @id @default(cuid())
+  userId String // who does the task
+  user   User   @relation("TaskOwner", fields: [userId], references: [id])
+
+  assignedById String? // set when an admin assigned it; null = the employee added it
+  assignedBy   User?   @relation("TaskAssigner", fields: [assignedById], references: [id])
+
+  date        DateTime   @db.Date // the day it's logged for
+  title       String
+  details     String?
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(NOT_STARTED)
+  deadline    DateTime?  @db.Date
+  link        String? // drive / canva / doc link
+  completedAt DateTime? // filled automatically when status becomes COMPLETED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date]) // makes "this person's tasks for this month" fast
 }

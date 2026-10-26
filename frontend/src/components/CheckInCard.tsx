@@ -26,7 +26,8 @@ function totals(day: Attendance, now: number) {
   return { breakMs, workedMs: end - Date.parse(day.checkIn) - breakMs };
 }
 
-export default function CheckInCard() {
+// onChange: lets the page react after check-in/out (e.g. refresh the month table)
+export default function CheckInCard({ onChange }: { onChange?: () => void }) {
   const now = useNow();
   const [day, setDay] = useState<Attendance | null>(null); // today's record from the database
   const [loaded, setLoaded] = useState(false);
@@ -48,6 +49,7 @@ export default function CheckInCard() {
     setError("");
     try {
       setDay(await api<Attendance>(`/api/attendance/${path}`, { method: "POST", body }));
+      onChange?.(); // ?. = call it only if the page passed one
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

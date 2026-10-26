@@ -78,6 +78,76 @@ export type Attendance = {
   breaks: Break[];
 };
 
+// ---------- Reports (backend/src/lib/reports.ts) ----------
+
+export type DayRow = {
+  date: string;
+  weekday: string;
+  status: "PRESENT" | "WORKING" | "ABSENT" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
+  holiday?: string;
+  place?: Place;
+  checkIn?: string;
+  checkOut?: string | null;
+  breaks?: number;
+  breakMs?: number;
+  workedMs?: number;
+};
+
+export type MonthSummary = {
+  present: number;
+  inOffice: number;
+  wfh: number;
+  absent: number;
+  workedMs: number;
+  avgMs: number;
+};
+
+export type MonthReport = { month: string; days: DayRow[]; summary: MonthSummary };
+
+// A short version of a user, as the admin endpoints send it
+export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team">;
+
+export type LiveStatus = "NOT_IN" | "WORKING" | "ON_BREAK" | "DONE";
+
+export type OverviewRow = {
+  user: UserBrief;
+  status: LiveStatus;
+  place: Place | null;
+  checkIn: string | null;
+  checkOut: string | null;
+  breakMs: number;
+  workedMs: number;
+  tasksTotal: number;
+  tasksDone: number;
+};
+
+// ---------- Tasks (prisma/schema.prisma → model Task) ----------
+
+export type Priority = "LOW" | "MEDIUM" | "HIGH";
+export type TaskStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "POSTPONED";
+
+export const priorityLabels: Record<Priority, string> = { LOW: "Low", MEDIUM: "Medium", HIGH: "High" };
+export const taskStatusLabels: Record<TaskStatus, string> = {
+  NOT_STARTED: "Not started",
+  IN_PROGRESS: "In progress",
+  COMPLETED: "Completed",
+  POSTPONED: "Postponed",
+};
+
+export type Task = {
+  id: string;
+  date: string;
+  title: string;
+  details: string | null;
+  priority: Priority;
+  status: TaskStatus;
+  deadline: string | null;
+  link: string | null;
+  completedAt: string | null;
+  user: { id: string; name: string };
+  assignedBy: { id: string; name: string } | null; // null = added by the employee
+};
+
 // backend/src/data/holidays.ts
 export type Holiday = {
   date: string;

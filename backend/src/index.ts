@@ -10,6 +10,8 @@ import authRouter from "./routes/auth.js";
 import usersRouter from "./routes/users.js";
 import directoryRouter from "./routes/directory.js";
 import attendanceRouter from "./routes/attendance.js";
+import tasksRouter from "./routes/tasks.js";
+import adminRouter from "./routes/admin.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -35,6 +37,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/directory", directoryRouter);
 app.use("/api/attendance", attendanceRouter);
+app.use("/api/tasks", tasksRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/holidays", holidaysRouter);
 app.use("/api/notices", noticesRouter);
 

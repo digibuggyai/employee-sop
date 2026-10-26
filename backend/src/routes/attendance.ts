@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
+import { monthReports, thisMonth } from "../lib/reports.js";
 
 const router = Router();
 router.use(requireAuth); // every attendance route needs a logged-in user
@@ -20,6 +21,13 @@ const findToday = (userId: string) =>
 // GET /api/attendance/today
 router.get("/today", async (req, res) => {
   res.json(await findToday(req.user!.id));
+});
+
+// GET /api/attendance/month?month=2026-10 → MY day-by-day sheet + totals for a month
+router.get("/month", async (req, res) => {
+  const month = z.string().regex(/^\d{4}-\d{2}$/).catch(thisMonth()).parse(req.query.month);
+  const report = (await monthReports([req.user!.id], month)).get(req.user!.id)!;
+  res.json({ month, ...report });
 });
 
 // POST /api/attendance/check-in   body: { place: "IN_OFFICE" | "WFH" }

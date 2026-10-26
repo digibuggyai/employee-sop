@@ -1,8 +1,10 @@
 // Small styled form pieces, so every form in the app looks the same.
 import { LoaderCircle } from "lucide-react";
 
-export const inputClass =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-zinc-50";
+// inputBase: the look. inputClass: the look + full width (forms). Use inputBase for filters.
+export const inputBase =
+  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-zinc-50";
+export const inputClass = `w-full ${inputBase}`;
 
 // <Field label="Email"><input .../></Field>
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {

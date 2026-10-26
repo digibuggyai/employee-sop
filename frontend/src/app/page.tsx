@@ -4,14 +4,13 @@ import CheckInCard from "@/components/CheckInCard";
 import Greeting from "@/components/Greeting";
 import NoticeList from "@/components/NoticeList";
 import UpcomingHolidays from "@/components/UpcomingHolidays";
-import { navItems } from "@/lib/nav";
+import { workspaceNav } from "@/lib/nav";
 
 // Dashboard ("/"). This file is a server component (no "use client"): it only arranges
 // the pieces. The interactive parts (clock, buttons, fetching) are client components inside it.
 export default function Dashboard() {
   // Everything except the Dashboard itself, shown as shortcut tiles
-  // (admin-only pages are left out here; admins reach them from the sidebar)
-  const shortcuts = navItems.filter((item) => item.href !== "/" && !item.adminOnly);
+  const shortcuts = workspaceNav.filter((item) => item.href !== "/");
 
   return (
     <>
