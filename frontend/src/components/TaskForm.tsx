@@ -113,12 +113,12 @@ export default function TaskForm({
         <input name="link" type="url" value={form.link} onChange={update} className={inputClass} placeholder="https://" />
       </Field>
       <ErrorBox message={error} />
-      <div className="flex gap-3">
-        <Button type="submit" loading={loading}>
-          {existing ? "Save" : employees ? "Assign task" : "Add task"}
-        </Button>
+      <div className="flex justify-end gap-2 border-t border-zinc-100 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
+        </Button>
+        <Button type="submit" loading={loading}>
+          {existing ? "Save" : employees ? "Assign task" : "Add task"}
         </Button>
       </div>
     </form>

@@ -5,6 +5,8 @@ import { KeyRound, LogOut } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
+import { Button, buttonClass } from "@/components/form";
+import { Badge } from "@/components/ui";
 import { employmentLabels } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
@@ -12,61 +14,66 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   if (!user) return null; // AppShell already redirects to /login
 
-  const rows: [string, string][] = [
-    ["Email", user.email],
-    ["Phone", user.phone ?? "—"],
-    ["Designation", user.designation ?? "—"],
-    ["Employment", employmentLabels[user.employmentType]],
-    ["Team", user.team ?? "—"],
-    ["Office", user.office ?? "—"],
-    ["Timings", user.timings ?? "—"],
-    ["Birthday", fmtDate(user.birthday, false)],
-    ["Joined", fmtDate(user.joinedOn)],
+  const sections: { title: string; rows: [string, string][] }[] = [
+    {
+      title: "Contact",
+      rows: [
+        ["Email", user.email],
+        ["Phone", user.phone ?? "—"],
+      ],
+    },
+    {
+      title: "Work",
+      rows: [
+        ["Designation", user.designation ?? "—"],
+        ["Employment", employmentLabels[user.employmentType]],
+        ["Team", user.team ?? "—"],
+        ["Office", user.office ?? "—"],
+        ["Timings", user.timings ?? "—"],
+        ["WFH allowed", `${user.wfhAllowance} days a month`],
+        ["Joined", fmtDate(user.joinedOn)],
+      ],
+    },
+    { title: "Personal", rows: [["Birthday", fmtDate(user.birthday, false)]] },
   ];
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <Card>
-        <div className="flex items-center gap-4">
-          <Avatar name={user.name} size="lg" />
-          <div>
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-            <p className="text-zinc-500">
-              {user.designation ?? employmentLabels[user.employmentType]}
-              {user.role === "ADMIN" && (
-                <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">Admin</span>
-              )}
-            </p>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex flex-wrap items-center gap-4">
+        <Avatar name={user.name} size="lg" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">{user.name}</h1>
+            {user.role === "ADMIN" && <Badge tone="brand">Admin</Badge>}
           </div>
+          <p className="text-sm text-zinc-500">{user.designation ?? employmentLabels[user.employmentType]}</p>
         </div>
-      </Card>
-
-      <Card title="Details">
-        <dl className="divide-y divide-zinc-100">
-          {rows.map(([label, value]) => (
-            <div key={label} className="grid grid-cols-3 gap-4 py-2.5 text-sm">
-              <dt className="text-zinc-500">{label}</dt>
-              <dd className="col-span-2 break-words">{value}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="mt-4 text-xs text-zinc-500">Something wrong? Ask an admin to update it.</p>
-      </Card>
-
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/change-password"
-          className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-zinc-50"
-        >
-          <KeyRound size={16} /> Change password
-        </Link>
-        <button
-          onClick={logout}
-          className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50"
-        >
-          <LogOut size={16} /> Log out
-        </button>
+        <div className="flex gap-2">
+          <Link href="/change-password" className={buttonClass("secondary")}>
+            <KeyRound size={15} /> Change password
+          </Link>
+          <Button variant="secondary" onClick={logout}>
+            <LogOut size={15} /> Log out
+          </Button>
+        </div>
       </div>
+
+      <Card flush>
+        {sections.map((s) => (
+          <section key={s.title} className="border-b border-zinc-100 px-5 py-4 last:border-0">
+            <h2 className="mb-2 text-xs font-medium tracking-wide text-zinc-400 uppercase">{s.title}</h2>
+            <dl>
+              {s.rows.map(([label, value]) => (
+                <div key={label} className="grid grid-cols-3 gap-4 py-1.5 text-sm">
+                  <dt className="text-zinc-500">{label}</dt>
+                  <dd className="col-span-2 wrap-break-word text-zinc-900">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </Card>
+      <p className="text-[13px] text-zinc-500">Something out of date? Ask an admin to update your profile.</p>
     </div>
   );
 }

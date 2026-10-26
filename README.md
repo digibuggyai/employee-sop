@@ -98,6 +98,11 @@ Browser ──/api/directory (cookie sent automatically)──► requireAuth ch
 | `components/MonthSheet.tsx`, `MonthSwitcher.tsx` | Day-by-day attendance table + CSV export |
 | `components/TaskList.tsx`, `TaskForm.tsx` | Task list (grouped by day) and add/edit/assign form |
 | `components/Badges.tsx` | All status / priority colours in one place |
+| `components/ui.tsx` | Design system: `Badge`, `Stat`, `EmptyState`, `Skeleton`, shared `table` classes |
+| `components/form.tsx` | `Button` (primary/secondary/ghost/danger, sm/md/lg), `IconButton`, `Segmented`, `Field`, input styles |
+| `components/Feedback.tsx` | Toasts (`useToast`) and confirm dialog (`useConfirm`) instead of browser popups |
+| `components/dashboard.tsx` | Dashboard widgets: greeting, this month, today's tasks |
+| `app/manifest.ts`, `app/icon.png`, `app/apple-icon.png`, `public/icons/` | Installable app (Add to Home Screen) |
 | `components/EmployeeForm.tsx` | Admin: add / edit employees |
 | `src/app/directory` | Colleague cards with search |
 | `src/lib/api.ts` | `api()` helper + data types |
@@ -110,3 +115,10 @@ Browser ──/api/directory (cookie sent automatically)──► requireAuth ch
 - **Make-up day**: an approved leave can be linked to a weekend/holiday the person fully worked. 1 worked day = 1 leave (enforced by a unique index).
 - **WFH limit**: `User.wfhAllowance` per person (default 4). All WFH days count, make-up days included; every WFH day after the limit in a month is a **half day**.
 - **Absent**: a past working day, after the joining date, with no check-in and no approved/pending leave.
+
+## UI rules
+
+- Neutral surfaces (zinc); brand red only for primary actions, the active page and numbers needing attention.
+- No emojis in the UI; icons from lucide-react with text labels.
+- Mobile first: check every screen at ~390px. Inputs are 16px on phones (prevents iOS zoom), buttons are taller on touch screens, wide tables become stacked lists below `md`.
+- Feedback through `useToast` / `useConfirm`, never `alert()` / `confirm()`.

@@ -117,19 +117,24 @@ export default function EmployeeForm({
       </div>
 
       {isEdit && (
-        <label className="flex items-center gap-2 text-sm">
-          <input name="active" type="checkbox" checked={form.active} onChange={update} className="h-4 w-4 accent-brand-700" />
-          Active (untick when someone leaves: they can&apos;t log in, but their records are kept)
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
+          <input name="active" type="checkbox" checked={form.active} onChange={update} className="mt-0.5 size-4 accent-brand-700" />
+          <span>
+            <span className="block text-sm font-medium text-zinc-900">Active account</span>
+            <span className="block text-[13px] text-zinc-500">
+              Untick when someone leaves. They can no longer log in, but their records are kept.
+            </span>
+          </span>
         </label>
       )}
 
       <ErrorBox message={error} />
-      <div className="flex gap-3">
-        <Button type="submit" loading={loading}>
-          {isEdit ? "Save changes" : "Create account"}
-        </Button>
+      <div className="flex justify-end gap-2 border-t border-zinc-100 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
+        </Button>
+        <Button type="submit" loading={loading}>
+          {isEdit ? "Save changes" : "Create account"}
         </Button>
       </div>
     </form>

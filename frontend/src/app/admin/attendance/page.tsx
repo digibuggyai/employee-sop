@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import Card from "@/components/Card";
 import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/form";
+import { Skeleton, table } from "@/components/ui";
 import { api, type MonthReport, type MonthSummary, type UserBrief } from "@/lib/api";
-import { downloadCsv, fmtDuration, thisMonthIST } from "@/lib/format";
+import { downloadCsv, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
 
 type SummaryRow = MonthSummary & { user: UserBrief };
 
@@ -41,85 +43,145 @@ export default function AdminAttendancePage() {
     setMonth(m);
   }
 
+  function open(user: UserBrief | null) {
+    setReport(null);
+    setSelected(user);
+  }
+
   function exportSummary() {
     if (!rows) return;
     downloadCsv(`attendance-summary-${month}.csv`, [
-      ["Employee", "Days present", "In-office", "WFH", "Absent", "Total worked", "Avg per day"],
-      ...rows.map((r) => [r.user.name, r.present, r.inOffice, r.wfh, r.absent, fmtDuration(r.workedMs), fmtDuration(r.avgMs)]),
+      ["Employee", "Days present", "In-office", "WFH", "WFH allowed", "Half days", "Leaves", "Leaves made up", "Absent", "Total worked", "Avg per day"],
+      ...rows.map((r) => [
+        r.user.name, r.present, r.inOffice, r.wfh, r.wfhAllowance, r.halfDays, r.leaves, r.leavesCompensated, r.absent,
+        fmtDuration(r.workedMs), fmtDuration(r.avgMs),
+      ]),
     ]);
   }
 
   return (
     <>
+      {/* Breadcrumb back to everyone, when a person is open */}
+      {selected && (
+        <button
+          onClick={() => open(null)}
+          className="mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-zinc-500 transition hover:text-zinc-900"
+        >
+          <ChevronLeft size={15} /> All employees
+        </button>
+      )}
+
       <PageHeader
-        title={selected ? selected.name : "Attendance"}
-        subtitle={selected ? "Day-by-day attendance." : "Hours and days for everyone. Click a person for their full sheet."}
+        title={
+          selected ? (
+            <span className="flex items-center gap-3">
+              <Avatar name={selected.name} /> {selected.name}
+            </span>
+          ) : (
+            "Attendance"
+          )
+        }
+        subtitle={selected ? `Day-by-day record for ${monthLabel(month)}.` : "Monthly hours, WFH and leave for everyone."}
+        actions={
+          <>
+            <MonthSwitcher month={month} onChange={changeMonth} />
+            {!selected && rows && (
+              <Button variant="secondary" onClick={exportSummary}>
+                <Download size={15} /> Export CSV
+              </Button>
+            )}
+          </>
+        }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        {selected && (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setSelected(null);
-              setReport(null);
-            }}
-          >
-            <ArrowLeft size={16} /> Everyone
-          </Button>
-        )}
-        <MonthSwitcher month={month} onChange={changeMonth} />
-        {!selected && rows && (
-          <Button variant="secondary" onClick={exportSummary}>
-            <Download size={15} /> Export CSV
-          </Button>
-        )}
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       {selected ? (
         report ? (
           <MonthSheet report={report} name={selected.name} />
         ) : (
-          <div className="h-64 animate-pulse rounded-2xl bg-zinc-100" />
+          <Skeleton className="h-96" />
         )
       ) : !rows ? (
-        !error && <div className="h-64 animate-pulse rounded-2xl bg-zinc-100" />
+        !error && <Skeleton className="h-64" />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs text-zinc-500">
+        <Card flush>
+          {/* Phones: a tappable row per person */}
+          <ul className="divide-y divide-zinc-100 md:hidden">
+            {rows.map((r) => (
+              <li key={r.user.id}>
+                <button onClick={() => open(r.user)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50">
+                  <Avatar name={r.user.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
+                    <p className="text-xs text-zinc-500 tabular-nums">
+                      {r.present} present · WFH {r.wfh}/{r.wfhAllowance} · {r.leaves} leave
+                      {r.absent > 0 && <span className="text-red-600"> · {r.absent} absent</span>}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-zinc-900 tabular-nums">{fmtDuration(r.workedMs)}</span>
+                  <ChevronRight size={16} className="text-zinc-400" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className={`${table.wrap} hidden md:block`}>
+            <table className={table.table}>
+              <thead className={table.thead}>
                 <tr>
-                  {["Employee", "Present", "In-office", "WFH", "Absent", "Total worked", "Avg / day"].map((h) => (
-                    <th key={h} className="px-4 py-2.5 font-medium whitespace-nowrap">
+                  {["Employee", "Present", "WFH", "Leaves", "Absent", "Hours", "Avg / day", ""].map((h) => (
+                    <th key={h} className={table.th}>
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className={table.tbody}>
                 {rows.map((r) => (
-                  <tr key={r.user.id} onClick={() => setSelected(r.user)} className="cursor-pointer hover:bg-brand-50/50">
-                    <td className="px-4 py-2.5">
+                  // the whole row opens the person's sheet; a real button inside keeps it keyboard-friendly
+                  <tr key={r.user.id} onClick={() => open(r.user)} className={`${table.tr} cursor-pointer`}>
+                    <td className={table.td}>
                       <div className="flex items-center gap-3">
-                        <Avatar name={r.user.name} />
-                        <span className="font-medium whitespace-nowrap">{r.user.name}</span>
+                        <Avatar name={r.user.name} size="sm" />
+                        <span className="font-medium text-zinc-900">{r.user.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 tabular-nums">{r.present}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{r.inOffice}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{r.wfh}</td>
-                    <td className={`px-4 py-2.5 tabular-nums ${r.absent ? "font-medium text-red-700" : ""}`}>{r.absent}</td>
-                    <td className="px-4 py-2.5 font-medium tabular-nums">{fmtDuration(r.workedMs)}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{fmtDuration(r.avgMs)}</td>
+                    <td className={`${table.td} tabular-nums`}>
+                      {r.present}
+                      <span className="text-xs text-zinc-500"> ({r.inOffice} office)</span>
+                    </td>
+                    <td className={`${table.td} tabular-nums`}>
+                      <span className={r.wfh > r.wfhAllowance ? "font-medium text-amber-700" : ""}>
+                        {r.wfh} / {r.wfhAllowance}
+                      </span>
+                      {r.halfDays > 0 && <span className="text-xs text-zinc-500"> ({r.halfDays} half)</span>}
+                    </td>
+                    <td className={`${table.td} tabular-nums`}>
+                      {r.leaves}
+                      {r.leaves > 0 && <span className="text-xs text-zinc-500"> ({r.leavesCompensated} made up)</span>}
+                      {r.leavesPending > 0 && <span className="text-xs text-amber-700"> +{r.leavesPending} pending</span>}
+                    </td>
+                    <td className={`${table.td} tabular-nums ${r.absent ? "font-medium text-red-600" : "text-zinc-400"}`}>{r.absent}</td>
+                    <td className={`${table.td} font-medium text-zinc-900 tabular-nums`}>{fmtDuration(r.workedMs)}</td>
+                    <td className={`${table.td} text-zinc-600 tabular-nums`}>{fmtDuration(r.avgMs)}</td>
+                    <td className={`${table.td} text-right`}>
+                      <button
+                        aria-label={`Open ${r.user.name}'s sheet`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          open(r.user);
+                        }}
+                        className="text-zinc-400 hover:text-zinc-900"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </>
   );

@@ -1,73 +1,80 @@
-// Coloured labels used in tables. One place decides colours, so they match everywhere.
+// Every status label in the app, mapped to one Badge style + a colour.
+// Change a colour here and it changes everywhere.
 import type { DayRow, LeaveStatus, LiveStatus, Priority, TaskStatus } from "@/lib/api";
 import { priorityLabels, taskStatusLabels } from "@/lib/api";
+import { Badge, type Tone } from "./ui";
 
-const pill = "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap";
-
-const dayStyles: Record<DayRow["status"], [string, string]> = {
-  PRESENT: ["Present", "bg-emerald-50 text-emerald-700"],
-  WORKING: ["Working", "bg-sky-50 text-sky-700"],
-  ABSENT: ["Absent", "bg-red-50 text-red-700"],
-  LEAVE: ["Leave", "bg-violet-50 text-violet-700"],
-  LEAVE_PENDING: ["Leave (pending)", "bg-violet-50 text-violet-500"],
-  WEEKEND: ["Weekend", "bg-zinc-100 text-zinc-500"],
-  HOLIDAY: ["Holiday", "bg-amber-50 text-amber-700"],
-  UPCOMING: ["—", "text-zinc-400"],
-  NOT_JOINED: ["Not joined", "text-zinc-400"],
+const dayStyles: Record<DayRow["status"], [string, Tone]> = {
+  PRESENT: ["Present", "green"],
+  WORKING: ["Working", "blue"],
+  ABSENT: ["Absent", "red"],
+  LEAVE: ["Leave", "violet"],
+  LEAVE_PENDING: ["Leave pending", "violet"],
+  WEEKEND: ["Weekend", "zinc"],
+  HOLIDAY: ["Holiday", "amber"],
+  UPCOMING: ["", "zinc"],
+  NOT_JOINED: ["Not joined", "zinc"],
 };
 
 export function DayStatusBadge({ status }: { status: DayRow["status"] }) {
-  const [label, style] = dayStyles[status];
-  return <span className={`${pill} ${style}`}>{label}</span>;
+  const [label, tone] = dayStyles[status];
+  if (!label) return <span className="text-zinc-300">—</span>;
+  return <Badge tone={tone}>{label}</Badge>;
 }
 
-const liveStyles: Record<LiveStatus, [string, string]> = {
-  NOT_IN: ["Not checked in", "bg-zinc-100 text-zinc-600"],
-  WORKING: ["Working", "bg-emerald-50 text-emerald-700"],
-  ON_BREAK: ["On break", "bg-amber-50 text-amber-700"],
-  DONE: ["Checked out", "bg-sky-50 text-sky-700"],
-  ON_LEAVE: ["On leave", "bg-violet-50 text-violet-700"],
+const liveStyles: Record<LiveStatus, [string, Tone]> = {
+  NOT_IN: ["Not checked in", "zinc"],
+  WORKING: ["Working", "green"],
+  ON_BREAK: ["On break", "amber"],
+  DONE: ["Checked out", "blue"],
+  ON_LEAVE: ["On leave", "violet"],
 };
 
 export function LiveStatusBadge({ status }: { status: LiveStatus }) {
-  const [label, style] = liveStyles[status];
-  return <span className={`${pill} ${style}`}>{label}</span>;
+  const [label, tone] = liveStyles[status];
+  return (
+    <Badge tone={tone} dot>
+      {label}
+    </Badge>
+  );
 }
 
-const priorityStyles: Record<Priority, string> = {
-  HIGH: "bg-red-50 text-red-700",
-  MEDIUM: "bg-amber-50 text-amber-700",
-  LOW: "bg-zinc-100 text-zinc-600",
-};
+const priorityTones: Record<Priority, Tone> = { HIGH: "red", MEDIUM: "amber", LOW: "zinc" };
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
-  return <span className={`${pill} ${priorityStyles[priority]}`}>{priorityLabels[priority]}</span>;
+  return <Badge tone={priorityTones[priority]}>{priorityLabels[priority]}</Badge>;
 }
 
+// Used by the status dropdown in task lists (it needs plain classes, not a component)
 export const taskStatusStyles: Record<TaskStatus, string> = {
-  NOT_STARTED: "bg-zinc-100 text-zinc-600",
-  IN_PROGRESS: "bg-sky-50 text-sky-700",
-  COMPLETED: "bg-emerald-50 text-emerald-700",
-  POSTPONED: "bg-amber-50 text-amber-700",
+  NOT_STARTED: "bg-zinc-50 text-zinc-600 ring-zinc-500/15",
+  IN_PROGRESS: "bg-sky-50 text-sky-700 ring-sky-600/20",
+  COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  POSTPONED: "bg-amber-50 text-amber-800 ring-amber-600/20",
 };
 
+const taskTones: Record<TaskStatus, Tone> = { NOT_STARTED: "zinc", IN_PROGRESS: "blue", COMPLETED: "green", POSTPONED: "amber" };
+
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  return <span className={`${pill} ${taskStatusStyles[status]}`}>{taskStatusLabels[status]}</span>;
+  return <Badge tone={taskTones[status]}>{taskStatusLabels[status]}</Badge>;
 }
 
-const leaveStyles: Record<LeaveStatus, [string, string]> = {
-  PENDING: ["Pending", "bg-amber-50 text-amber-700"],
-  APPROVED: ["Approved", "bg-emerald-50 text-emerald-700"],
-  REJECTED: ["Rejected", "bg-red-50 text-red-700"],
+const leaveStyles: Record<LeaveStatus, [string, Tone]> = {
+  PENDING: ["Pending", "amber"],
+  APPROVED: ["Approved", "green"],
+  REJECTED: ["Rejected", "red"],
 };
 
 export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {
-  const [label, style] = leaveStyles[status];
-  return <span className={`${pill} ${style}`}>{label}</span>;
+  const [label, tone] = leaveStyles[status];
+  return (
+    <Badge tone={tone} dot>
+      {label}
+    </Badge>
+  );
 }
 
-// Small grey/coloured tag for extra info inside table cells
+// Extra info inside table cells ("Made up 17 Oct", "Half day")
 export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" }) {
-  const tones = { zinc: "bg-zinc-100 text-zinc-600", amber: "bg-amber-50 text-amber-700", violet: "bg-violet-50 text-violet-700" };
-  return <span className={`${pill} ${tones[tone]}`}>{children}</span>;
+  return <Badge tone={tone}>{children}</Badge>;
 }

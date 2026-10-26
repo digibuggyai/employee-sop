@@ -1,10 +1,14 @@
 "use client";
 
-import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, ListTodo, Pencil, Trash2 } from "lucide-react";
 import { api, taskStatusLabels, type Task, type TaskStatus } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
-import { PriorityBadge, taskStatusStyles } from "./Badges";
 import { useAuth } from "./AuthProvider";
+import Avatar from "./Avatar";
+import { PriorityBadge, taskStatusStyles } from "./Badges";
+import { useConfirm, useToast } from "./Feedback";
+import { IconButton } from "./form";
+import { EmptyState } from "./ui";
 
 // Tasks grouped by day. The status is a dropdown, so updating it is one click.
 // showOwner = show whose task it is (admin view).
@@ -13,14 +17,24 @@ export default function TaskList({
   showOwner = false,
   onChange,
   onEdit,
+  emptyAction,
 }: {
   tasks: Task[];
   showOwner?: boolean;
   onChange: (task: Task | { deletedId: string }) => void;
   onEdit: (task: Task) => void;
+  emptyAction?: React.ReactNode;
 }) {
   const { user } = useAuth();
-  if (tasks.length === 0) return <p className="py-8 text-center text-sm text-zinc-500">No tasks here yet.</p>;
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  if (tasks.length === 0)
+    return (
+      <div className="rounded-xl border border-dashed border-zinc-300 bg-white">
+        <EmptyState icon={ListTodo} title="No tasks in this period" description="Tasks you add will appear here, grouped by day." action={emptyAction} />
+      </div>
+    );
 
   // { "2026-10-26": [task, task], "2026-10-25": [...] } (tasks arrive newest first)
   const groups = new Map<string, Task[]>();
@@ -30,78 +44,108 @@ export default function TaskList({
     try {
       onChange(await api<Task>(`/api/tasks/${task.id}`, { method: "PATCH", body: { status } }));
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not update");
+      toast.error(err instanceof Error ? err.message : "Could not update the task");
     }
   }
 
   async function remove(task: Task) {
-    if (!confirm(`Delete "${task.title}"?`)) return;
+    const ok = await confirm({
+      title: "Delete this task?",
+      description: `"${task.title}" will be removed permanently.`,
+      confirmLabel: "Delete task",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api(`/api/tasks/${task.id}`, { method: "DELETE" });
       onChange({ deletedId: task.id });
+      toast.success("Task deleted");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not delete");
+      toast.error(err instanceof Error ? err.message : "Could not delete the task");
     }
   }
 
   return (
     <div className="space-y-6">
-      {[...groups].map(([date, list]) => (
-        <section key={date}>
-          <h3 className="mb-2 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-            {new Date(date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" })}
-            <span className="ml-2 font-normal normal-case">
-              {list.filter((t) => t.status === "COMPLETED").length}/{list.length} done
-            </span>
-          </h3>
-          <ul className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white">
-            {list.map((t) => {
-              // employees can't delete tasks an admin assigned (the backend checks this too)
-              const canDelete = user?.role === "ADMIN" || !t.assignedBy;
-              return (
-                <li key={t.id} className="flex flex-wrap items-start gap-3 px-4 py-3 sm:flex-nowrap">
-                  <div className="min-w-0 flex-1">
-                    <p className={`font-medium ${t.status === "COMPLETED" ? "text-zinc-400 line-through" : ""}`}>{t.title}</p>
-                    {t.details && <p className="mt-0.5 text-sm text-zinc-600">{t.details}</p>}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                      <PriorityBadge priority={t.priority} />
-                      {showOwner && <span className="font-medium text-zinc-700">{t.user.name}</span>}
-                      {t.assignedBy && <span>Assigned by {t.assignedBy.name}</span>}
-                      {t.deadline && <span>Due {fmtDate(t.deadline, false)}</span>}
-                      {t.link && (
-                        <a href={t.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand-700 hover:underline">
-                          <ExternalLink size={12} /> Link
-                        </a>
+      {[...groups].map(([date, list]) => {
+        const done = list.filter((t) => t.status === "COMPLETED").length;
+        return (
+          <section key={date}>
+            <div className="mb-2 flex items-baseline justify-between px-1">
+              <h3 className="text-[13px] font-semibold text-zinc-900">
+                {new Date(date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}
+              </h3>
+              <span className="text-xs text-zinc-500 tabular-nums">
+                {done} of {list.length} done
+              </span>
+            </div>
+            <ul className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
+              {list.map((t) => {
+                // employees can't delete tasks an admin assigned (the backend checks this too)
+                const canDelete = user?.role === "ADMIN" || !t.assignedBy;
+                const completed = t.status === "COMPLETED";
+                return (
+                  // phones: controls drop to their own row under the task; larger screens: on the right
+                  <li key={t.id} className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-zinc-50/60 sm:flex-row sm:items-start sm:gap-3">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      {showOwner && (
+                        <span className="mt-0.5">
+                          <Avatar name={t.user.name} size="xs" />
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm font-medium ${completed ? "text-zinc-400 line-through" : "text-zinc-900"}`}>
+                          {t.title}
+                        </p>
+                        {t.details && <p className="mt-0.5 line-clamp-2 text-[13px] text-zinc-500">{t.details}</p>}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+                          <PriorityBadge priority={t.priority} />
+                          {showOwner && <span className="font-medium text-zinc-700">{t.user.name}</span>}
+                          {t.assignedBy && <span>Assigned by {t.assignedBy.name}</span>}
+                          {t.deadline && <span>Due {fmtDate(t.deadline, false)}</span>}
+                          {t.link && (
+                            <a
+                              href={t.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-medium text-zinc-700 hover:text-brand-700"
+                            >
+                              <ExternalLink size={12} /> Open link
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-0.5 sm:shrink-0">
+                      <select
+                        aria-label="Status"
+                        value={t.status}
+                        onChange={(e) => setStatus(t, e.target.value as TaskStatus)}
+                        className={`mr-auto h-8 cursor-pointer sm:mr-1 rounded-md border-0 py-0 pr-7 pl-2 text-base font-medium sm:h-7 sm:text-xs ring-1 ring-inset outline-none ${taskStatusStyles[t.status]}`}
+                      >
+                        {Object.entries(taskStatusLabels).map(([v, l]) => (
+                          <option key={v} value={v}>
+                            {l}
+                          </option>
+                        ))}
+                      </select>
+                      <IconButton label="Edit task" onClick={() => onEdit(t)}>
+                        <Pencil size={15} />
+                      </IconButton>
+                      {canDelete && (
+                        <IconButton label="Delete task" tone="danger" onClick={() => remove(t)}>
+                          <Trash2 size={15} />
+                        </IconButton>
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <select
-                      value={t.status}
-                      onChange={(e) => setStatus(t, e.target.value as TaskStatus)}
-                      className={`rounded-full border-0 px-2.5 py-1 text-xs font-medium outline-none ${taskStatusStyles[t.status]}`}
-                    >
-                      {Object.entries(taskStatusLabels).map(([v, l]) => (
-                        <option key={v} value={v}>
-                          {l}
-                        </option>
-                      ))}
-                    </select>
-                    <button onClick={() => onEdit(t)} title="Edit" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
-                      <Pencil size={15} />
-                    </button>
-                    {canDelete && (
-                      <button onClick={() => remove(t)} title="Delete" className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600">
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }

@@ -3,16 +3,19 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import Card from "@/components/Card";
+import { useToast } from "@/components/Feedback";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import TaskForm from "@/components/TaskForm";
 import TaskList, { applyTaskChange } from "@/components/TaskList";
 import { Button } from "@/components/form";
+import { Skeleton } from "@/components/ui";
 import { api, type Task } from "@/lib/api";
 import { monthRange, thisMonthIST } from "@/lib/format";
 
 // /tasks: my daily task log (replaces my tab in the Task List sheet)
 export default function TasksPage() {
+  const toast = useToast();
   const [month, setMonth] = useState(thisMonthIST());
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [error, setError] = useState("");
@@ -27,17 +30,30 @@ export default function TasksPage() {
   }, [month]);
 
   const done = tasks?.filter((t) => t.status === "COMPLETED").length ?? 0;
+  const addButton = (
+    <Button onClick={() => setEditing("new")}>
+      <Plus size={16} /> Add task
+    </Button>
+  );
 
   return (
-    <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageHeader title="Tasks" subtitle={tasks ? `${done} of ${tasks.length} done this month` : " "} />
-        {!editing && (
-          <Button onClick={() => setEditing("new")}>
-            <Plus size={16} /> Add task
-          </Button>
-        )}
-      </div>
+    <div className="max-w-4xl">
+      <PageHeader
+        title="Tasks"
+        subtitle={tasks ? `${done} of ${tasks.length} completed this month` : "Your daily task log."}
+        actions={
+          <>
+            <MonthSwitcher
+              month={month}
+              onChange={(m) => {
+                setTasks(null); // show the loading state while the new month loads
+                setMonth(m);
+              }}
+            />
+            {!editing && addButton}
+          </>
+        }
+      />
 
       {editing && (
         <Card title={editing === "new" ? "New task" : "Edit task"} className="mb-6">
@@ -46,6 +62,7 @@ export default function TasksPage() {
             existing={editing === "new" ? undefined : editing}
             onSaved={(t) => {
               setTasks((list) => applyTaskChange(list ?? [], t));
+              toast.success(editing === "new" ? "Task added" : "Task updated");
               setEditing(null);
             }}
             onCancel={() => setEditing(null)}
@@ -53,25 +70,16 @@ export default function TasksPage() {
         </Card>
       )}
 
-      <div className="mb-4">
-        <MonthSwitcher
-          month={month}
-          onChange={(m) => {
-            setTasks(null); // show the loading state while the new month loads
-            setMonth(m);
-          }}
-        />
-      </div>
-
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {!tasks && !error && <div className="h-40 animate-pulse rounded-2xl bg-zinc-100" />}
+      {!tasks && !error && <Skeleton className="h-64" />}
       {tasks && (
         <TaskList
           tasks={tasks}
           onChange={(c) => setTasks((list) => applyTaskChange(list ?? [], c))}
           onEdit={(t) => setEditing(t)}
+          emptyAction={!editing && addButton}
         />
       )}
-    </>
+    </div>
   );
 }

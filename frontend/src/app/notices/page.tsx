@@ -4,11 +4,11 @@ import PageHeader from "@/components/PageHeader";
 
 export default function NoticesPage() {
   return (
-    <>
-      <PageHeader title="Notice Board" subtitle="Company policies and announcements." />
-      <Card>
-        <NoticeList />
+    <div className="max-w-3xl">
+      <PageHeader title="Notice board" subtitle="Company policies and announcements." />
+      <Card flush>
+        <NoticeList grouped />
       </Card>
-    </>
+    </div>
   );
 }

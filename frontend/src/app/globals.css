@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
-/* @theme = our design tokens. Each --color-* here becomes Tailwind classes:
-   --color-brand-700 → bg-brand-700, text-brand-700, border-brand-700, ...
-   Brand red is the dark red from the attendance sheet header. */
+/* Design tokens. Each --color-* becomes Tailwind classes (bg-brand-700, text-ink, ...).
+   Rule of thumb: neutrals (zinc) for structure, brand red ONLY for primary actions,
+   the active page, and numbers that need attention. */
 @theme inline {
   --color-brand-50: #fdf3f3;
   --color-brand-100: #fbe4e4;
   --color-brand-200: #f6c9c9;
   --color-brand-500: #c62828;
   --color-brand-600: #ad1414;
-  --color-brand-700: #990000;
+  --color-brand-700: #990000; /* the sheet header red */
   --color-brand-800: #7a0000;
+  --color-brand-900: #4d0000;
 
-  --color-canvas: #f6f6f7; /* page background */
-  --color-ink: #18181b; /* main text */
+  --color-canvas: #fafafa; /* page background */
+  --color-ink: #09090b; /* main text */
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -22,4 +23,19 @@
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One visible focus style for keyboard users, everywhere (mouse clicks don't show it).
+   In the base layer, so components with their own focus style (inputs use a soft ring) win. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+}
+
+/* Native <dialog> backdrop for the confirm dialog */
+dialog::backdrop {
+  background: rgb(9 9 11 / 0.4);
 }

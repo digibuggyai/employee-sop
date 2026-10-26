@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Cake, Mail, Phone, Search } from "lucide-react";
+import { Cake, Mail, Phone, Search, Users } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import PageHeader from "@/components/PageHeader";
 import { inputClass } from "@/components/form";
+import { Badge, EmptyState, Skeleton } from "@/components/ui";
 import { api, employmentLabels, type User } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
@@ -30,55 +31,64 @@ export default function DirectoryPage() {
 
   return (
     <>
-      <PageHeader title="Directory" subtitle="Everyone at Digibuggy." />
-
-      <div className="relative mb-6 max-w-md">
-        <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, role, team…"
-          className={`${inputClass} pl-9`}
-        />
-      </div>
+      <PageHeader
+        title="Directory"
+        subtitle={people ? `${people.length} people at Digibuggy` : "Everyone at Digibuggy."}
+        actions={
+          <div className="relative w-full sm:w-72">
+            <Search size={15} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, role, team"
+              aria-label="Search people"
+              className={`${inputClass} pl-9`}
+            />
+          </div>
+        }
+      />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {!people && !error && <div className="h-40 animate-pulse rounded-2xl bg-zinc-100" />}
-      {people && shown.length === 0 && <p className="text-sm text-zinc-500">No one matches “{query}”.</p>}
+      {!people && !error && <Skeleton className="h-48" />}
+      {people && shown.length === 0 && (
+        <EmptyState icon={Users} title={`No one matches "${query}"`} description="Try a first name, a team or a role." />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((p) => (
-          <div key={p.id} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
+          <article key={p.id} className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
+            <div className="flex items-start gap-3">
               <Avatar name={p.name} />
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{p.name}</p>
-                <p className="truncate text-sm text-zinc-500">{p.designation ?? employmentLabels[p.employmentType]}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-zinc-900">{p.name}</p>
+                <p className="truncate text-[13px] text-zinc-500">{p.designation ?? employmentLabels[p.employmentType]}</p>
               </div>
+              {p.team && <Badge>{p.team}</Badge>}
             </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {[p.team, p.office, p.timings].filter(Boolean).map((tag) => (
-                <span key={tag} className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <div className="mt-3 space-y-1 text-sm text-zinc-600">
-              <a href={`mailto:${p.email}`} className="flex items-center gap-2 truncate hover:text-brand-700">
-                <Mail size={14} /> {p.email}
+
+            <div className="mt-4 space-y-1.5 border-t border-zinc-100 pt-3 text-[13px]">
+              <a href={`mailto:${p.email}`} className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900">
+                <Mail size={14} className="shrink-0 text-zinc-400" />
+                <span className="truncate">{p.email}</span>
               </a>
               {p.phone && (
-                <a href={`tel:${p.phone}`} className="flex items-center gap-2 hover:text-brand-700">
-                  <Phone size={14} /> {p.phone}
+                <a href={`tel:${p.phone}`} className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900">
+                  <Phone size={14} className="shrink-0 text-zinc-400" />
+                  {p.phone}
                 </a>
               )}
               {p.birthday && (
-                <p className="flex items-center gap-2">
-                  <Cake size={14} /> {fmtDate(p.birthday, false)}
+                <p className="flex items-center gap-2 text-zinc-600">
+                  <Cake size={14} className="shrink-0 text-zinc-400" />
+                  {fmtDate(p.birthday, false)}
                 </p>
               )}
             </div>
-          </div>
+
+            {(p.office || p.timings) && (
+              <p className="mt-3 text-xs text-zinc-500">{[p.office, p.timings].filter(Boolean).join(" · ")}</p>
+            )}
+          </article>
         ))}
       </div>
     </>

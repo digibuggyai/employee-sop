@@ -4,7 +4,9 @@ import { Download } from "lucide-react";
 import type { DayRow, MonthReport } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime } from "@/lib/format";
 import { DayStatusBadge, Tag } from "./Badges";
+import Card from "./Card";
 import { Button } from "./form";
+import { Stat, table } from "./ui";
 
 const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
 
@@ -50,78 +52,128 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
   }
 
   const notMadeUp = summary.leaves - summary.leavesCompensated;
-  const tiles: [string, string, string?][] = [
-    ["Worked", fmtDuration(summary.workedMs), `avg ${fmtDuration(summary.avgMs)} / day`],
-    ["Days present", String(summary.present), `${summary.inOffice} in-office`],
-    [
-      "WFH",
-      `${summary.wfh} / ${summary.wfhAllowance}`,
-      summary.halfDays ? `${summary.halfDays} half day${summary.halfDays > 1 ? "s" : ""}` : "within limit",
-    ],
-    [
-      "Leaves",
-      String(summary.leaves),
-      summary.leaves ? (notMadeUp ? `${notMadeUp} not made up` : "all made up") : summary.leavesPending ? `${summary.leavesPending} pending` : "none",
-    ],
-    ["Absent", String(summary.absent), "no leave applied"],
-  ];
+  const overWfh = summary.wfh > summary.wfhAllowance;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {tiles.map(([label, value, sub]) => (
-          <div key={label} className="rounded-xl border border-zinc-200 bg-white p-3">
-            <p className="text-xs text-zinc-500">{label}</p>
-            <p className="mt-0.5 text-lg font-semibold tabular-nums">{value}</p>
-            {sub && <p className="text-xs text-zinc-500">{sub}</p>}
-          </div>
-        ))}
+    <div className="space-y-6">
+      {/* 2 columns on phones (the 5th tile spans both), 5 in a row on large screens */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
+        <Stat label="Hours worked" value={fmtDuration(summary.workedMs)} hint={`avg ${fmtDuration(summary.avgMs)} a day`} />
+        <Stat label="Days present" value={summary.present} hint={`${summary.inOffice} in-office`} />
+        <Stat
+          label="WFH used"
+          value={`${summary.wfh} / ${summary.wfhAllowance}`}
+          hint={summary.halfDays ? `${summary.halfDays} counted as half day` : "Within allowance"}
+          emphasis={overWfh ? "warning" : undefined}
+        />
+        <Stat
+          label="Leaves"
+          value={summary.leaves}
+          hint={
+            summary.leaves
+              ? notMadeUp
+                ? `${notMadeUp} not made up`
+                : "All made up"
+              : summary.leavesPending
+                ? `${summary.leavesPending} pending`
+                : "None taken"
+          }
+        />
+        <Stat
+          label="Absent"
+          value={summary.absent}
+          hint="Without leave"
+          emphasis={summary.absent ? "danger" : undefined}
+        />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
-          <p className="text-sm font-semibold">Day by day</p>
-          <Button variant="secondary" onClick={exportCsv} className="py-1.5">
-            <Download size={15} /> Export CSV
+      <Card
+        title="Day by day"
+        flush
+        actions={
+          <Button variant="secondary" size="sm" onClick={exportCsv}>
+            <Download size={14} /> Export CSV
           </Button>
-        </div>
-        {/* overflow-x-auto: on phones the table scrolls sideways instead of squashing */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs text-zinc-500">
+        }
+      >
+        {/* Phones: one compact row per day */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {days.map((d) => {
+            const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED";
+            return (
+              <li key={d.date} className={`flex gap-3 px-4 ${quiet ? "bg-zinc-50/50 py-2" : "py-3"}`}>
+                <div className={`w-9 shrink-0 text-center ${quiet ? "text-zinc-400" : ""}`}>
+                  <p className="text-sm leading-tight font-semibold tabular-nums">{d.date.slice(8)}</p>
+                  <p className="text-[11px] text-zinc-500">{d.weekday.slice(0, 3)}</p>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <DayStatusBadge status={d.status} />
+                    {d.workedMs !== undefined && (
+                      <span className="text-sm font-medium text-zinc-900 tabular-nums">{fmtDuration(d.workedMs)}</span>
+                    )}
+                  </div>
+                  {d.checkIn && (
+                    <p className="mt-1 text-xs text-zinc-500 tabular-nums">
+                      {fmtTime(d.checkIn)} – {fmtTime(d.checkOut)} · {d.place ? placeLabel[d.place] : ""}
+                      {d.breaks ? ` · ${fmtDuration(d.breakMs)} break` : ""}
+                    </p>
+                  )}
+                  {(d.holiday || d.halfDay || d.compensates || d.leave) && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
+                      {d.halfDay && <Tag tone="amber">Half day, extra WFH</Tag>}
+                      {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
+                      {d.leave && (
+                        <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>
+                          {d.leave.compensatedOn ? `Made up ${fmtDate(d.leave.compensatedOn, false)}` : "Not made up"}
+                        </Tag>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Larger screens: the full table */}
+        <div className={`${table.wrap} hidden md:block`}>
+          <table className={table.table}>
+            <thead className={table.thead}>
               <tr>
                 {["Date", "Status", "Place", "In", "Out", "Breaks", "Worked", "Notes"].map((h) => (
-                  <th key={h} className="px-4 py-2 font-medium whitespace-nowrap">
+                  <th key={h} className={table.th}>
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody className={table.tbody}>
               {days.map((d) => {
                 const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED";
                 return (
-                  <tr key={d.date} className={quiet ? "bg-zinc-50/60 text-zinc-400" : ""}>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <span className="font-medium tabular-nums">{d.date.slice(8)}</span>{" "}
-                      <span className="text-zinc-500">{d.weekday.slice(0, 3)}</span>
+                  <tr key={d.date} className={quiet ? "bg-zinc-50/50 text-zinc-400" : table.tr}>
+                    <td className={`${table.td} py-2.5`}>
+                      <span className="inline-block w-6 font-medium tabular-nums">{d.date.slice(8)}</span>
+                      <span className={quiet ? "" : "text-zinc-500"}>{d.weekday.slice(0, 3)}</span>
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className={`${table.td} py-2.5`}>
                       <DayStatusBadge status={d.status} />
                     </td>
-                    <td className="px-4 py-2">{d.place ? placeLabel[d.place] : ""}</td>
-                    <td className="px-4 py-2 tabular-nums whitespace-nowrap">{d.checkIn ? fmtTime(d.checkIn) : ""}</td>
-                    <td className="px-4 py-2 tabular-nums whitespace-nowrap">{d.checkIn ? fmtTime(d.checkOut) : ""}</td>
-                    <td className="px-4 py-2 tabular-nums whitespace-nowrap">
-                      {d.breaks ? `${d.breaks} · ${fmtDuration(d.breakMs)}` : ""}
+                    <td className={`${table.td} py-2.5 text-zinc-600`}>{d.place ? placeLabel[d.place] : ""}</td>
+                    <td className={`${table.td} py-2.5 tabular-nums`}>{d.checkIn ? fmtTime(d.checkIn) : ""}</td>
+                    <td className={`${table.td} py-2.5 tabular-nums`}>{d.checkIn ? fmtTime(d.checkOut) : ""}</td>
+                    <td className={`${table.td} py-2.5 text-zinc-600 tabular-nums`}>
+                      {d.breaks ? `${fmtDuration(d.breakMs)} (${d.breaks})` : ""}
                     </td>
-                    <td className="px-4 py-2 font-medium tabular-nums whitespace-nowrap">
+                    <td className={`${table.td} py-2.5 font-medium text-zinc-900 tabular-nums`}>
                       {d.workedMs !== undefined ? fmtDuration(d.workedMs) : ""}
                     </td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-wrap gap-1">
+                    <td className={`${table.td} py-2.5`}>
+                      <div className="flex items-center gap-1.5">
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
-                        {d.halfDay && <Tag tone="amber">Half day · extra WFH</Tag>}
+                        {d.halfDay && <Tag tone="amber">Half day, extra WFH</Tag>}
                         {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                         {d.leave && (
                           <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>
@@ -137,7 +189,7 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

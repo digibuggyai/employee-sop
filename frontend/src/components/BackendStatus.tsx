@@ -17,12 +17,13 @@ export default function BackendStatus({ compact = false }: { compact?: boolean }
       .catch(() => setStatus("offline")); // backend not running, or CORS blocked it
   }, []);
 
-  const color = { checking: "bg-yellow-400", online: "bg-green-500", offline: "bg-red-500" }[status];
+  const color = { checking: "bg-zinc-300", online: "bg-emerald-500", offline: "bg-red-500" }[status];
+  const label = { checking: "Connecting", online: "Connected", offline: "Server unreachable" }[status];
 
   return (
-    <span className="inline-flex items-center gap-2 text-xs text-zinc-500" title={`Backend ${status}`}>
-      <span className={`h-2 w-2 rounded-full ${color}`} />
-      {!compact && `Backend ${status}`}
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400" title={label}>
+      <span className={`size-1.5 rounded-full ${color}`} />
+      {!compact && label}
     </span>
   );
 }

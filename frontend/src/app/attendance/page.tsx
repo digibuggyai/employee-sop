@@ -6,6 +6,7 @@ import CheckInCard from "@/components/CheckInCard";
 import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
+import { Skeleton } from "@/components/ui";
 import { api, type MonthReport } from "@/lib/api";
 import { thisMonthIST } from "@/lib/format";
 
@@ -25,18 +26,23 @@ export default function AttendancePage() {
 
   return (
     <>
-      <PageHeader title="Attendance" subtitle="Check in, check out and see your month." />
+      <PageHeader
+        title="Attendance"
+        subtitle="Your check-ins, breaks and monthly record."
+        actions={
+          <MonthSwitcher
+            month={month}
+            onChange={(m) => {
+              setReport(null);
+              setMonth(m);
+            }}
+          />
+        }
+      />
       <div className="space-y-6">
-        <CheckInCard onChange={() => setVersion((v) => v + 1)} />
-        <MonthSwitcher
-          month={month}
-          onChange={(m) => {
-            setReport(null);
-            setMonth(m);
-          }}
-        />
+        {month === thisMonthIST() && <CheckInCard onChange={() => setVersion((v) => v + 1)} />}
         {error && <p className="text-sm text-red-600">{error}</p>}
-        {!report && !error && <div className="h-64 animate-pulse rounded-2xl bg-zinc-100" />}
+        {!report && !error && <Skeleton className="h-96" />}
         {report && <MonthSheet report={report} name={user?.name ?? "me"} />}
       </div>
     </>
