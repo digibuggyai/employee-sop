@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* @theme = our design tokens. Each --color-* here becomes Tailwind classes:
+   --color-brand-700 → bg-brand-700, text-brand-700, border-brand-700, ...
+   Brand red is the dark red from the attendance sheet header. */
+@theme inline {
+  --color-brand-50: #fdf3f3;
+  --color-brand-100: #fbe4e4;
+  --color-brand-200: #f6c9c9;
+  --color-brand-500: #c62828;
+  --color-brand-600: #ad1414;
+  --color-brand-700: #990000;
+  --color-brand-800: #7a0000;
+
+  --color-canvas: #f6f6f7; /* page background */
+  --color-ink: #18181b; /* main text */
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
