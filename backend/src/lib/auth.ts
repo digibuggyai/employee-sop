@@ -17,7 +17,7 @@ declare global {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error("JWT_SECRET is missing in .env");
+if (!JWT_SECRET) throw new Error("JWT_SECRET is not set (locally: backend/.env, on Railway: the service's Variables tab)");
 
 export const COOKIE_NAME = "token";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
