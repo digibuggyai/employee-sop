@@ -42,6 +42,40 @@ model User {
   mustChangePassword Boolean @default(true) // true until they replace the temporary password
   active             Boolean @default(true) // false = left the company; can't log in, data kept
 
+  attendance Attendance[] // one user → many attendance days (a "relation")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Place {
+  IN_OFFICE
+  WFH
+}
+
+// One row per person per day: replaces a row of the attendance sheet.
+model Attendance {
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id]) // links to the User table
+  date     DateTime  @db.Date // the day (India time), e.g. 2026-10-26
+  place    Place
+  checkIn  DateTime // exact moment, set by the server
+  checkOut DateTime?
+  note     String?
+  breaks   Break[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date]) // a person can't have two attendance rows for the same day
+}
+
+// Each break inside a day. end = null means "on break right now".
+model Break {
+  id           String     @id @default(cuid())
+  attendanceId String
+  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  start        DateTime
+  end          DateTime?
 }

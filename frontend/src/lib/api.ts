@@ -59,6 +59,25 @@ export type User = {
   updatedAt: string;
 };
 
+// backend: prisma/schema.prisma → model Attendance + Break (dates arrive as ISO strings)
+export type Place = "IN_OFFICE" | "WFH";
+
+export type Break = {
+  id: string;
+  start: string;
+  end: string | null; // null = on break right now
+};
+
+export type Attendance = {
+  id: string;
+  date: string;
+  place: Place;
+  checkIn: string;
+  checkOut: string | null;
+  note: string | null;
+  breaks: Break[];
+};
+
 // backend/src/data/holidays.ts
 export type Holiday = {
   date: string;

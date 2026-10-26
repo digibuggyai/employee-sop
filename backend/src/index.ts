@@ -9,6 +9,7 @@ import noticesRouter from "./routes/notices.js";
 import authRouter from "./routes/auth.js";
 import usersRouter from "./routes/users.js";
 import directoryRouter from "./routes/directory.js";
+import attendanceRouter from "./routes/attendance.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -33,6 +34,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/directory", directoryRouter);
+app.use("/api/attendance", attendanceRouter);
 app.use("/api/holidays", holidaysRouter);
 app.use("/api/notices", noticesRouter);
 
