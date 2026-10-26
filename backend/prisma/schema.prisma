@@ -41,12 +41,16 @@ model User {
 
   mustChangePassword Boolean @default(true) // true until they replace the temporary password
   active             Boolean @default(true) // false = left the company; can't log in, data kept
+  wfhAllowance       Int     @default(4) // WFH days per month; each WFH day beyond this counts as a half day
 
   attendance Attendance[] // one user → many attendance days (a "relation")
 
   // Two relations to Task, so each needs a name: tasks I own vs tasks I assigned to others.
   tasks         Task[] @relation("TaskOwner")
   assignedTasks Task[] @relation("TaskAssigner")
+
+  leaves         Leave[] @relation("LeaveOwner")
+  reviewedLeaves Leave[] @relation("LeaveReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -119,4 +123,35 @@ model Task {
   updatedAt DateTime @updatedAt
 
   @@index([userId, date]) // makes "this person's tasks for this month" fast
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// One leave DAY (a 3-day request creates 3 rows, so each day can be approved or made up on its own).
+model Leave {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("LeaveOwner", fields: [userId], references: [id])
+
+  date   DateTime    @db.Date
+  reason String?
+  status LeaveStatus @default(PENDING)
+
+  reviewedById String? // the admin who approved / rejected it
+  reviewedBy   User?     @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+
+  // The weekend/holiday day the person worked to make up for this leave.
+  // 1 worked day covers 1 leave: the unique rule below stops one day being used twice.
+  compensatedOn DateTime? @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date]) // one leave row per person per day
+  @@unique([userId, compensatedOn]) // (Postgres allows many NULLs here, so un-compensated leaves are fine)
 }

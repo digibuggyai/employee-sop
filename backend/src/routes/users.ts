@@ -33,6 +33,8 @@ const profileFields = {
   timings: optionalText,
   birthday: optionalDate,
   joinedOn: optionalDate,
+  // z.coerce turns the form's "4" (text) into the number 4
+  wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
 };
 
 // GET /api/users → everyone, active first, then A–Z

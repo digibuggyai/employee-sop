@@ -7,7 +7,7 @@
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate dev && prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "create-admin": "tsx src/scripts/create-admin.ts",

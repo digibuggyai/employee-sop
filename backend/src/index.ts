@@ -12,6 +12,7 @@ import directoryRouter from "./routes/directory.js";
 import attendanceRouter from "./routes/attendance.js";
 import tasksRouter from "./routes/tasks.js";
 import adminRouter from "./routes/admin.js";
+import leavesRouter from "./routes/leaves.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -39,6 +40,7 @@ app.use("/api/directory", directoryRouter);
 app.use("/api/attendance", attendanceRouter);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/leaves", leavesRouter);
 app.use("/api/holidays", holidaysRouter);
 app.use("/api/notices", noticesRouter);
 

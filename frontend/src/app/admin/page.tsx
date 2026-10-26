@@ -27,12 +27,13 @@ export default function AdminOverviewPage() {
     ["Working", count("WORKING"), "text-emerald-700"],
     ["On break", count("ON_BREAK"), "text-amber-700"],
     ["Checked out", count("DONE"), "text-sky-700"],
+    ["On leave", count("ON_LEAVE"), "text-violet-700"],
     ["Not checked in", count("NOT_IN"), "text-red-700"],
     ["WFH", rows?.filter((r) => r.place === "WFH").length ?? 0, "text-violet-700"],
   ];
 
   // Who's in first, then the rest
-  const order: Record<LiveStatus, number> = { WORKING: 0, ON_BREAK: 1, DONE: 2, NOT_IN: 3 };
+  const order: Record<LiveStatus, number> = { WORKING: 0, ON_BREAK: 1, DONE: 2, ON_LEAVE: 3, NOT_IN: 4 };
   const sorted = [...(rows ?? [])].sort((a, b) => order[a.status] - order[b.status]);
 
   return (
@@ -51,7 +52,7 @@ export default function AdminOverviewPage() {
         />
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         {tiles.map(([label, value, color]) => (
           <div key={label} className="rounded-xl border border-zinc-200 bg-white p-4">
             <p className="text-xs text-zinc-500">{label}</p>

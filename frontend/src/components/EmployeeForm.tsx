@@ -28,6 +28,7 @@ export default function EmployeeForm({
     timings: existing?.timings ?? "",
     birthday: toDateInput(existing?.birthday ?? null),
     joinedOn: toDateInput(existing?.joinedOn ?? null),
+    wfhAllowance: String(existing?.wfhAllowance ?? 4),
     active: existing?.active ?? true,
     password: "", // create: temporary password · edit: leave empty unless resetting
   });
@@ -100,6 +101,9 @@ export default function EmployeeForm({
         </Field>
         <Field label="Birthday">
           <input name="birthday" type="date" value={form.birthday} onChange={update} className={inputClass} />
+        </Field>
+        <Field label="WFH days allowed per month" hint="Each WFH day beyond this counts as a half day.">
+          <input name="wfhAllowance" type="number" min={0} max={31} required value={form.wfhAllowance} onChange={update} className={inputClass} />
         </Field>
         <Field label="Joined on">
           <input name="joinedOn" type="date" value={form.joinedOn} onChange={update} className={inputClass} />

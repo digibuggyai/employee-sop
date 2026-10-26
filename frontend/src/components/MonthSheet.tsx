@@ -1,12 +1,25 @@
 "use client";
 
 import { Download } from "lucide-react";
-import type { MonthReport } from "@/lib/api";
-import { downloadCsv, fmtDuration, fmtTime } from "@/lib/format";
-import { DayStatusBadge } from "./Badges";
+import type { DayRow, MonthReport } from "@/lib/api";
+import { downloadCsv, fmtDate, fmtDuration, fmtTime } from "@/lib/format";
+import { DayStatusBadge, Tag } from "./Badges";
 import { Button } from "./form";
 
 const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
+
+// Extra notes for a day: holiday name, half day, make-up links, leave reason
+function dayNotes(d: DayRow): string[] {
+  const notes: string[] = [];
+  if (d.holiday) notes.push(d.holiday);
+  if (d.halfDay) notes.push("Half day (WFH over limit)");
+  if (d.compensates) notes.push(`Makes up leave of ${fmtDate(d.compensates, false)}`);
+  if (d.leave) {
+    if (d.leave.reason) notes.push(d.leave.reason);
+    notes.push(d.leave.compensatedOn ? `Made up on ${fmtDate(d.leave.compensatedOn, false)}` : "Not made up");
+  }
+  return notes;
+}
 
 // The old attendance sheet, rebuilt: one row per day + totals.
 // Used on /attendance (my month) and /admin/attendance (anyone's month).
@@ -15,7 +28,7 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
 
   function exportCsv() {
     downloadCsv(`attendance-${name.replaceAll(" ", "-")}-${report.month}.csv`, [
-      ["Date", "Day", "Status", "Place", "In", "Out", "Breaks", "Break time", "Worked", "Note"],
+      ["Date", "Day", "Status", "Place", "In", "Out", "Breaks", "Break time", "Worked", "Notes"],
       ...days.map((d) => [
         d.date,
         d.weekday,
@@ -26,28 +39,41 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
         d.breaks ?? "",
         d.breakMs !== undefined ? fmtDuration(d.breakMs) : "",
         d.workedMs !== undefined ? fmtDuration(d.workedMs) : "",
-        d.holiday ?? "",
+        dayNotes(d).join("; "),
       ]),
       [],
-      ["Total worked", fmtDuration(summary.workedMs), "Days present", summary.present, "Absent", summary.absent],
+      ["Total worked", fmtDuration(summary.workedMs)],
+      ["Days present", summary.present, "In-office", summary.inOffice, "WFH", `${summary.wfh} of ${summary.wfhAllowance}`],
+      ["Half days (extra WFH)", summary.halfDays],
+      ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Absent", summary.absent],
     ]);
   }
 
-  const tiles: [string, string][] = [
-    ["Worked", fmtDuration(summary.workedMs)],
-    ["Days present", String(summary.present)],
-    ["In-office / WFH", `${summary.inOffice} / ${summary.wfh}`],
-    ["Avg per day", fmtDuration(summary.avgMs)],
-    ["Absent", String(summary.absent)],
+  const notMadeUp = summary.leaves - summary.leavesCompensated;
+  const tiles: [string, string, string?][] = [
+    ["Worked", fmtDuration(summary.workedMs), `avg ${fmtDuration(summary.avgMs)} / day`],
+    ["Days present", String(summary.present), `${summary.inOffice} in-office`],
+    [
+      "WFH",
+      `${summary.wfh} / ${summary.wfhAllowance}`,
+      summary.halfDays ? `${summary.halfDays} half day${summary.halfDays > 1 ? "s" : ""}` : "within limit",
+    ],
+    [
+      "Leaves",
+      String(summary.leaves),
+      summary.leaves ? (notMadeUp ? `${notMadeUp} not made up` : "all made up") : summary.leavesPending ? `${summary.leavesPending} pending` : "none",
+    ],
+    ["Absent", String(summary.absent), "no leave applied"],
   ];
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {tiles.map(([label, value]) => (
+        {tiles.map(([label, value, sub]) => (
           <div key={label} className="rounded-xl border border-zinc-200 bg-white p-3">
             <p className="text-xs text-zinc-500">{label}</p>
             <p className="mt-0.5 text-lg font-semibold tabular-nums">{value}</p>
+            {sub && <p className="text-xs text-zinc-500">{sub}</p>}
           </div>
         ))}
       </div>
@@ -64,7 +90,7 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs text-zinc-500">
               <tr>
-                {["Date", "Status", "Place", "In", "Out", "Breaks", "Worked"].map((h) => (
+                {["Date", "Status", "Place", "In", "Out", "Breaks", "Worked", "Notes"].map((h) => (
                   <th key={h} className="px-4 py-2 font-medium whitespace-nowrap">
                     {h}
                   </th>
@@ -82,7 +108,6 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <DayStatusBadge status={d.status} />
-                      {d.holiday && <span className="ml-2 text-xs text-amber-700">{d.holiday}</span>}
                     </td>
                     <td className="px-4 py-2">{d.place ? placeLabel[d.place] : ""}</td>
                     <td className="px-4 py-2 tabular-nums whitespace-nowrap">{d.checkIn ? fmtTime(d.checkIn) : ""}</td>
@@ -92,6 +117,19 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
                     </td>
                     <td className="px-4 py-2 font-medium tabular-nums whitespace-nowrap">
                       {d.workedMs !== undefined ? fmtDuration(d.workedMs) : ""}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
+                        {d.halfDay && <Tag tone="amber">Half day · extra WFH</Tag>}
+                        {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
+                        {d.leave && (
+                          <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>
+                            {d.leave.compensatedOn ? `Made up ${fmtDate(d.leave.compensatedOn, false)}` : "Not made up"}
+                          </Tag>
+                        )}
+                        {d.leave?.reason && <span className="text-xs text-zinc-500">{d.leave.reason}</span>}
+                      </div>
                     </td>
                   </tr>
                 );

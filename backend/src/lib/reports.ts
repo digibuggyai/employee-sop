@@ -32,11 +32,17 @@ export function daysOfMonth(month: string): string[] {
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// Weekends and company holidays: days that don't need leave, and can be worked as make-up days.
+export function isOffDay(date: string) {
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return weekday === 0 || weekday === 6 || holidays.some((h) => h.date === date);
+}
+
 export type DayRow = {
   date: string;
   weekday: string;
   // what kind of day it is, and what happened
-  status: "PRESENT" | "WORKING" | "ABSENT" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
+  status: "PRESENT" | "WORKING" | "ABSENT" | "LEAVE" | "LEAVE_PENDING" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
   holiday?: string;
   place?: "IN_OFFICE" | "WFH";
   checkIn?: Date;
@@ -44,75 +50,109 @@ export type DayRow = {
   breaks?: number;
   breakMs?: number;
   workedMs?: number;
+  halfDay?: boolean; // a WFH day beyond the person's monthly allowance
+  compensates?: string; // this worked day makes up for the leave on that date
+  leave?: { id: string; reason: string | null; compensatedOn: string | null };
 };
 
 export type MonthSummary = {
   present: number;
   inOffice: number;
   wfh: number;
-  absent: number; // working days in the past with no check-in (leave module will refine this)
+  wfhAllowance: number;
+  halfDays: number; // WFH days over the allowance
+  leaves: number; // approved leave days
+  leavesCompensated: number; // ...of which made up on a weekend/holiday
+  leavesPending: number;
+  absent: number; // past working days with no check-in and no approved/pending leave
   workedMs: number;
   avgMs: number; // average per present day
 };
 
-// Monthly sheet for several people at once, with ONE database query.
+const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+
+// Monthly sheet for several people at once, with ONE query per table.
 export async function monthReports(userIds: string[], month: string) {
   const dates = daysOfMonth(month);
+  const range = { gte: toDbDate(dates[0]), lte: toDbDate(dates.at(-1)!) };
+
   // When each person started: joining date, or the day their account was made.
   // Days before that are "not joined yet", not absences.
   const people = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, joinedOn: true, createdAt: true },
+    select: { id: true, joinedOn: true, createdAt: true, wfhAllowance: true },
   });
-  const startOf = new Map(
-    people.map((p) => [
-      p.id,
-      p.joinedOn?.toISOString().slice(0, 10) ??
-        p.createdAt.toLocaleDateString("en-CA", { timeZone: TIMEZONE }),
-    ]),
-  );
+  const personOf = new Map(people.map((p) => [p.id, p]));
 
-  const rows = await prisma.attendance.findMany({
-    where: { userId: { in: userIds }, date: { gte: toDbDate(dates[0]), lte: toDbDate(dates.at(-1)!) } },
-    include: { breaks: true },
-  });
+  const [rows, leaves] = await Promise.all([
+    prisma.attendance.findMany({ where: { userId: { in: userIds }, date: range }, include: { breaks: true } }),
+    // Leaves IN this month, plus leaves made up IN this month (the leave itself may be in an earlier month)
+    prisma.leave.findMany({
+      where: { userId: { in: userIds }, status: { not: "REJECTED" }, OR: [{ date: range }, { compensatedOn: range }] },
+    }),
+  ]);
 
   const today = todayString();
   const holidayByDate = new Map(holidays.map((h) => [h.date, h.name]));
   const reports = new Map<string, { days: DayRow[]; summary: MonthSummary }>();
 
   for (const userId of userIds) {
-    // quick lookup: "2026-10-05" → that day's row for this person
-    const byDate = new Map(
-      rows.filter((r) => r.userId === userId).map((r) => [r.date.toISOString().slice(0, 10), r]),
+    const person = personOf.get(userId);
+    const start =
+      person?.joinedOn?.toISOString().slice(0, 10) ??
+      person?.createdAt.toLocaleDateString("en-CA", { timeZone: TIMEZONE }) ??
+      dates[0];
+    // quick lookups by "2026-10-05"
+    const attByDate = new Map(rows.filter((r) => r.userId === userId).map((r) => [dayKey(r.date), r]));
+    const myLeaves = leaves.filter((l) => l.userId === userId);
+    const leaveByDate = new Map(myLeaves.map((l) => [dayKey(l.date), l]));
+    const leaveByMakeUpDay = new Map(
+      myLeaves.filter((l) => l.compensatedOn).map((l) => [dayKey(l.compensatedOn!), l]),
     );
-    const start = startOf.get(userId) ?? dates[0];
-    const summary: MonthSummary = { present: 0, inOffice: 0, wfh: 0, absent: 0, workedMs: 0, avgMs: 0 };
+
+    const summary: MonthSummary = {
+      present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
+      leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0,
+    };
 
     const days = dates.map((date): DayRow => {
       const weekdayIndex = new Date(`${date}T00:00:00Z`).getUTCDay();
-      const base = { date, weekday: WEEKDAYS[weekdayIndex] };
-      const att = byDate.get(date);
+      const base = { date, weekday: WEEKDAYS[weekdayIndex], holiday: holidayByDate.get(date) };
+      const att = attByDate.get(date);
+      const leave = leaveByDate.get(date);
 
       if (att) {
-        // Worked (even on a weekend/holiday, like a compensation day)
+        // Worked (even on a weekend/holiday, e.g. a make-up day)
         const { breakMs, workedMs } = dayTotals(att);
         summary.present++;
         summary[att.place === "WFH" ? "wfh" : "inOffice"]++;
         summary.workedMs += workedMs;
+        const madeUp = leaveByMakeUpDay.get(date);
         return {
           ...base,
           status: att.checkOut ? "PRESENT" : "WORKING",
-          holiday: holidayByDate.get(date),
           place: att.place,
           checkIn: att.checkIn,
           checkOut: att.checkOut,
           breaks: att.breaks.length,
           breakMs,
           workedMs,
+          ...(madeUp && { compensates: dayKey(madeUp.date) }),
         };
       }
-      if (holidayByDate.has(date)) return { ...base, status: "HOLIDAY", holiday: holidayByDate.get(date) };
+      if (leave) {
+        const compensatedOn = leave.compensatedOn ? dayKey(leave.compensatedOn) : null;
+        if (leave.status === "APPROVED") {
+          summary.leaves++;
+          if (compensatedOn) summary.leavesCompensated++;
+        } else summary.leavesPending++;
+        return {
+          ...base,
+          status: leave.status === "APPROVED" ? "LEAVE" : "LEAVE_PENDING",
+          leave: { id: leave.id, reason: leave.reason, compensatedOn },
+        };
+      }
+      if (holidayByDate.has(date)) return { ...base, status: "HOLIDAY" };
       if (weekdayIndex === 0 || weekdayIndex === 6) return { ...base, status: "WEEKEND" };
       if (date >= today) return { ...base, status: "UPCOMING" };
       if (date < start) return { ...base, status: "NOT_JOINED" };
@@ -120,11 +160,21 @@ export async function monthReports(userIds: string[], month: string) {
       return { ...base, status: "ABSENT" };
     });
 
+    // WFH policy: the first `wfhAllowance` WFH days of the month are normal; every one after is a half day.
+    days
+      .filter((d) => d.place === "WFH")
+      .slice(summary.wfhAllowance)
+      .forEach((d) => {
+        d.halfDay = true;
+        summary.halfDays++;
+      });
+
     summary.avgMs = summary.present ? Math.round(summary.workedMs / summary.present) : 0;
     reports.set(userId, { days, summary });
   }
   return reports;
 }
+
 
 // "2026-10" (current month in India time)
 export const thisMonth = () => todayString().slice(0, 7);

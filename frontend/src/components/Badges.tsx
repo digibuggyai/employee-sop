@@ -1,5 +1,5 @@
 // Coloured labels used in tables. One place decides colours, so they match everywhere.
-import type { DayRow, LiveStatus, Priority, TaskStatus } from "@/lib/api";
+import type { DayRow, LeaveStatus, LiveStatus, Priority, TaskStatus } from "@/lib/api";
 import { priorityLabels, taskStatusLabels } from "@/lib/api";
 
 const pill = "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap";
@@ -8,6 +8,8 @@ const dayStyles: Record<DayRow["status"], [string, string]> = {
   PRESENT: ["Present", "bg-emerald-50 text-emerald-700"],
   WORKING: ["Working", "bg-sky-50 text-sky-700"],
   ABSENT: ["Absent", "bg-red-50 text-red-700"],
+  LEAVE: ["Leave", "bg-violet-50 text-violet-700"],
+  LEAVE_PENDING: ["Leave (pending)", "bg-violet-50 text-violet-500"],
   WEEKEND: ["Weekend", "bg-zinc-100 text-zinc-500"],
   HOLIDAY: ["Holiday", "bg-amber-50 text-amber-700"],
   UPCOMING: ["—", "text-zinc-400"],
@@ -24,6 +26,7 @@ const liveStyles: Record<LiveStatus, [string, string]> = {
   WORKING: ["Working", "bg-emerald-50 text-emerald-700"],
   ON_BREAK: ["On break", "bg-amber-50 text-amber-700"],
   DONE: ["Checked out", "bg-sky-50 text-sky-700"],
+  ON_LEAVE: ["On leave", "bg-violet-50 text-violet-700"],
 };
 
 export function LiveStatusBadge({ status }: { status: LiveStatus }) {
@@ -50,4 +53,21 @@ export const taskStatusStyles: Record<TaskStatus, string> = {
 
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
   return <span className={`${pill} ${taskStatusStyles[status]}`}>{taskStatusLabels[status]}</span>;
+}
+
+const leaveStyles: Record<LeaveStatus, [string, string]> = {
+  PENDING: ["Pending", "bg-amber-50 text-amber-700"],
+  APPROVED: ["Approved", "bg-emerald-50 text-emerald-700"],
+  REJECTED: ["Rejected", "bg-red-50 text-red-700"],
+};
+
+export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {
+  const [label, style] = leaveStyles[status];
+  return <span className={`${pill} ${style}`}>{label}</span>;
+}
+
+// Small grey/coloured tag for extra info inside table cells
+export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" }) {
+  const tones = { zinc: "bg-zinc-100 text-zinc-600", amber: "bg-amber-50 text-amber-700", violet: "bg-violet-50 text-violet-700" };
+  return <span className={`${pill} ${tones[tone]}`}>{children}</span>;
 }

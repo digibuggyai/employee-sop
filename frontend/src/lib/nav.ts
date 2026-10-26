@@ -8,6 +8,7 @@ import {
   Megaphone,
   Plane,
   Gauge,
+  CalendarOff,
   UserCog,
   Users,
   type LucideIcon,
@@ -39,6 +40,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin", label: "Overview", desc: "Everyone today", icon: Gauge, mobile: true },
   { href: "/admin/attendance", label: "Attendance", desc: "Hours for everyone", icon: CalendarRange, mobile: true },
   { href: "/admin/tasks", label: "Tasks", desc: "Everyone's tasks", icon: ClipboardList, mobile: true },
+  { href: "/admin/leaves", label: "Leaves", desc: "Approve leave, link make-up days", icon: CalendarOff, mobile: true },
   { href: "/admin/employees", label: "Employees", desc: "Create and manage accounts", icon: UserCog, mobile: true },
 ];
 

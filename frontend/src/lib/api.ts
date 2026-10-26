@@ -55,6 +55,7 @@ export type User = {
   joinedOn: string | null;
   mustChangePassword: boolean;
   active: boolean;
+  wfhAllowance: number; // WFH days per month before extra ones count as half days
   createdAt: string;
   updatedAt: string;
 };
@@ -83,7 +84,7 @@ export type Attendance = {
 export type DayRow = {
   date: string;
   weekday: string;
-  status: "PRESENT" | "WORKING" | "ABSENT" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
+  status: "PRESENT" | "WORKING" | "ABSENT" | "LEAVE" | "LEAVE_PENDING" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
   holiday?: string;
   place?: Place;
   checkIn?: string;
@@ -91,12 +92,20 @@ export type DayRow = {
   breaks?: number;
   breakMs?: number;
   workedMs?: number;
+  halfDay?: boolean; // WFH beyond the monthly allowance
+  compensates?: string; // this worked weekend/holiday makes up for the leave on that date
+  leave?: { id: string; reason: string | null; compensatedOn: string | null };
 };
 
 export type MonthSummary = {
   present: number;
   inOffice: number;
   wfh: number;
+  wfhAllowance: number;
+  halfDays: number;
+  leaves: number;
+  leavesCompensated: number;
+  leavesPending: number;
   absent: number;
   workedMs: number;
   avgMs: number;
@@ -107,7 +116,7 @@ export type MonthReport = { month: string; days: DayRow[]; summary: MonthSummary
 // A short version of a user, as the admin endpoints send it
 export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team">;
 
-export type LiveStatus = "NOT_IN" | "WORKING" | "ON_BREAK" | "DONE";
+export type LiveStatus = "NOT_IN" | "WORKING" | "ON_BREAK" | "DONE" | "ON_LEAVE";
 
 export type OverviewRow = {
   user: UserBrief;
@@ -146,6 +155,21 @@ export type Task = {
   completedAt: string | null;
   user: { id: string; name: string };
   assignedBy: { id: string; name: string } | null; // null = added by the employee
+};
+
+// ---------- Leaves (prisma/schema.prisma → model Leave: one row per leave day) ----------
+
+export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type Leave = {
+  id: string;
+  date: string;
+  reason: string | null;
+  status: LeaveStatus;
+  compensatedOn: string | null; // the weekend/holiday worked to make up for it
+  reviewedBy: { id: string; name: string } | null;
+  reviewedAt: string | null;
+  user?: { id: string; name: string }; // included in admin lists
 };
 
 // backend/src/data/holidays.ts
