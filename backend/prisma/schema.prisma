@@ -1,0 +1,47 @@
+// The database design. Each `model` becomes a table, each line a column.
+// After changing this file run:  npm run db:migrate  (updates the database + regenerates the client)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma" // generated code lives in src/ so it gets built with the app
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Only two roles for now: employees see their own data, admins see and manage everything.
+enum Role {
+  EMPLOYEE
+  ADMIN
+}
+
+enum EmploymentType {
+  FULL_TIME
+  INTERN
+  REMOTE_INTERN
+}
+
+model User {
+  id           String @id @default(cuid()) // unique random id, e.g. "cm3x9..."
+  name         String
+  email        String @unique // two people can't share an email; used to log in
+  passwordHash String // NEVER the real password, only its bcrypt hash
+  role         Role   @default(EMPLOYEE)
+
+  // Profile (from the old Employee Directory sheet). "?" = optional.
+  phone          String?
+  designation    String?
+  employmentType EmploymentType @default(INTERN)
+  team           String? // Sales, Ops, Content, Marketing...
+  office         String? // AVS / Digibuggy
+  timings        String? // "11:00 to 18:00"
+  birthday       DateTime? @db.Date
+  joinedOn       DateTime? @db.Date
+
+  mustChangePassword Boolean @default(true) // true until they replace the temporary password
+  active             Boolean @default(true) // false = left the company; can't log in, data kept
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

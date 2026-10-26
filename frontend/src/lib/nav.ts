@@ -5,6 +5,7 @@ import {
   ListTodo,
   Megaphone,
   Plane,
+  UserCog,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -17,6 +18,7 @@ export type NavItem = {
   desc: string;
   icon: LucideIcon;
   mobile?: boolean; // show in the phone bottom bar (max 5 fit)
+  adminOnly?: boolean; // hidden from employees (the backend blocks them too)
 };
 
 export const navItems: NavItem[] = [
@@ -27,4 +29,8 @@ export const navItems: NavItem[] = [
   { href: "/notices", label: "Notice Board", desc: "Policies and announcements", icon: Megaphone, mobile: true },
   { href: "/directory", label: "Directory", desc: "Everyone at Digibuggy", icon: Users },
   { href: "/sops", label: "SOPs", desc: "How we do things", icon: BookOpen },
+  { href: "/admin/employees", label: "Employees", desc: "Add and manage accounts", icon: UserCog, adminOnly: true },
 ];
+
+// Pages that work without logging in (they render without the sidebar).
+export const publicPaths = ["/login"];

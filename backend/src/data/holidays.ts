@@ -1,6 +1,3 @@
-// Copied from the "Holiday calendar '26" tab of the Office sheet.
-// Temporary: in step 2 this moves into the PostgreSQL database.
-
 export type Holiday = {
   date: string; // "YYYY-MM-DD", the format databases and JavaScript understand
   name: string;

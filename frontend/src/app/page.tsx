@@ -10,7 +10,8 @@ import { navItems } from "@/lib/nav";
 // the pieces. The interactive parts (clock, buttons, fetching) are client components inside it.
 export default function Dashboard() {
   // Everything except the Dashboard itself, shown as shortcut tiles
-  const shortcuts = navItems.filter((item) => item.href !== "/");
+  // (admin-only pages are left out here; admins reach them from the sidebar)
+  const shortcuts = navItems.filter((item) => item.href !== "/" && !item.adminOnly);
 
   return (
     <>

@@ -1,7 +1,3 @@
-// From the "Notice Board" tab of the Office sheet.
-// The WiFi password is deliberately left out until we have login + roles.
-// Temporary: moves into the database in step 2.
-
 export type Notice = {
   title: string;
   body: string;
