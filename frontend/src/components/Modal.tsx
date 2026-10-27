@@ -20,6 +20,9 @@ export default function Modal({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  // Where the press started. A drag that begins inside (e.g. moving a photo in the cropper)
+  // and ends outside must NOT count as "clicked outside", or the window would close mid-drag.
+  const pressStartedOutside = useRef(false);
 
   // Keep the real dialog in sync with the `open` prop
   useEffect(() => {
@@ -36,8 +39,11 @@ export default function Modal({
         e.preventDefault(); // Esc: let React state decide
         onClose();
       }}
-      // click on the dark backdrop (outside the panel) closes it
-      onClick={(e) => e.target === ref.current && onClose()}
+      // a click on the dark backdrop (outside the panel) closes it, only if the press began there too
+      onPointerDown={(e) => (pressStartedOutside.current = e.target === ref.current)}
+      onClick={(e) => {
+        if (e.target === ref.current && pressStartedOutside.current) onClose();
+      }}
       className="m-0 mt-auto w-full max-w-none rounded-t-2xl border border-zinc-200 bg-white p-0 shadow-xl sm:m-auto sm:max-w-lg sm:rounded-xl"
     >
       {open && (
