@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { monthReports, thisMonth } from "../lib/reports.js";
+import { checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 
 const router = Router();
 router.use(requireAuth); // every attendance route needs a logged-in user
@@ -78,6 +79,67 @@ router.post("/check-out", async (req, res) => {
     prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now } }),
   ]);
   res.json(await findToday(req.user!.id));
+});
+
+
+// ---------- Change requests (employees can't edit attendance; they ask an admin) ----------
+
+const correctionInclude = { reviewedBy: { select: { id: true, name: true } } };
+
+// GET /api/attendance/corrections?month=2026-10 → my requests for that month
+router.get("/corrections", async (req, res) => {
+  const month = z.string().regex(/^\d{4}-\d{2}$/).catch(thisMonth()).parse(req.query.month);
+  const [y, m] = month.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const corrections = await prisma.attendanceCorrection.findMany({
+    where: { userId: req.user!.id, date: { gte: toDbDate(`${month}-01`), lte: toDbDate(`${month}-${last}`) } },
+    include: correctionInclude,
+    orderBy: { createdAt: "desc" },
+  });
+  res.json(corrections);
+});
+
+// POST /api/attendance/corrections { date, place?, checkIn?, checkOut?, note?, reason }
+// One open request per day: asking again replaces the pending one.
+router.post("/corrections", async (req, res) => {
+  const parsed = dayChangeSchema
+    .extend({
+      reason: z
+        .string({ error: "Tell your admin why this needs changing" })
+        .trim()
+        .min(3, "Tell your admin why this needs changing")
+        .max(500),
+    })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const { reason, ...input } = parsed.data;
+  const me = req.user!.id;
+  const change = toDayChange(input);
+
+  if (Object.values(change).every((v) => v === undefined)) return res.status(400).json({ error: "Change at least one thing" });
+  const problem = await checkDayChange(me, input.date, change);
+  if (problem) return res.status(400).json({ error: problem });
+
+  const data = { ...change, reason };
+  const pending = await prisma.attendanceCorrection.findFirst({
+    where: { userId: me, date: toDbDate(input.date), status: "PENDING" },
+  });
+  const saved = pending
+    ? await prisma.attendanceCorrection.update({ where: { id: pending.id }, data, include: correctionInclude })
+    : await prisma.attendanceCorrection.create({
+        data: { ...data, userId: me, date: toDbDate(input.date) },
+        include: correctionInclude,
+      });
+  res.status(pending ? 200 : 201).json(saved);
+});
+
+// DELETE /api/attendance/corrections/:id → withdraw my pending request
+router.delete("/corrections/:id", async (req, res) => {
+  const c = await prisma.attendanceCorrection.findUnique({ where: { id: req.params.id } });
+  if (!c || c.userId !== req.user!.id) return res.status(404).json({ error: "Request not found" });
+  if (c.status !== "PENDING") return res.status(400).json({ error: "Only pending requests can be withdrawn" });
+  await prisma.attendanceCorrection.delete({ where: { id: c.id } });
+  res.json({ ok: true });
 });
 
 export default router;

@@ -4,6 +4,7 @@ import "./globals.css";
 import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/components/AuthProvider";
 import { FeedbackProvider } from "@/components/Feedback";
+import { PendingProvider } from "@/components/Pending";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,9 +42,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* AuthProvider = who's logged in · FeedbackProvider = toasts + confirm dialog
             AppShell = gatekeeper + sidebar / tab bar */}
         <AuthProvider>
-          <FeedbackProvider>
-            <AppShell>{children}</AppShell>
-          </FeedbackProvider>
+          <PendingProvider>
+            <FeedbackProvider>
+              <AppShell>{children}</AppShell>
+            </FeedbackProvider>
+          </PendingProvider>
         </AuthProvider>
       </body>
     </html>

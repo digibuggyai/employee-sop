@@ -53,6 +53,8 @@ export type DayRow = {
   halfDay?: boolean; // a WFH day beyond the person's monthly allowance
   compensates?: string; // this worked day makes up for the leave on that date
   leave?: { id: string; reason: string | null; compensatedOn: string | null };
+  note?: string | null; // the attendance note (e.g. "Due to college")
+  pendingChange?: string; // id of a change request waiting for an admin
 };
 
 export type MonthSummary = {
@@ -84,11 +86,15 @@ export async function monthReports(userIds: string[], month: string) {
   });
   const personOf = new Map(people.map((p) => [p.id, p]));
 
-  const [rows, leaves] = await Promise.all([
+  const [rows, leaves, pendingChanges] = await Promise.all([
     prisma.attendance.findMany({ where: { userId: { in: userIds }, date: range }, include: { breaks: true } }),
     // Leaves IN this month, plus leaves made up IN this month (the leave itself may be in an earlier month)
     prisma.leave.findMany({
       where: { userId: { in: userIds }, status: { not: "REJECTED" }, OR: [{ date: range }, { compensatedOn: range }] },
+    }),
+    prisma.attendanceCorrection.findMany({
+      where: { userId: { in: userIds }, status: "PENDING", date: range },
+      select: { id: true, userId: true, date: true },
     }),
   ]);
 
@@ -120,6 +126,8 @@ export async function monthReports(userIds: string[], month: string) {
       const base = { date, weekday: WEEKDAYS[weekdayIndex], holiday: holidayByDate.get(date) };
       const att = attByDate.get(date);
       const leave = leaveByDate.get(date);
+      const pending = pendingChanges.find((c) => c.userId === userId && dayKey(c.date) === date);
+      const flags = pending ? { pendingChange: pending.id } : {};
 
       if (att) {
         // Worked (even on a weekend/holiday, e.g. a make-up day)
@@ -137,6 +145,8 @@ export async function monthReports(userIds: string[], month: string) {
           breaks: att.breaks.length,
           breakMs,
           workedMs,
+          note: att.note,
+          ...flags,
           ...(madeUp && { compensates: dayKey(madeUp.date) }),
         };
       }
@@ -157,7 +167,7 @@ export async function monthReports(userIds: string[], month: string) {
       if (date >= today) return { ...base, status: "UPCOMING" };
       if (date < start) return { ...base, status: "NOT_JOINED" };
       summary.absent++;
-      return { ...base, status: "ABSENT" };
+      return { ...base, status: "ABSENT", ...flags };
     });
 
     // WFH policy: the first `wfhAllowance` WFH days of the month are normal; every one after is a half day.

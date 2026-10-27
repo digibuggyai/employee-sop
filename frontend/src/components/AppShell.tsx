@@ -6,8 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { LoaderCircle, LogOut } from "lucide-react";
 import { adminNav, publicPaths, workspaceNav, type NavItem } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
+import { usePending } from "./Pending";
 import Avatar from "./Avatar";
 import BackendStatus from "./BackendStatus";
+import BrandLogo from "./BrandLogo";
 
 // The frame around every page, and the "gatekeeper":
 //  - not logged in            → send to /login
@@ -20,6 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, logout } = useAuth();
+  const { counts, refresh } = usePending(); // admin notifications (pending requests)
   const isPublic = publicPaths.includes(pathname);
   const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
 
@@ -36,6 +39,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (redirectTo) router.replace(redirectTo); // replace = don't add to browser history
   }, [redirectTo, router]);
 
+  // Moving between pages also refreshes the notification counts
+  useEffect(() => {
+    refresh();
+  }, [pathname, refresh]);
+
   if (loading || redirectTo) return <FullScreenSpinner />;
 
   // Login page: no frame, just the page
@@ -47,6 +55,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // "/" and "/admin" only match exactly; others also match their sub-pages
   const isActive = (href: string) =>
     href === "/" || href === "/admin" ? pathname === href : pathname.startsWith(href);
+  const badgeOf = (item: NavItem) => (item.badge ? counts[item.badge] : 0);
+  const totalPending = counts.leaves + counts.corrections;
 
   return (
     <div className="min-h-screen">
@@ -58,7 +68,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {isAdmin && (
           <div className="px-3 pb-2">
-            <AreaSwitch inAdmin={inAdmin} />
+            <AreaSwitch inAdmin={inAdmin} pending={totalPending} />
           </div>
         )}
 
@@ -71,7 +81,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   .filter((i) => i.group === group)
                   .map((item) => (
                     <li key={item.href}>
-                      <SideLink item={item} active={isActive(item.href)} />
+                      <SideLink item={item} active={isActive(item.href)} count={badgeOf(item)} />
                     </li>
                   ))}
               </ul>
@@ -113,7 +123,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-zinc-200 bg-white/90 px-4 backdrop-blur md:hidden">
         <Logo />
         <div className="flex items-center gap-2">
-          {isAdmin && <AreaSwitch inAdmin={inAdmin} compact />}
+          {isAdmin && <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact />}
           <Link href="/profile" aria-label="Profile">
             <Avatar name={user.name} size="sm" />
           </Link>
@@ -133,8 +143,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         {items
           .filter((i) => i.mobile)
-          .map(({ href, label, short, icon: Icon }) => {
+          .map((item) => {
+            const { href, label, short, icon: Icon } = item;
             const active = isActive(href);
+            const count = badgeOf(item);
             return (
               <Link
                 key={href}
@@ -145,7 +157,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 {active && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-brand-700" />}
-                <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
+                <span className="relative">
+                  <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
+                  {count > 0 && (
+                    <span className="absolute -top-1.5 -right-2.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums">
+                      {count}
+                    </span>
+                  )}
+                </span>
                 {short ?? label}
               </Link>
             );
@@ -155,7 +174,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SideLink({ item, active }: { item: NavItem; active: boolean }) {
+function SideLink({ item, active, count }: { item: NavItem; active: boolean; count: number }) {
   const Icon = item.icon;
   return (
     <Link
@@ -167,21 +186,29 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
     >
       <Icon size={16} className={active ? "text-brand-700" : "text-zinc-400"} />
       {item.label}
+      {count > 0 && (
+        <span
+          aria-label={`${count} waiting`}
+          className="ml-auto min-w-5 rounded-full bg-red-600 px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
+        >
+          {count}
+        </span>
+      )}
     </Link>
   );
 }
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2">
-      <span className="grid size-7 place-items-center rounded-md bg-brand-700 text-[13px] font-bold text-white">D</span>
-      <span className="text-sm font-semibold tracking-tight whitespace-nowrap text-zinc-900">Digibuggy Hub</span>
+    <Link href="/" aria-label="Digibuggy, go to dashboard" className="flex items-center">
+      <BrandLogo className="h-7 w-auto md:h-8" priority />
     </Link>
   );
 }
 
 // Workspace / Admin switcher (admins only). Two links styled as a segmented control.
-function AreaSwitch({ inAdmin, compact = false }: { inAdmin: boolean; compact?: boolean }) {
+// A red dot on "Admin" when something is waiting there, so admins notice from their workspace.
+function AreaSwitch({ inAdmin, pending, compact = false }: { inAdmin: boolean; pending: number; compact?: boolean }) {
   const seg = (active: boolean) =>
     `flex-1 rounded-md text-center font-medium transition ${compact ? "px-2.5 py-1 text-xs" : "py-1 text-[13px]"} ${
       active ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-500 hover:text-zinc-800"
@@ -191,8 +218,11 @@ function AreaSwitch({ inAdmin, compact = false }: { inAdmin: boolean; compact?: 
       <Link href="/" className={seg(!inAdmin)} aria-current={!inAdmin ? "page" : undefined}>
         Workspace
       </Link>
-      <Link href="/admin" className={seg(inAdmin)} aria-current={inAdmin ? "page" : undefined}>
+      <Link href="/admin" className={`relative ${seg(inAdmin)}`} aria-current={inAdmin ? "page" : undefined}>
         Admin
+        {pending > 0 && !inAdmin && (
+          <span aria-label={`${pending} waiting for review`} className="absolute top-1 right-1.5 size-2 rounded-full bg-red-600" />
+        )}
       </Link>
     </div>
   );

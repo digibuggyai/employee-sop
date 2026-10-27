@@ -5,6 +5,7 @@ import {
   CalendarRange,
   ClipboardList,
   Gauge,
+  Inbox,
   LayoutDashboard,
   ListTodo,
   Megaphone,
@@ -22,7 +23,8 @@ export type NavItem = {
   short?: string; // label for the phone tab bar, if the full one is too long
   icon: LucideIcon;
   group: string;
-  mobile?: boolean; // show in the phone tab bar (5 fit)
+  mobile?: boolean; // show in the phone tab bar
+  badge?: "leaves" | "corrections"; // red count of pending items (admin menu)
 };
 
 // Everyone's own workspace
@@ -41,7 +43,8 @@ export const adminNav: NavItem[] = [
   { href: "/admin", label: "Overview", icon: Gauge, group: "Monitor", mobile: true },
   { href: "/admin/attendance", label: "Attendance", icon: CalendarRange, group: "Monitor", mobile: true },
   { href: "/admin/tasks", label: "Tasks", icon: ClipboardList, group: "Monitor", mobile: true },
-  { href: "/admin/leaves", label: "Leaves", icon: CalendarOff, group: "Manage", mobile: true },
+  { href: "/admin/requests", label: "Requests", icon: Inbox, group: "Manage", mobile: true, badge: "corrections" },
+  { href: "/admin/leaves", label: "Leaves", icon: CalendarOff, group: "Manage", mobile: true, badge: "leaves" },
   { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage", mobile: true },
 ];
 

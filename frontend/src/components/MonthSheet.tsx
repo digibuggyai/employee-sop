@@ -1,11 +1,11 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { Download, PencilLine } from "lucide-react";
 import type { DayRow, MonthReport } from "@/lib/api";
-import { downloadCsv, fmtDate, fmtDuration, fmtTime } from "@/lib/format";
+import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { DayStatusBadge, Tag } from "./Badges";
 import Card from "./Card";
-import { Button } from "./form";
+import { Button, IconButton } from "./form";
 import { Stat, table } from "./ui";
 
 const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
@@ -13,6 +13,7 @@ const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
 // Extra notes for a day: holiday name, half day, make-up links, leave reason
 function dayNotes(d: DayRow): string[] {
   const notes: string[] = [];
+  if (d.note) notes.push(d.note);
   if (d.holiday) notes.push(d.holiday);
   if (d.halfDay) notes.push("Half day (WFH over limit)");
   if (d.compensates) notes.push(`Makes up leave of ${fmtDate(d.compensates, false)}`);
@@ -25,8 +26,22 @@ function dayNotes(d: DayRow): string[] {
 
 // The old attendance sheet, rebuilt: one row per day + totals.
 // Used on /attendance (my month) and /admin/attendance (anyone's month).
-export default function MonthSheet({ report, name }: { report: MonthReport; name: string }) {
+// onEditDay: when given, past days get an edit button (admins edit; employees request a change)
+export default function MonthSheet({
+  report,
+  name,
+  onEditDay,
+  editLabel = "Edit day",
+}: {
+  report: MonthReport;
+  name: string;
+  onEditDay?: (day: DayRow) => void;
+  editLabel?: string;
+}) {
   const { days, summary } = report;
+  const today = todayIST();
+  // Only past days (today is handled by the check-in card), and not before someone joined
+  const canEdit = (d: DayRow) => !!onEditDay && d.date < today && d.status !== "NOT_JOINED";
 
   function exportCsv() {
     downloadCsv(`attendance-${name.replaceAll(" ", "-")}-${report.month}.csv`, [
@@ -119,8 +134,10 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
                       {d.breaks ? ` · ${fmtDuration(d.breakMs)} break` : ""}
                     </p>
                   )}
-                  {(d.holiday || d.halfDay || d.compensates || d.leave) && (
+                  {d.note && <p className="mt-1 text-xs text-zinc-600">{d.note}</p>}
+                  {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange) && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
+                      {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
                       {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                       {d.halfDay && <Tag tone="amber">Half day, extra WFH</Tag>}
                       {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
@@ -132,6 +149,11 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
                     </div>
                   )}
                 </div>
+                {canEdit(d) && (
+                  <IconButton label={`${editLabel}: ${d.date}`} onClick={() => onEditDay!(d)} className="-mr-2 self-start">
+                    <PencilLine size={15} />
+                  </IconButton>
+                )}
               </li>
             );
           })}
@@ -142,8 +164,8 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
           <table className={table.table}>
             <thead className={table.thead}>
               <tr>
-                {["Date", "Status", "Place", "In", "Out", "Breaks", "Worked", "Notes"].map((h) => (
-                  <th key={h} className={table.th}>
+                {["Date", "Status", "Place", "In", "Out", "Breaks", "Worked", "Notes", ...(onEditDay ? [""] : [])].map((h) => (
+                  <th key={h || "actions"} className={table.th}>
                     {h}
                   </th>
                 ))}
@@ -172,6 +194,12 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
                     </td>
                     <td className={`${table.td} py-2.5`}>
                       <div className="flex items-center gap-1.5">
+                        {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
+                        {d.note && (
+                          <span className="max-w-56 truncate text-xs text-zinc-600" title={d.note}>
+                            {d.note}
+                          </span>
+                        )}
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                         {d.halfDay && <Tag tone="amber">Half day, extra WFH</Tag>}
                         {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
@@ -183,6 +211,15 @@ export default function MonthSheet({ report, name }: { report: MonthReport; name
                         {d.leave?.reason && <span className="text-xs text-zinc-500">{d.leave.reason}</span>}
                       </div>
                     </td>
+                    {onEditDay && (
+                      <td className={`${table.td} py-1.5 text-right`}>
+                        {canEdit(d) && (
+                          <IconButton label={`${editLabel}: ${d.date}`} onClick={() => onEditDay(d)}>
+                            <PencilLine size={15} />
+                          </IconButton>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })}

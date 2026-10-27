@@ -57,6 +57,10 @@ Browser ──/api/directory (cookie sent automatically)──► requireAuth ch
 | `GET/POST /api/leaves`, `DELETE /api/leaves/:id` | logged in | my leave + WFH usage; request a range; cancel pending |
 | `GET/POST /api/admin/leaves`, `PATCH /api/admin/leaves/:id` | admin | pending/month lists; record approved leave; approve/reject; link make-up day |
 | `GET /api/admin/leaves/make-up-options?userId=` | admin | worked weekends/holidays not yet used as make-up |
+| `GET/POST /api/attendance/corrections`, `DELETE …/:id` | logged in | ask an admin to change a past day (employees can't edit attendance) |
+| `GET /api/admin/corrections`, `PATCH …/:id` | admin | review change requests; approving applies them |
+| `PUT /api/admin/attendance/:userId/day`, `DELETE /api/admin/attendance/:userId/:date` | admin | edit / add / delete a day directly |
+| `GET /api/admin/pending` | admin | counts for the red badges (leave + change requests) |
 | `GET/POST /api/users`, `PATCH /api/users/:id` | admin | list, create, edit / deactivate / reset password |
 | `GET /api/holidays`, `GET /api/notices` | anyone | static data for now |
 
@@ -136,3 +140,10 @@ Sent through [Resend](https://resend.com) (HTTPS API, because Railway blocks SMT
 | `APP_URL` | `https://team.dgbindia.com` (the "Log in" link in emails) |
 
 Without `RESEND_API_KEY` nothing is sent; the email is printed in the backend terminal instead. A failed email never blocks the action: the admin sees the reason and the login details to share manually.
+
+## Attendance corrections
+
+- Employees can't edit attendance. The pencil on their sheet sends a **change request** (new values + reason); the row shows "Change requested".
+- Admins see a red badge on **Requests** (and a dot on the Admin switch), compare current vs requested, and approve (applied immediately) or reject.
+- Admins can also edit, add or delete any past day directly from Admin → Attendance → a person's sheet.
+- Both paths go through `backend/src/lib/attendanceEdit.ts`, so the rules are the same.

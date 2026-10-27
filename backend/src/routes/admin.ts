@@ -6,6 +6,7 @@ import { toDbDate, todayString } from "../lib/dates.js";
 import { dayStatus, dayTotals, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 import { taskInclude } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
+import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 
 // Everything in the Admin Panel. Every route: logged in AND admin.
 const router = Router();
@@ -210,6 +211,102 @@ router.patch("/leaves/:id", async (req, res) => {
       }),
     },
     include: adminLeaveInclude,
+  });
+  res.json(updated);
+});
+
+
+// ---------- Editing attendance + reviewing change requests ----------
+
+// GET /api/admin/pending → counts for the red badges in the admin menu
+router.get("/pending", async (_req, res) => {
+  const [leaves, corrections] = await Promise.all([
+    prisma.leave.count({ where: { status: "PENDING" } }),
+    prisma.attendanceCorrection.count({ where: { status: "PENDING" } }),
+  ]);
+  res.json({ leaves, corrections });
+});
+
+// PUT /api/admin/attendance/:userId/day { date, place?, checkIn?, checkOut?, note? }
+// Admins change a day directly (or add a missing one). No approval needed.
+router.put("/attendance/:userId/day", async (req, res) => {
+  const parsed = dayChangeSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const userId = req.params.userId;
+  if (!(await prisma.user.findUnique({ where: { id: userId } }))) return res.status(404).json({ error: "Employee not found" });
+
+  const change = toDayChange(parsed.data);
+  const problem = await checkDayChange(userId, parsed.data.date, change);
+  if (problem) return res.status(400).json({ error: problem });
+  res.json(await applyDayChange(userId, parsed.data.date, change));
+});
+
+// DELETE /api/admin/attendance/:userId/:date → remove a wrong day (its breaks go with it)
+router.delete("/attendance/:userId/:date", async (req, res) => {
+  const date = z.iso.date().safeParse(req.params.date);
+  if (!date.success) return res.status(400).json({ error: "Invalid date" });
+  const { count } = await prisma.attendance.deleteMany({ where: { userId: req.params.userId, date: toDbDate(date.data) } });
+  if (!count) return res.status(404).json({ error: "No attendance on that day" });
+  res.json({ ok: true });
+});
+
+const correctionAdminInclude = {
+  user: { select: { id: true, name: true } },
+  reviewedBy: { select: { id: true, name: true } },
+};
+
+// GET /api/admin/corrections?status=PENDING (default) | REVIEWED
+// Each request comes with the day's CURRENT values, so the admin can compare before → after.
+router.get("/corrections", async (req, res) => {
+  const reviewed = req.query.status === "REVIEWED";
+  const corrections = await prisma.attendanceCorrection.findMany({
+    where: reviewed ? { status: { not: "PENDING" } } : { status: "PENDING" },
+    include: correctionAdminInclude,
+    orderBy: reviewed ? { reviewedAt: "desc" } : { createdAt: "asc" }, // oldest pending first
+    take: reviewed ? 50 : undefined,
+  });
+  const current = await prisma.attendance.findMany({
+    where: { OR: corrections.map((c) => ({ userId: c.userId, date: c.date })) },
+  });
+  const find = (userId: string, date: Date) =>
+    current.find((a) => a.userId === userId && a.date.getTime() === date.getTime()) ?? null;
+  res.json(
+    corrections.map((c) => {
+      const a = find(c.userId, c.date);
+      return { ...c, current: a && { place: a.place, checkIn: a.checkIn, checkOut: a.checkOut, note: a.note } };
+    }),
+  );
+});
+
+// PATCH /api/admin/corrections/:id { status: "APPROVED" | "REJECTED" }
+// Approving applies the requested values to the attendance day.
+router.patch("/corrections/:id", async (req, res) => {
+  const parsed = z.object({ status: z.enum(["APPROVED", "REJECTED"]) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Choose approve or reject" });
+
+  const c = await prisma.attendanceCorrection.findUnique({ where: { id: req.params.id } });
+  if (!c) return res.status(404).json({ error: "Request not found" });
+  if (c.status !== "PENDING") return res.status(400).json({ error: "This request was already reviewed" });
+
+  if (parsed.data.status === "APPROVED") {
+    const date = c.date.toISOString().slice(0, 10);
+    // null in a request means "no change" (employees can't remove an out time)
+    const change = {
+      place: c.place ?? undefined,
+      checkIn: c.checkIn ?? undefined,
+      checkOut: c.checkOut ?? undefined,
+      note: c.note ?? undefined,
+    };
+    // Re-check: the day may have changed since the employee asked
+    const problem = await checkDayChange(c.userId, date, change);
+    if (problem) return res.status(400).json({ error: `Can't apply this request: ${problem}` });
+    await applyDayChange(c.userId, date, change);
+  }
+
+  const updated = await prisma.attendanceCorrection.update({
+    where: { id: c.id },
+    data: { status: parsed.data.status, reviewedById: req.user!.id, reviewedAt: new Date() },
+    include: correctionAdminInclude,
   });
   res.json(updated);
 });

@@ -101,6 +101,8 @@ export type DayRow = {
   halfDay?: boolean; // WFH beyond the monthly allowance
   compensates?: string; // this worked weekend/holiday makes up for the leave on that date
   leave?: { id: string; reason: string | null; compensatedOn: string | null };
+  note?: string | null; // the attendance note
+  pendingChange?: string; // id of a change request waiting for an admin
 };
 
 export type MonthSummary = {
@@ -191,3 +193,28 @@ export type Notice = {
   body: string;
   category: "Pay" | "Leave" | "Attendance" | "Work";
 };
+
+// ---------- Attendance change requests (backend: model AttendanceCorrection) ----------
+
+export type RequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+// The values an employee asked for (null = not changing that field)
+export type Correction = {
+  id: string;
+  date: string;
+  place: Place | null;
+  checkIn: string | null;
+  checkOut: string | null;
+  note: string | null;
+  reason: string;
+  status: RequestStatus;
+  reviewedBy: { id: string; name: string } | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  user?: { id: string; name: string }; // admin lists
+  // admin lists: the day as it is now (null = no attendance that day)
+  current?: { place: Place; checkIn: string; checkOut: string | null; note: string | null } | null;
+};
+
+// Red badge numbers in the admin menu
+export type PendingCounts = { leaves: number; corrections: number };

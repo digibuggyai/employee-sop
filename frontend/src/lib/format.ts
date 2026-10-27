@@ -57,3 +57,9 @@ export function downloadCsv(filename: string, rows: (string | number)[][]) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// A moment → "13:10" (24-hour, India time) for <input type="time">
+export const toTimeInput = (iso: string | null | undefined) =>
+  iso
+    ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" })
+    : "";

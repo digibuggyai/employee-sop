@@ -10,3 +10,6 @@ export function todayString(): string {
 
 // A @db.Date column wants a Date at midnight UTC for that calendar day.
 export const toDbDate = (yyyyMmDd: string) => new Date(`${yyyyMmDd}T00:00:00.000Z`);
+
+// "2026-10-05" + "13:10" (India time) → the exact moment as a Date
+export const istDateTime = (yyyyMmDd: string, hhmm: string) => new Date(`${yyyyMmDd}T${hhmm}:00+05:30`);

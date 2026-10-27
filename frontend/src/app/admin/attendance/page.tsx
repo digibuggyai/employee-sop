@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
+import DayEditDialog from "@/components/DayEditDialog";
 import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/form";
 import { Skeleton, table } from "@/components/ui";
-import { api, type MonthReport, type MonthSummary, type UserBrief } from "@/lib/api";
+import { api, type DayRow, type MonthReport, type MonthSummary, type UserBrief } from "@/lib/api";
 import { downloadCsv, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
 
 type SummaryRow = MonthSummary & { user: UserBrief };
@@ -21,6 +22,8 @@ export default function AdminAttendancePage() {
   const [selected, setSelected] = useState<UserBrief | null>(null); // whose sheet is open
   const [report, setReport] = useState<MonthReport | null>(null);
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState<DayRow | null>(null); // day open in the edit dialog
+  const [version, setVersion] = useState(0); // bump → reload the open sheet
 
   // Everyone's totals for the month
   useEffect(() => {
@@ -35,7 +38,7 @@ export default function AdminAttendancePage() {
     api<MonthReport>(`/api/admin/attendance/month?userId=${selected.id}&month=${month}`)
       .then(setReport)
       .catch((err) => setError(err.message));
-  }, [selected, month]);
+  }, [selected, month, version]);
 
   function changeMonth(m: string) {
     setRows(null);
@@ -98,7 +101,7 @@ export default function AdminAttendancePage() {
 
       {selected ? (
         report ? (
-          <MonthSheet report={report} name={selected.name} />
+          <MonthSheet report={report} name={selected.name} onEditDay={setEditing} />
         ) : (
           <Skeleton className="h-96" />
         )
@@ -183,6 +186,15 @@ export default function AdminAttendancePage() {
           </div>
         </Card>
       )}
+
+      {/* Admin edits apply immediately; then reload the sheet so totals update */}
+      <DayEditDialog
+        day={editing}
+        mode="admin"
+        userId={selected?.id}
+        onClose={() => setEditing(null)}
+        onSaved={() => setVersion((v) => v + 1)}
+      />
     </>
   );
 }

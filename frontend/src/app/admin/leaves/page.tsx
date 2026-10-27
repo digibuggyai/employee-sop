@@ -7,6 +7,7 @@ import { LeaveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import { useConfirm, useToast } from "@/components/Feedback";
 import MonthSwitcher from "@/components/MonthSwitcher";
+import { usePending } from "@/components/Pending";
 import PageHeader from "@/components/PageHeader";
 import { Button, ErrorBox, Field, inputBase, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton } from "@/components/ui";
@@ -46,7 +47,11 @@ export default function AdminLeavesPage() {
       .catch((err) => setError(err.message));
   }, [month, version]);
 
-  const reload = () => setVersion((v) => v + 1);
+  const { refresh: refreshBadges } = usePending();
+  const reload = () => {
+    setVersion((v) => v + 1);
+    refreshBadges(); // the red badge in the menu updates right away
+  };
 
   async function review(leave: Leave, status: "APPROVED" | "REJECTED") {
     if (status === "REJECTED") {

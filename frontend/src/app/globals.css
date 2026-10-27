@@ -4,14 +4,15 @@
    Rule of thumb: neutrals (zinc) for structure, brand red ONLY for primary actions,
    the active page, and numbers that need attention. */
 @theme inline {
-  --color-brand-50: #fdf3f3;
-  --color-brand-100: #fbe4e4;
-  --color-brand-200: #f6c9c9;
-  --color-brand-500: #c62828;
-  --color-brand-600: #ad1414;
-  --color-brand-700: #990000; /* the sheet header red */
-  --color-brand-800: #7a0000;
-  --color-brand-900: #4d0000;
+  /* Taken from the official dgB logo: the "B" is #791929 */
+  --color-brand-50: #fcf3f5;
+  --color-brand-100: #f8e4e8;
+  --color-brand-200: #efc6cf;
+  --color-brand-500: #a3283c;
+  --color-brand-600: #8b1f31;
+  --color-brand-700: #791929; /* the logo's maroon */
+  --color-brand-800: #5f1220;
+  --color-brand-900: #3f0b15;
 
   --color-canvas: #fafafa; /* page background */
   --color-ink: #09090b; /* main text */

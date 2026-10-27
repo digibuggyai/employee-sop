@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, ListTodo, Plane } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import BrandLogo from "@/components/BrandLogo";
 import PasswordInput from "@/components/PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "@/components/form";
 import { api, type User } from "@/lib/api";
@@ -50,9 +51,9 @@ export default function LoginPage() {
             backgroundSize: "48px 48px",
           }}
         />
-        <div className="relative flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-md bg-brand-700 text-sm font-bold">D</span>
-          <span className="font-semibold tracking-tight">Digibuggy Hub</span>
+        <div className="relative">
+          {/* white-letter version: this panel is dark */}
+          <BrandLogo tone="light" tagline className="h-16 w-auto" priority />
         </div>
 
         <div className="relative max-w-md">
@@ -78,9 +79,9 @@ export default function LoginPage() {
       {/* Form */}
       <main className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <div className="mb-8 flex items-center gap-2 lg:hidden">
-            <span className="grid size-8 place-items-center rounded-md bg-brand-700 text-sm font-bold text-white">D</span>
-            <span className="font-semibold tracking-tight">Digibuggy Hub</span>
+          {/* phones / small screens: the brand panel is hidden, so show the logo here */}
+          <div className="mb-8 lg:hidden">
+            <BrandLogo tagline className="h-14 w-auto" priority />
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Log in</h1>

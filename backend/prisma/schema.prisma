@@ -52,6 +52,9 @@ model User {
   leaves         Leave[] @relation("LeaveOwner")
   reviewedLeaves Leave[] @relation("LeaveReviewer")
 
+  corrections         AttendanceCorrection[] @relation("CorrectionOwner")
+  reviewedCorrections AttendanceCorrection[] @relation("CorrectionReviewer")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -154,4 +157,37 @@ model Leave {
 
   @@unique([userId, date]) // one leave row per person per day
   @@unique([userId, compensatedOn]) // (Postgres allows many NULLs here, so un-compensated leaves are fine)
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// An employee asking to change one day's attendance (they can't edit it themselves).
+// Holds only the NEW values; the current values are read from Attendance when an admin reviews it.
+// Approving copies these values into the Attendance row (creating it if the day had none).
+model AttendanceCorrection {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("CorrectionOwner", fields: [userId], references: [id])
+
+  date     DateTime  @db.Date
+  place    Place?
+  checkIn  DateTime?
+  checkOut DateTime?
+  note     String?
+  reason   String // why the change is needed (shown to the admin)
+
+  status       RequestStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?         @relation("CorrectionReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status]) // "all pending requests" is the admin's most common question
+  @@index([userId, date])
 }
