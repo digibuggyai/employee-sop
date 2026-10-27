@@ -21,14 +21,14 @@ function layout(title: string, body: string) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
       <tr><td style="padding:0 4px 16px">
         <span style="display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;border-radius:6px;background:${BRAND};color:#fff;font-weight:700;font-size:14px">D</span>
-        <span style="font-weight:600;font-size:15px;vertical-align:middle;margin-left:8px">Digibuggy Hub</span>
+        <span style="font-weight:600;font-size:15px;vertical-align:middle;margin-left:8px">Digibuggy</span>
       </td></tr>
       <tr><td style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:28px">
         <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3">${title}</h1>
         ${body}
       </td></tr>
       <tr><td style="padding:16px 4px;font-size:12px;color:#71717a">
-        Sent by Digibuggy Hub. If you weren't expecting this email, you can ignore it.
+        Sent by Digibuggy. If you weren't expecting this email, you can ignore it.
       </td></tr>
     </table>
   </td></tr>
@@ -55,16 +55,16 @@ export function welcomeEmail(name: string, email: string, password: string) {
   const first = name.split(" ")[0];
   const url = `${appUrl()}/login`;
   return {
-    subject: "Your Digibuggy Hub account is ready",
+    subject: "Your Digibuggy account is ready",
     html: layout(
-      `Welcome to Digibuggy Hub, ${esc(first)}`,
+      `Welcome to Digibuggy, ${esc(first)}`,
       p("An account has been created for you. Use it to check in and out, log your daily tasks and request leave.") +
         credentials(email, password) +
-        button(url, "Log in to Digibuggy Hub") +
+        button(url, "Log in to Digibuggy") +
         p("You'll be asked to choose your own password the first time you log in.") +
         p(`On your phone, open the link and choose <b>Add to Home Screen</b> to use it like an app.`),
     ),
-    text: `Welcome to Digibuggy Hub, ${first}.\n\nAn account has been created for you.\n\nEmail: ${email}\nTemporary password: ${password}\n\nLog in: ${url}\n\nYou'll be asked to choose your own password the first time you log in.`,
+    text: `Welcome to Digibuggy, ${first}.\n\nAn account has been created for you.\n\nEmail: ${email}\nTemporary password: ${password}\n\nLog in: ${url}\n\nYou'll be asked to choose your own password the first time you log in.`,
   };
 }
 
@@ -73,7 +73,7 @@ export function passwordResetEmail(name: string, email: string, password: string
   const first = name.split(" ")[0];
   const url = `${appUrl()}/login`;
   return {
-    subject: "Your Digibuggy Hub password was reset",
+    subject: "Your Digibuggy password was reset",
     html: layout(
       "Your password was reset",
       p(`Hi ${esc(first)}, an admin has reset your password. Log in with the temporary password below.`) +
@@ -81,6 +81,6 @@ export function passwordResetEmail(name: string, email: string, password: string
         button(url, "Log in") +
         p("You'll be asked to choose a new password right after logging in. If you didn't ask for this, tell your admin."),
     ),
-    text: `Hi ${first}, an admin has reset your Digibuggy Hub password.\n\nEmail: ${email}\nTemporary password: ${password}\n\nLog in: ${url}\n\nYou'll be asked to choose a new password after logging in.`,
+    text: `Hi ${first}, an admin has reset your Digibuggy password.\n\nEmail: ${email}\nTemporary password: ${password}\n\nLog in: ${url}\n\nYou'll be asked to choose a new password after logging in.`,
   };
 }

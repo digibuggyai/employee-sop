@@ -132,7 +132,7 @@ Sent through [Resend](https://resend.com) (HTTPS API, because Railway blocks SMT
 | Variable | Example |
 |---|---|
 | `RESEND_API_KEY` | `re_...` (Resend → API Keys) |
-| `MAIL_FROM` | `Digibuggy Hub <hub@dgbindia.com>` (domain must be verified in Resend) |
+| `MAIL_FROM` | `Digibuggy <hub@dgbindia.com>` (domain must be verified in Resend) |
 | `APP_URL` | `https://team.dgbindia.com` (the "Log in" link in emails) |
 
 Without `RESEND_API_KEY` nothing is sent; the email is printed in the backend terminal instead. A failed email never blocks the action: the admin sees the reason and the login details to share manually.

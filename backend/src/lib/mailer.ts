@@ -4,7 +4,7 @@
 //
 // Settings (backend/.env locally, Railway → Variables in production):
 //   RESEND_API_KEY  re_...                              (resend.com → API Keys)
-//   MAIL_FROM       Digibuggy Hub <hub@dgbindia.com>    (an address on a domain verified in Resend)
+//   MAIL_FROM       Digibuggy <hub@dgbindia.com>    (an address on a domain verified in Resend)
 // Without RESEND_API_KEY, emails are printed to the terminal instead of sent (handy while developing).
 
 export type Mail = { to: string; subject: string; html: string; text: string };
@@ -14,7 +14,7 @@ const API_URL = process.env.RESEND_API_URL ?? "https://api.resend.com/emails";
 
 export async function sendMail(mail: Mail): Promise<MailResult> {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM ?? "Digibuggy Hub <onboarding@resend.dev>";
+  const from = process.env.MAIL_FROM ?? "Digibuggy <onboarding@resend.dev>";
 
   if (!key) {
     console.log(`\n[mail not configured] To: ${mail.to}\nSubject: ${mail.subject}\n${mail.text}\n`);
