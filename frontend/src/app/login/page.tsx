@@ -41,7 +41,7 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel (large screens only) */}
-      <aside className="relative hidden overflow-hidden bg-zinc-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden bg-brand-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
         {/* faint grid texture */}
         <div
           aria-hidden
@@ -52,8 +52,8 @@ export default function LoginPage() {
           }}
         />
         <div className="relative">
-          {/* white-letter version: this panel is dark */}
-          <BrandLogo tone="light" tagline className="h-16 w-auto" priority />
+          {/* white version: this panel is navy */}
+          <BrandLogo tone="light" className="h-7 w-auto" priority />
         </div>
 
         <div className="relative max-w-md">
@@ -66,14 +66,14 @@ export default function LoginPage() {
                 </span>
                 <div>
                   <p className="text-sm font-medium">{title}</p>
-                  <p className="mt-0.5 text-sm text-zinc-400">{text}</p>
+                  <p className="mt-0.5 text-sm text-white/65">{text}</p>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="relative text-xs text-zinc-500">Digibuggy Global Technologies LLP</p>
+        <p className="relative text-xs text-white/50">Digibuggy Global Technologies LLP</p>
       </aside>
 
       {/* Form */}
@@ -81,7 +81,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* phones / small screens: the brand panel is hidden, so show the logo here */}
           <div className="mb-8 lg:hidden">
-            <BrandLogo tagline className="h-14 w-auto" priority />
+            <BrandLogo className="h-6 w-auto" priority />
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Log in</h1>

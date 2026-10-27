@@ -4,15 +4,15 @@
    Rule of thumb: neutrals (zinc) for structure, brand red ONLY for primary actions,
    the active page, and numbers that need attention. */
 @theme inline {
-  /* Taken from the official dgB logo: the "B" is #791929 */
-  --color-brand-50: #fcf3f5;
-  --color-brand-100: #f8e4e8;
-  --color-brand-200: #efc6cf;
-  --color-brand-500: #a3283c;
-  --color-brand-600: #8b1f31;
-  --color-brand-700: #791929; /* the logo's maroon */
-  --color-brand-800: #5f1220;
-  --color-brand-900: #3f0b15;
+  /* From the official Digibuggy logo: navy #12254b */
+  --color-brand-50: #f1f4fa;
+  --color-brand-100: #e1e8f4;
+  --color-brand-200: #c3d0e8;
+  --color-brand-500: #2d4c8c;
+  --color-brand-600: #1e3a73;
+  --color-brand-700: #12254b; /* the logo's navy */
+  --color-brand-800: #0d1c3a;
+  --color-brand-900: #08122a;
 
   --color-canvas: #fafafa; /* page background */
   --color-ink: #09090b; /* main text */

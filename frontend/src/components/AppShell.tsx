@@ -201,7 +201,8 @@ function SideLink({ item, active, count }: { item: NavItem; active: boolean; cou
 function Logo() {
   return (
     <Link href="/" aria-label="Digibuggy, go to dashboard" className="flex items-center">
-      <BrandLogo className="h-7 w-auto md:h-8" priority />
+      {/* wide logo: 18px tall on phones (room for the switch + avatar), 20px in the sidebar */}
+      <BrandLogo className="h-[18px] w-auto md:h-5" priority />
     </Link>
   );
 }

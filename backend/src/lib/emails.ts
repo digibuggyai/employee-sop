@@ -3,17 +3,17 @@
 //
 // Email HTML is old-fashioned on purpose: tables + inline styles are what Gmail/Outlook render reliably.
 
-const BRAND = "#791929"; // the maroon of the dgB logo
+const BRAND = "#12254b"; // the navy of the Digibuggy logo
 
 // Where the "Log in" button points: the deployed app (e.g. https://team.dgbindia.com)
 export const appUrl = () => (process.env.APP_URL ?? process.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 // The logo in emails must be a PUBLIC web address (Gmail/Outlook download it from the internet).
-// It's the frontend's public/brand/logo.png. A localhost address would be a broken image in a
+// It is the frontend file public/brand/digibuggy-logo.png. A localhost address would be a broken image in a
 // real inbox, so local testing falls back to the live site.
 const logoUrl = () => {
   const base = appUrl();
-  return base.includes("localhost") ? "https://team.dgbindia.com/brand/logo.png" : `${base}/brand/logo.png`;
+  return base.includes("localhost") ? "https://team.dgbindia.com/brand/digibuggy-logo.png" : `${base}/brand/digibuggy-logo.png`;
 };
 
 // Names and passwords go into HTML, so escape them (a name like "<b>" must not become markup)
@@ -28,7 +28,7 @@ function layout(title: string, body: string) {
   <tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
       <tr><td style="padding:0 4px 16px">
-        <img src="${logoUrl()}" width="107" height="40" alt="Digibuggy" style="display:block;border:0;height:40px;width:107px">
+        <img src="${logoUrl()}" width="178" height="20" alt="Digibuggy" style="display:block;border:0;height:20px;width:178px">
 
       </td></tr>
       <tr><td style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:28px">

@@ -1,28 +1,27 @@
 import Image from "next/image";
 
-// The official dgB logo. Files live in public/brand/ (made from dgbindia.com's logo:
-// trimmed, transparent background, and a white-letter version for dark backgrounds).
-//   tone "dark"  → for light backgrounds (dark grey "dg")
-//   tone "light" → for dark backgrounds (white "dg")
-//   tagline      → include "Redefining Your Needs"
+// The official Digibuggy logo (navy bee + DIGIBUGGY). Files live in public/brand/.
+//   tone "dark"  → navy, for light backgrounds
+//   tone "light" → white, for dark/navy backgrounds
+//   variant "mark" → just the bee (for tight spaces)
 const files = {
-  dark: { src: "/brand/logo.png", width: 427, height: 160 },
-  light: { src: "/brand/logo-light.png", width: 427, height: 160 },
-  darkTagline: { src: "/brand/logo-full.png", width: 503, height: 240 },
-  lightTagline: { src: "/brand/logo-full-light.png", width: 503, height: 240 },
+  full: { dark: "/brand/digibuggy-logo.png", light: "/brand/digibuggy-logo-light.png", width: 640, height: 72 },
+  mark: { dark: "/brand/digibuggy-mark.png", light: "/brand/digibuggy-mark.png", width: 94, height: 72 },
 };
 
 export default function BrandLogo({
   tone = "dark",
-  tagline = false,
-  className = "h-7 w-auto", // set the height; width follows
+  variant = "full",
+  className = "h-5 w-auto", // set the height; width follows the logo's proportions
   priority = false,
 }: {
   tone?: "dark" | "light";
-  tagline?: boolean;
+  variant?: "full" | "mark";
   className?: string;
   priority?: boolean; // true for logos visible on first paint (loads them first)
 }) {
-  const f = files[tagline ? (`${tone}Tagline` as const) : tone];
-  return <Image src={f.src} width={f.width} height={f.height} alt="Digibuggy" priority={priority} className={className} />;
+  const f = files[variant];
+  return (
+    <Image src={f[tone]} width={f.width} height={f.height} alt="Digibuggy" priority={priority} className={className} />
+  );
 }

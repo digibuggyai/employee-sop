@@ -13,10 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#fafafa",
     theme_color: "#ffffff",
     icons: [
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-      // "maskable": Android may crop it into a circle/squircle; the full red square survives that
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/digibuggy-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icons/digibuggy-512.png", sizes: "512x512", type: "image/png" },
+      // "maskable": Android may crop it into a circle/squircle; the navy square fills it, the bee stays inside the safe zone
+      { src: "/icons/digibuggy-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }
