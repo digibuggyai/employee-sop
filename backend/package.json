@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "create-admin": "tsx src/scripts/create-admin.ts",
     "import-attendance": "tsx src/scripts/import-attendance.ts",
-    "postdb:migrate": "prisma generate"
+    "postdb:migrate": "prisma generate",
+    "bulk-create": "tsx src/scripts/bulk-create-users.ts"
   },
   "description": "API for Digibuggy Hub",
   "dependencies": {
