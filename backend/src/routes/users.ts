@@ -2,6 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, requireAdmin, requireAuth } from "../lib/auth.js";
+import { sendMail } from "../lib/mailer.js";
+import { passwordResetEmail, welcomeEmail } from "../lib/emails.js";
 
 const router = Router();
 
@@ -46,13 +48,14 @@ router.get("/", async (_req, res) => {
 const createSchema = z.object({
   ...profileFields,
   password: z.string().min(8, "Temporary password must be at least 8 characters"),
+  notify: z.boolean().default(true), // email the login details to the new employee
 });
 
 // POST /api/users → admin creates an account with a temporary password
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-  const { password, ...profile } = parsed.data;
+  const { password, notify, ...profile } = parsed.data;
 
   if (await prisma.user.findUnique({ where: { email: profile.email } })) {
     return res.status(409).json({ error: "Someone already uses this email" });
@@ -61,7 +64,11 @@ router.post("/", async (req, res) => {
   const user = await prisma.user.create({
     data: { ...profile, passwordHash: await hashPassword(password), mustChangePassword: true },
   });
-  res.status(201).json(user);
+
+  // The account exists now. Emailing is a bonus: if it fails, the admin is told and can share the
+  // password themselves, so a mail problem never blocks creating an account.
+  const mail = notify ? await sendMail({ to: user.email, ...welcomeEmail(user.name, user.email, password) }) : null;
+  res.status(201).json({ ...user, mail });
 });
 
 // For edits every field is optional (.partial()), plus active and an optional password reset.
@@ -70,6 +77,7 @@ const updateSchema = z
     ...profileFields,
     active: z.boolean(),
     password: z.string().min(8, "New password must be at least 8 characters"),
+    notify: z.boolean(), // email the new password (only used together with password)
   })
   .partial();
 
@@ -77,7 +85,7 @@ const updateSchema = z
 router.patch("/:id", async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-  const { password, ...changes } = parsed.data;
+  const { password, notify = true, ...changes } = parsed.data;
   const id = req.params.id;
 
   // Stop admins from locking themselves out by accident.
@@ -101,7 +109,11 @@ router.patch("/:id", async (req, res) => {
       ...(password && { passwordHash: await hashPassword(password), mustChangePassword: true }),
     },
   });
-  res.json(user);
+
+  // Only a password reset sends an email; normal profile edits don't.
+  const mail =
+    password && notify ? await sendMail({ to: user.email, ...passwordResetEmail(user.name, user.email, password) }) : null;
+  res.json({ ...user, mail });
 });
 
 export default router;

@@ -40,6 +40,12 @@ export const employmentLabels: Record<EmploymentType, string> = {
 };
 
 // backend: prisma/schema.prisma → model User (minus passwordHash)
+// What the backend's mailer reports (backend/src/lib/mailer.ts)
+export type MailResult = { sent: true } | { sent: false; reason: string };
+
+// Creating / editing a user also says whether an email went out (null = no email was needed)
+export type SavedUser = User & { mail: MailResult | null };
+
 export type User = {
   id: string;
   name: string;

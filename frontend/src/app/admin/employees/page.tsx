@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Plus, Search, Users } from "lucide-react";
+import { Copy, Pencil, Plus, Search, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
 import EmployeeForm from "@/components/EmployeeForm";
@@ -9,7 +9,7 @@ import { useToast } from "@/components/Feedback";
 import PageHeader from "@/components/PageHeader";
 import { Button, IconButton, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton, table } from "@/components/ui";
-import { api, employmentLabels, type User } from "@/lib/api";
+import { api, employmentLabels, type SavedUser, type User } from "@/lib/api";
 
 // /admin/employees: list everyone, add new accounts, edit or deactivate existing ones.
 export default function EmployeesAdminPage() {
@@ -26,14 +26,38 @@ export default function EmployeesAdminPage() {
       .catch((err) => setError(err.message));
   }, []);
 
-  // After saving: put the new/updated person into the list without reloading everything.
-  function handleSaved(saved: User) {
+  // Login details to show on screen when the email couldn't be sent (or wasn't wanted)
+  const [share, setShare] = useState<{ name: string; email: string; password: string; reason: string } | null>(null);
+
+  // After saving: put the new/updated person into the list without reloading everything,
+  // then tell the admin exactly what happened with the email.
+  function handleSaved(saved: SavedUser, password: string) {
+    const { mail, ...user } = saved;
     setUsers((list) => {
-      const others = (list ?? []).filter((u) => u.id !== saved.id);
-      return [...others, saved].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name));
+      const others = (list ?? []).filter((u) => u.id !== user.id);
+      return [...others, user].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name));
     });
-    toast.success(editing === "new" ? `Account created for ${saved.name}` : `${saved.name} updated`);
+
+    const created = editing === "new";
+    if (mail?.sent) {
+      toast.success(`${created ? "Account created" : "Password reset"}. Login details emailed to ${user.email}`);
+      setShare(null);
+    } else if (password) {
+      // Account saved, but the person doesn't have their password yet: keep it on screen to share.
+      toast.success(created ? `Account created for ${user.name}` : `Password reset for ${user.name}`);
+      setShare({ name: user.name, email: user.email, password, reason: mail ? mail.reason : "Email was turned off" });
+    } else {
+      toast.success(`${user.name} updated`);
+    }
     setEditing(null);
+  }
+
+  async function copyShare() {
+    if (!share) return;
+    await navigator.clipboard.writeText(
+      `Digibuggy Hub login\n${window.location.origin}/login\nEmail: ${share.email}\nTemporary password: ${share.password}`,
+    );
+    toast.success("Login details copied");
   }
 
   const q = query.trim().toLowerCase();
@@ -70,6 +94,32 @@ export default function EmployeesAdminPage() {
             onCancel={() => setEditing(null)}
           />
         </Card>
+      )}
+
+      {/* Shown when the login details still need to reach the person */}
+      {share && (
+        <div role="status" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-amber-900">Share these login details with {share.name}</p>
+              <p className="mt-0.5 text-[13px] text-amber-800">{share.reason}. Send them over WhatsApp or in person.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={copyShare}>
+                <Copy size={14} /> Copy
+              </Button>
+              <IconButton label="Dismiss" onClick={() => setShare(null)}>
+                <X size={15} />
+              </IconButton>
+            </div>
+          </div>
+          <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+            <dt className="text-amber-800">Email</dt>
+            <dd className="font-medium break-all text-zinc-900">{share.email}</dd>
+            <dt className="text-amber-800">Temporary password</dt>
+            <dd className="font-mono font-semibold text-zinc-900">{share.password}</dd>
+          </dl>
+        </div>
       )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}

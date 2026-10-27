@@ -1,9 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { api, employmentLabels, type EmploymentType, type Role, type User } from "@/lib/api";
+import { RefreshCw } from "lucide-react";
+import { api, employmentLabels, type EmploymentType, type Role, type SavedUser, type User } from "@/lib/api";
 import { toDateInput } from "@/lib/format";
 import { Button, ErrorBox, Field, inputClass } from "./form";
+
+// A strong temporary password that's easy to read out or type: no 0/O, 1/l/I look-alikes.
+function generatePassword(length = 10) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const random = crypto.getRandomValues(new Uint32Array(length)); // cryptographically random, unlike Math.random
+  return Array.from(random, (n) => chars[n % chars.length]).join("");
+}
 
 // One form for both "Add employee" (no `existing`) and "Edit employee" (with `existing`).
 export default function EmployeeForm({
@@ -12,7 +20,7 @@ export default function EmployeeForm({
   onCancel,
 }: {
   existing?: User;
-  onSaved: (user: User) => void;
+  onSaved: (user: SavedUser, password: string) => void; // password = the temporary one, if set
   onCancel: () => void;
 }) {
   const isEdit = !!existing;
@@ -31,6 +39,7 @@ export default function EmployeeForm({
     wfhAllowance: String(existing?.wfhAllowance ?? 4),
     active: existing?.active ?? true,
     password: "", // create: temporary password · edit: leave empty unless resetting
+    notify: true, // email the login details
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,13 +56,13 @@ export default function EmployeeForm({
     setError("");
     setLoading(true);
     // When editing, don't send an empty password (that would mean "no reset").
-    const { password, ...rest } = form;
-    const body = isEdit && !password ? rest : form;
+    const { password, notify, ...rest } = form;
+    const body = isEdit && !password ? rest : { ...rest, password, notify };
     try {
       const saved = isEdit
-        ? await api<User>(`/api/users/${existing.id}`, { method: "PATCH", body })
-        : await api<User>("/api/users", { method: "POST", body });
-      onSaved(saved);
+        ? await api<SavedUser>(`/api/users/${existing.id}`, { method: "PATCH", body })
+        : await api<SavedUser>("/api/users", { method: "POST", body });
+      onSaved(saved, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save");
       setLoading(false);
@@ -112,9 +121,29 @@ export default function EmployeeForm({
           label={isEdit ? "Reset password" : "Temporary password *"}
           hint={isEdit ? "Leave empty to keep their password. They'll change it at next login." : "They'll be asked to change it at first login. Min 8 characters."}
         >
-          <input name="password" type="text" autoComplete="off" required={!isEdit} minLength={8} value={form.password} onChange={update} className={inputClass} />
+          <div className="flex gap-2">
+            <input name="password" type="text" autoComplete="off" spellCheck={false} required={!isEdit} minLength={8} value={form.password} onChange={update} className={`${inputClass} font-mono`} />
+            <Button type="button" variant="secondary" onClick={() => setForm({ ...form, password: generatePassword() })}>
+              <RefreshCw size={15} /> Generate
+            </Button>
+          </div>
         </Field>
       </div>
+
+      {/* Email the login details: for new accounts, and for password resets */}
+      {(!isEdit || form.password) && (
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
+          <input name="notify" type="checkbox" checked={form.notify} onChange={update} className="mt-0.5 size-4 accent-brand-700" />
+          <span>
+            <span className="block text-sm font-medium text-zinc-900">
+              {isEdit ? "Email the new password" : "Email the login details"}
+            </span>
+            <span className="block text-[13px] text-zinc-500">
+              Sends {form.email || "their email"} {isEdit ? "the new temporary password" : "their email, temporary password and a link to log in"}.
+            </span>
+          </span>
+        </label>
+      )}
 
       {isEdit && (
         <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
