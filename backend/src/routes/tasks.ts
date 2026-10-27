@@ -9,7 +9,7 @@ router.use(requireAuth);
 
 // What we send back for every task: the task + who it belongs to + who assigned it.
 export const taskInclude = {
-  user: { select: { id: true, name: true } },
+  user: { select: { id: true, name: true, photoUpdatedAt: true } },
   assignedBy: { select: { id: true, name: true } },
 };
 

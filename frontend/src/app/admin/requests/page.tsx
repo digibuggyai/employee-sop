@@ -65,7 +65,7 @@ export default function AdminRequestsPage() {
           <ul className="divide-y divide-zinc-100">
             {reviewed.slice(0, 15).map((c) => (
               <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm">
-                <Avatar name={c.user?.name ?? "?"} size="xs" />
+                <Avatar person={c.user ?? { name: "?" }} size="xs" />
                 <span className="font-medium text-zinc-900">{c.user?.name}</span>
                 <span className="text-zinc-500">{fullDay(c.date)}</span>
                 <span className="min-w-0 flex-1 truncate text-xs text-zinc-500">{c.reason}</span>
@@ -118,7 +118,7 @@ function RequestCard({ c, onDone }: { c: Correction; onDone: () => void }) {
   return (
     <Card flush>
       <div className="flex flex-wrap items-start gap-3 px-5 pt-4">
-        <Avatar name={c.user?.name ?? "?"} size="sm" />
+        <Avatar person={c.user ?? { name: "?" }} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-zinc-900">
             {c.user?.name} <span className="font-normal text-zinc-500">· {fullDay(c.date)}</span>

@@ -119,7 +119,7 @@ export default function AdminLeavesPage() {
           <ul className="divide-y divide-zinc-100">
             {pending.map((l) => (
               <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5">
-                <Avatar name={l.user?.name ?? "?"} size="sm" />
+                <Avatar person={l.user ?? { name: "?" }} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-zinc-900">
                     {l.user?.name} <span className="font-normal text-zinc-500">· {fullDay(l.date)}</span>
@@ -203,7 +203,7 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
   const current = leave.compensatedOn?.slice(0, 10) ?? "";
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5">
-      <Avatar name={leave.user?.name ?? "?"} size="sm" />
+      <Avatar person={leave.user ?? { name: "?" }} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-zinc-900">
           {leave.user?.name} <span className="font-normal text-zinc-500">· {fullDay(leave.date)}</span>

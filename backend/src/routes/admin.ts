@@ -19,7 +19,7 @@ const activeUsers = () =>
   prisma.user.findMany({
     where: { active: true },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, designation: true, employmentType: true, team: true },
+    select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true },
   });
 
 // GET /api/admin/overview?date=2026-10-26 → everyone's status, hours and tasks for one day
@@ -102,7 +102,7 @@ router.get("/tasks", async (req, res) => {
 
 // ---------- Leaves ----------
 
-const adminLeaveInclude = { ...leaveInclude, user: { select: { id: true, name: true } } };
+const adminLeaveInclude = { ...leaveInclude, user: { select: { id: true, name: true, photoUpdatedAt: true } } };
 
 // GET /api/admin/leaves?status=PENDING            → every pending request (any month)
 // GET /api/admin/leaves?month=2026-10             → all leaves in a month
@@ -251,7 +251,7 @@ router.delete("/attendance/:userId/:date", async (req, res) => {
 });
 
 const correctionAdminInclude = {
-  user: { select: { id: true, name: true } },
+  user: { select: { id: true, name: true, photoUpdatedAt: true } },
   reviewedBy: { select: { id: true, name: true } },
 };
 

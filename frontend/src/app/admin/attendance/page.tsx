@@ -78,7 +78,7 @@ export default function AdminAttendancePage() {
         title={
           selected ? (
             <span className="flex items-center gap-3">
-              <Avatar name={selected.name} /> {selected.name}
+              <Avatar person={selected} /> {selected.name}
             </span>
           ) : (
             "Attendance"
@@ -114,7 +114,7 @@ export default function AdminAttendancePage() {
             {rows.map((r) => (
               <li key={r.user.id}>
                 <button onClick={() => open(r.user)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50">
-                  <Avatar name={r.user.name} size="sm" />
+                  <Avatar person={r.user} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
                     <p className="text-xs text-zinc-500 tabular-nums">
@@ -145,7 +145,7 @@ export default function AdminAttendancePage() {
                   <tr key={r.user.id} onClick={() => open(r.user)} className={`${table.tr} cursor-pointer`}>
                     <td className={table.td}>
                       <div className="flex items-center gap-3">
-                        <Avatar name={r.user.name} size="sm" />
+                        <Avatar person={r.user} size="sm" />
                         <span className="font-medium text-zinc-900">{r.user.name}</span>
                       </div>
                     </td>

@@ -7,6 +7,7 @@ import Card from "@/components/Card";
 import EmployeeForm from "@/components/EmployeeForm";
 import { useToast } from "@/components/Feedback";
 import PageHeader from "@/components/PageHeader";
+import PhotoUploader from "@/components/PhotoUploader";
 import { Button, IconButton, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton, table } from "@/components/ui";
 import { api, employmentLabels, type SavedUser, type User } from "@/lib/api";
@@ -86,6 +87,18 @@ export default function EmployeesAdminPage() {
           description={editing === "new" ? "They'll be asked to choose their own password at first login." : undefined}
           className="mb-6"
         >
+          {/* Editing someone: their photo can be set or removed here (saves immediately) */}
+          {editing !== "new" && (
+            <div className="mb-5 border-b border-zinc-100 pb-5">
+              <PhotoUploader
+                user={editing}
+                onChange={(u) => {
+                  setUsers((list) => (list ?? []).map((x) => (x.id === u.id ? u : x)));
+                  setEditing(u);
+                }}
+              />
+            </div>
+          )}
           {/* key forces a fresh form when switching between people */}
           <EmployeeForm
             key={editing === "new" ? "new" : editing.id}
@@ -147,7 +160,7 @@ export default function EmployeesAdminPage() {
             <ul className="divide-y divide-zinc-100 md:hidden">
               {shown.map((u) => (
                 <li key={u.id} className={`flex items-center gap-3 px-4 py-3 ${u.active ? "" : "opacity-60"}`}>
-                  <Avatar name={u.name} size="sm" />
+                  <Avatar person={u} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate text-sm font-medium text-zinc-900">
                       {u.name}
@@ -180,7 +193,7 @@ export default function EmployeesAdminPage() {
                     <tr key={u.id} className={`${table.tr} ${u.active ? "" : "text-zinc-400"}`}>
                       <td className={table.td}>
                         <div className="flex items-center gap-3">
-                          <Avatar name={u.name} size="sm" />
+                          <Avatar person={u} size="sm" />
                           <div className="min-w-0">
                             <p className={`font-medium ${u.active ? "text-zinc-900" : ""}`}>{u.name}</p>
                             <p className="text-xs text-zinc-500">{u.email}</p>

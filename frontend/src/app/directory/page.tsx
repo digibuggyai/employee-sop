@@ -10,7 +10,7 @@ import { api, employmentLabels, type User } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
 // The backend only sends these fields for colleagues (see backend/src/routes/directory.ts)
-type Person = Pick<User, "id" | "name" | "email" | "phone" | "designation" | "employmentType" | "team" | "office" | "timings" | "birthday">;
+type Person = Pick<User, "id" | "name" | "email" | "phone" | "designation" | "employmentType" | "team" | "office" | "timings" | "birthday" | "photoUpdatedAt">;
 
 export default function DirectoryPage() {
   const [people, setPeople] = useState<Person[] | null>(null);
@@ -58,7 +58,7 @@ export default function DirectoryPage() {
         {shown.map((p) => (
           <article key={p.id} className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
             <div className="flex items-start gap-3">
-              <Avatar name={p.name} />
+              <Avatar person={p} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-zinc-900">{p.name}</p>
                 <p className="truncate text-[13px] text-zinc-500">{p.designation ?? employmentLabels[p.employmentType]}</p>

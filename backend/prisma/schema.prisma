@@ -43,6 +43,11 @@ model User {
   active             Boolean @default(true) // false = left the company; can't log in, data kept
   wfhAllowance       Int     @default(4) // WFH days per month; each WFH day beyond this counts as a half day
 
+  // Profile photo. The image itself lives in UserPhoto (kept out of User so lists stay light);
+  // this timestamp tells the app a photo exists and makes the photo's URL change when it's replaced.
+  photoUpdatedAt DateTime?
+  photo          UserPhoto?
+
   attendance Attendance[] // one user → many attendance days (a "relation")
 
   // Two relations to Task, so each needs a name: tasks I own vs tasks I assigned to others.
@@ -190,4 +195,13 @@ model AttendanceCorrection {
 
   @@index([status]) // "all pending requests" is the admin's most common question
   @@index([userId, date])
+}
+
+// A profile photo: a small square JPEG (resized to 256x256 in the browser before upload, ~20 KB).
+model UserPhoto {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      Bytes
+  mime      String
+  updatedAt DateTime @updatedAt
 }

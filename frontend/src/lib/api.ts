@@ -62,6 +62,7 @@ export type User = {
   mustChangePassword: boolean;
   active: boolean;
   wfhAllowance: number; // WFH days per month before extra ones count as half days
+  photoUpdatedAt: string | null; // set when the person has a profile photo
   createdAt: string;
   updatedAt: string;
 };
@@ -122,7 +123,10 @@ export type MonthSummary = {
 export type MonthReport = { month: string; days: DayRow[]; summary: MonthSummary };
 
 // A short version of a user, as the admin endpoints send it
-export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team">;
+export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team" | "photoUpdatedAt">;
+
+// The bits of a person an avatar needs
+export type Person = { id?: string; name: string; photoUpdatedAt?: string | null };
 
 export type LiveStatus = "NOT_IN" | "WORKING" | "ON_BREAK" | "DONE" | "ON_LEAVE";
 
@@ -161,7 +165,7 @@ export type Task = {
   deadline: string | null;
   link: string | null;
   completedAt: string | null;
-  user: { id: string; name: string };
+  user: { id: string; name: string; photoUpdatedAt?: string | null };
   assignedBy: { id: string; name: string } | null; // null = added by the employee
 };
 
@@ -177,7 +181,7 @@ export type Leave = {
   compensatedOn: string | null; // the weekend/holiday worked to make up for it
   reviewedBy: { id: string; name: string } | null;
   reviewedAt: string | null;
-  user?: { id: string; name: string }; // included in admin lists
+  user?: { id: string; name: string; photoUpdatedAt?: string | null }; // included in admin lists
 };
 
 // backend/src/data/holidays.ts
@@ -211,7 +215,7 @@ export type Correction = {
   reviewedBy: { id: string; name: string } | null;
   reviewedAt: string | null;
   createdAt: string;
-  user?: { id: string; name: string }; // admin lists
+  user?: { id: string; name: string; photoUpdatedAt?: string | null }; // admin lists
   // admin lists: the day as it is now (null = no attendance that day)
   current?: { place: Place; checkIn: string; checkOut: string | null; note: string | null } | null;
 };

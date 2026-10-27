@@ -13,6 +13,7 @@ router.get("/", requireAuth, async (_req, res) => {
     select: {
       id: true,
       name: true,
+      photoUpdatedAt: true,
       email: true,
       phone: true,
       designation: true,

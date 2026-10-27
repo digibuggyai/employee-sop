@@ -108,7 +108,7 @@ export default function AdminOverviewPage() {
           <ul className="divide-y divide-zinc-100 md:hidden">
             {shown.map((r) => (
               <li key={r.user.id} className="flex items-center gap-3 px-4 py-3">
-                <Avatar name={r.user.name} size="sm" />
+                <Avatar person={r.user} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
                   <p className="truncate text-xs text-zinc-500 tabular-nums">
@@ -141,7 +141,7 @@ export default function AdminOverviewPage() {
                   <tr key={r.user.id} className={table.tr}>
                     <td className={table.td}>
                       <div className="flex items-center gap-3">
-                        <Avatar name={r.user.name} size="sm" />
+                        <Avatar person={r.user} size="sm" />
                         <div className="min-w-0">
                           <p className="font-medium text-zinc-900">{r.user.name}</p>
                           <p className="truncate text-xs text-zinc-500">{r.user.designation ?? r.user.team ?? ""}</p>

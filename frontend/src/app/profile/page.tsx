@@ -5,13 +5,14 @@ import { KeyRound, LogOut } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
+import PhotoUploader from "@/components/PhotoUploader";
 import { Button, buttonClass } from "@/components/form";
 import { Badge } from "@/components/ui";
 import { employmentLabels } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   if (!user) return null; // AppShell already redirects to /login
 
   const sections: { title: string; rows: [string, string][] }[] = [
@@ -40,7 +41,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Avatar name={user.name} size="lg" />
+        <Avatar person={user} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">{user.name}</h1>
@@ -57,6 +58,11 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
+      <Card title="Photo">
+        {/* setUser: the new photo shows in the sidebar and header straight away */}
+        <PhotoUploader user={user} onChange={setUser} />
+      </Card>
 
       <Card flush>
         {sections.map((s) => (

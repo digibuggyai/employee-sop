@@ -13,6 +13,7 @@ import attendanceRouter from "./routes/attendance.js";
 import tasksRouter from "./routes/tasks.js";
 import adminRouter from "./routes/admin.js";
 import leavesRouter from "./routes/leaves.js";
+import photosRouter from "./routes/photos.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -41,12 +42,15 @@ app.use("/api/attendance", attendanceRouter);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/leaves", leavesRouter);
+app.use("/api/photos", photosRouter);
 app.use("/api/holidays", holidaysRouter);
 app.use("/api/notices", noticesRouter);
 
 // Safety net: if any route throws (e.g. database unreachable), reply with a clean 500
 // instead of crashing. Express recognises an error handler by its 4 parameters.
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {
+  // An upload bigger than a route allows (e.g. a profile photo over 300 KB)
+  if (err.type === "entity.too.large") return res.status(413).json({ error: "That file is too large" });
   console.error(err);
   res.status(500).json({ error: "Something went wrong on the server" });
 });

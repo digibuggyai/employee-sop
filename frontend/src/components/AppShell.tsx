@@ -98,7 +98,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 pathname === "/profile" ? "bg-zinc-100" : ""
               }`}
             >
-              <Avatar name={user.name} size="sm" />
+              <Avatar person={user} size="sm" />
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-medium text-zinc-900">{user.name}</p>
                 <p className="truncate text-xs text-zinc-500">{user.email}</p>
@@ -125,7 +125,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2">
           {isAdmin && <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact />}
           <Link href="/profile" aria-label="Profile">
-            <Avatar name={user.name} size="sm" />
+            <Avatar person={user} size="sm" />
           </Link>
         </div>
       </header>

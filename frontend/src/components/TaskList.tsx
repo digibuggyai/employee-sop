@@ -90,7 +90,7 @@ export default function TaskList({
                     <div className="flex min-w-0 flex-1 gap-3">
                       {showOwner && (
                         <span className="mt-0.5">
-                          <Avatar name={t.user.name} size="xs" />
+                          <Avatar person={t.user} size="xs" />
                         </span>
                       )}
                       <div className="min-w-0 flex-1">
