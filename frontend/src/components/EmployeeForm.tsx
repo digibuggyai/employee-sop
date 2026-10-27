@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { api, employmentLabels, type EmploymentType, type Role, type SavedUser, type User } from "@/lib/api";
 import { toDateInput } from "@/lib/format";
+import PasswordInput from "./PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "./form";
 
 // A strong temporary password that's easy to read out or type: no 0/O, 1/l/I look-alikes.
@@ -122,7 +123,10 @@ export default function EmployeeForm({
           hint={isEdit ? "Leave empty to keep their password. They'll change it at next login." : "They'll be asked to change it at first login. Min 8 characters."}
         >
           <div className="flex gap-2">
-            <input name="password" type="text" autoComplete="off" spellCheck={false} required={!isEdit} minLength={8} value={form.password} onChange={update} className={`${inputClass} font-mono`} />
+            {/* shown by default so the admin can read the generated password; the eye hides it */}
+            <div className="flex-1">
+              <PasswordInput name="password" defaultVisible autoComplete="new-password" required={!isEdit} minLength={8} value={form.password} onChange={update} className="font-mono" />
+            </div>
             <Button type="button" variant="secondary" onClick={() => setForm({ ...form, password: generatePassword() })}>
               <RefreshCw size={15} /> Generate
             </Button>

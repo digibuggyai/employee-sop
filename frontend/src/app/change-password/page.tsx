@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import Card from "@/components/Card";
 import PageHeader from "@/components/PageHeader";
-import { Button, ErrorBox, Field, inputClass } from "@/components/form";
+import PasswordInput from "@/components/PasswordInput";
+import { Button, ErrorBox, Field } from "@/components/form";
 import { api, type User } from "@/lib/api";
 
 export default function ChangePasswordPage() {
@@ -51,13 +52,13 @@ export default function ChangePasswordPage() {
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Field label={user?.mustChangePassword ? "Temporary password" : "Current password"}>
-            <input name="currentPassword" type="password" autoComplete="current-password" required value={form.currentPassword} onChange={update} className={inputClass} />
+            <PasswordInput name="currentPassword" autoComplete="current-password" required value={form.currentPassword} onChange={update} />
           </Field>
           <Field label="New password" hint="At least 8 characters">
-            <input name="newPassword" type="password" autoComplete="new-password" required minLength={8} value={form.newPassword} onChange={update} className={inputClass} />
+            <PasswordInput name="newPassword" autoComplete="new-password" required minLength={8} value={form.newPassword} onChange={update} />
           </Field>
           <Field label="Confirm new password">
-            <input name="confirm" type="password" autoComplete="new-password" required value={form.confirm} onChange={update} className={inputClass} />
+            <PasswordInput name="confirm" autoComplete="new-password" required value={form.confirm} onChange={update} />
           </Field>
           <ErrorBox message={error} />
           <Button type="submit" loading={loading}>

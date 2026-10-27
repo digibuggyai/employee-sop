@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, ListTodo, Plane } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import PasswordInput from "@/components/PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "@/components/form";
 import { api, type User } from "@/lib/api";
 
@@ -99,13 +100,11 @@ export default function LoginPage() {
               />
             </Field>
             <Field label="Password">
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={inputClass}
               />
             </Field>
             <ErrorBox message={error} />
