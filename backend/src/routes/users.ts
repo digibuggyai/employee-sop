@@ -2,6 +2,7 @@ import { Router, type Request } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { todayString } from "../lib/dates.js";
+import { parseTimings } from "../lib/policy.js";
 import { hashPassword, requireAdmin, requireAuth } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
 import { passwordResetEmail, welcomeEmail } from "../lib/emails.js";
@@ -37,13 +38,15 @@ const profileFields = {
   designation: optionalText,
   team: optionalText,
   office: optionalText,
-  timings: optionalText,
+  // the shift used for late / early-leaving, e.g. "11:30 to 6:00"; must be readable
+  timings: optionalText.refine((v) => !v || parseTimings(v), "Write timings like 11:30 to 6:00"),
   birthday: optionalDate,
   joinedOn: optionalDate,
   leftOn: optionalDate, // last working day, for someone who has left
   // z.coerce turns the form's "4" (text) into the number 4
   wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
   // empty in the form = no weekly target
+  leaveOpening: z.coerce.number().min(0, "Leave balance can't be negative").max(60).optional(), // full-time: carried in
   weeklyHours: z
     .preprocess((v) => (v === "" ? null : v), z.coerce.number().int().min(1, "Weekly hours must be at least 1").max(100).nullable())
     .optional(),

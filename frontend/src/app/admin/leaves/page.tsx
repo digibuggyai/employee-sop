@@ -124,7 +124,10 @@ export default function AdminLeavesPage() {
                   <p className="text-sm font-medium text-zinc-900">
                     {l.user?.name} <span className="font-normal text-zinc-500">· {fullDay(l.date)}</span>
                   </p>
-                  <p className="text-[13px] text-zinc-600">{l.reason}</p>
+                  <p className="text-[13px] text-zinc-600">
+                    {l.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
+                    {l.reason}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" onClick={() => review(l, "REJECTED")}>
@@ -208,7 +211,10 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
         <p className="text-sm font-medium text-zinc-900">
           {leave.user?.name} <span className="font-normal text-zinc-500">· {fullDay(leave.date)}</span>
         </p>
-        <p className="truncate text-[13px] text-zinc-600">{leave.reason ?? "No reason given"}</p>
+        <p className="truncate text-[13px] text-zinc-600">
+          {leave.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
+          {leave.reason ?? "No reason given"}
+        </p>
       </div>
       <LeaveStatusBadge status={leave.status} />
       {leave.status === "APPROVED" && (

@@ -11,7 +11,12 @@ import { EmptyState, Skeleton } from "@/components/ui";
 import { api, type Leave } from "@/lib/api";
 import { fmtDate, todayIST } from "@/lib/format";
 
-type LeaveData = { leaves: Leave[]; wfh: { used: number; allowance: number; halfDays: number } };
+type LeaveData = {
+  leaves: Leave[];
+  wfh: { used: number; allowance: number; halfDays: number };
+  balance: number | null; // full-time: leave left (1.5 a month, rolls over)
+  emergency: { used: number; allowed: number }; // same-day leave this month
+};
 
 // /leave: request leave, see my requests, see my WFH usage this month
 export default function LeavePage() {
@@ -57,7 +62,11 @@ export default function LeavePage() {
       <PageHeader title="Leave & WFH" subtitle="Request leave and keep track of approvals." actions={!showForm && requestButton} />
 
       {showForm && (
-        <Card title="Request leave" description="Weekends and holidays in the range are skipped automatically." className="mb-6 max-w-2xl">
+        <Card
+          title="Request leave"
+          description="Ask in advance. Starting today counts as your emergency leave (1 a month). Weekends and holidays are skipped."
+          className="mb-6 max-w-2xl"
+        >
           <LeaveRequestForm
             onDone={(created, skipped) => {
               setShowForm(false);
@@ -73,39 +82,59 @@ export default function LeavePage() {
       )}
 
       <div className="grid items-start gap-6 lg:grid-cols-3">
-        {/* WFH usage this month */}
-        <Card title="WFH this month">
-          {wfh ? (
-            <>
-              <div className="flex items-baseline gap-1.5">
-                <span className={`text-3xl font-semibold tracking-tight tabular-nums ${wfh.used > wfh.allowance ? "text-red-600" : "text-zinc-900"}`}>
-                  {wfh.used}
-                </span>
-                <span className="text-sm text-zinc-500">of {wfh.allowance} days</span>
-              </div>
-              {/* one segment per allowed day: easier to read than a percentage */}
-              <div className="mt-3 flex gap-1">
-                {Array.from({ length: Math.max(wfh.allowance, wfh.used) }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 flex-1 rounded-full ${
-                      i >= wfh.allowance ? "bg-red-500" : i < wfh.used ? "bg-zinc-900" : "bg-zinc-200"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="mt-3 text-[13px] text-zinc-600">
-                {wfh.halfDays > 0
-                  ? `${wfh.halfDays} day${wfh.halfDays > 1 ? "s" : ""} over the limit ${wfh.halfDays > 1 ? "count" : "counts"} as half day${wfh.halfDays > 1 ? "s" : ""}.`
-                  : wfh.used >= wfh.allowance
-                    ? "Allowance used. Further WFH days this month count as half days."
-                    : `${wfh.allowance - wfh.used} left before WFH days count as half days.`}
+        <div className="space-y-6">
+          {/* Leave balance (full-time) and this month's emergency leave */}
+          {data && (
+            <Card title="Leave">
+              {data.balance !== null && (
+                <div className="mb-3 flex items-baseline gap-1.5">
+                  <span className={`text-3xl font-semibold tracking-tight tabular-nums ${data.balance < 0 ? "text-red-600" : "text-zinc-900"}`}>
+                    {data.balance}
+                  </span>
+                  <span className="text-sm text-zinc-500">days left · 1.5 added each month</span>
+                </div>
+              )}
+              <p className="text-[13px] text-zinc-600">
+                Emergency leave this month: {data.emergency.used} of {data.emergency.allowed} used. Other leave must be
+                asked for in advance; leave without approval counts as unauthorized (1 day salary deduction).
               </p>
-            </>
-          ) : (
-            <Skeleton className="h-20" />
+            </Card>
           )}
-        </Card>
+
+          {/* WFH usage this month */}
+          <Card title="WFH this month">
+            {wfh ? (
+              <>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-3xl font-semibold tracking-tight tabular-nums ${wfh.used > wfh.allowance ? "text-red-600" : "text-zinc-900"}`}>
+                    {wfh.used}
+                  </span>
+                  <span className="text-sm text-zinc-500">of {wfh.allowance} days</span>
+                </div>
+                {/* one segment per allowed day: easier to read than a percentage */}
+                <div className="mt-3 flex gap-1">
+                  {Array.from({ length: Math.max(wfh.allowance, wfh.used) }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 flex-1 rounded-full ${
+                        i >= wfh.allowance ? "bg-red-500" : i < wfh.used ? "bg-zinc-900" : "bg-zinc-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-[13px] text-zinc-600">
+                  {wfh.halfDays > 0
+                    ? `${wfh.halfDays} day${wfh.halfDays > 1 ? "s" : ""} over the limit ${wfh.halfDays > 1 ? "count" : "counts"} as half day${wfh.halfDays > 1 ? "s" : ""}.`
+                    : wfh.used >= wfh.allowance
+                      ? "Allowance used. Further WFH days this month count as half days."
+                      : `${wfh.allowance - wfh.used} left before WFH days count as half days.`}
+                </p>
+              </>
+            ) : (
+              <Skeleton className="h-20" />
+            )}
+          </Card>
+        </div>
 
         {/* My leave days */}
         <Card title="My leave" className="lg:col-span-2" flush>
@@ -129,7 +158,10 @@ export default function LeavePage() {
                     </p>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] text-zinc-700">{l.reason ?? "No reason given"}</p>
+                    <p className="truncate text-[13px] text-zinc-700">
+                      {l.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
+                      {l.reason ?? "No reason given"}
+                    </p>
                     <p className="text-xs text-zinc-500">
                       {l.status === "APPROVED" && (l.compensatedOn ? `Made up on ${fmtDate(l.compensatedOn, false)}` : "Not made up")}
                       {l.reviewedBy && ` · ${l.status === "REJECTED" ? "Rejected" : "Approved"} by ${l.reviewedBy.name}`}
@@ -178,7 +210,7 @@ function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skip
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="From">
-          <input name="from" type="date" required value={form.from} onChange={update} className={inputClass} />
+          <input name="from" type="date" required min={todayIST()} value={form.from} onChange={update} className={inputClass} />
         </Field>
         <Field label="To">
           <input name="to" type="date" required min={form.from} value={form.to} onChange={update} className={inputClass} />

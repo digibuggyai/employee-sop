@@ -12,7 +12,16 @@ import { Badge, Stat, table } from "./ui";
 
 const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
 
-const halfDayLabel = { MARKED: "Half day", EXTRA_WFH: "Half day, extra WFH" } as const;
+const halfDayLabel = { MARKED: "Half day", EXTRA_WFH: "Half day, extra WFH", OVER_2H: "Half day, over 2h" } as const;
+
+// "Late 25m · free" / "Left early 40m · counts": against their timings (first 2 short leaves a month are free)
+function lateText(d: DayRow): string | null {
+  if (!d.lateMin && !d.earlyMin) return null;
+  const mins = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`); // 25m, 1h 5m
+  const parts = [d.lateMin && `Late ${mins(d.lateMin)}`, d.earlyMin && `Left early ${mins(d.earlyMin)}`];
+  const suffix = d.shortLeave === "FREE" ? " · free" : d.shortLeave === "COUNTED" ? " · counts" : "";
+  return parts.filter(Boolean).join(", ") + suffix;
+}
 
 // Extra notes for a day: holiday name, half day, make-up links, leave reason
 function dayNotes(d: DayRow): string[] {
@@ -20,6 +29,10 @@ function dayNotes(d: DayRow): string[] {
   if (d.note) notes.push(d.note);
   if (d.holiday) notes.push(d.holiday);
   if (d.halfDay) notes.push(halfDayLabel[d.halfDay]);
+  const late = lateText(d);
+  if (late) notes.push(late);
+  if (d.plan) notes.push(`Plan: ${d.plan}`);
+  if (d.report) notes.push(`Report: ${d.report}`);
   if (d.compensates) notes.push(`Makes up leave of ${fmtDate(d.compensates, false)}`);
   if (d.leave) {
     if (d.leave.reason) notes.push(d.leave.reason);
@@ -69,7 +82,9 @@ export default function MonthSheet({
       ["Total worked", fmtDuration(summary.workedMs)],
       ["Days present", summary.present, "In-office", summary.inOffice, "WFH", `${summary.wfh} of ${summary.wfhAllowance}`],
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
-      ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Absent", summary.absent],
+      ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
+      ["Late / early (short leaves)", summary.shortLeaves, "Absence days from lates", summary.latePenaltyDays],
+      ...(summary.leaveBalance !== null ? [["Leave balance", summary.leaveBalance]] : []),
       [],
       ["Week (Mon–Sun)", "Hours", "Target"],
       ...weeks.map((w) => [weekLabel(w), fmtDuration(w.workedMs), summary.weeklyHours ? `${summary.weeklyHours}h` : ""]),
@@ -95,8 +110,8 @@ export default function MonthSheet({
 
   return (
     <div className="space-y-6">
-      {/* 2 columns on phones, 3 on tablets, all 6 in a row on wide screens */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-6">
+      {/* 2 columns on phones (the last tile spans both), 4 on larger screens */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
         <Stat label="Hours worked" value={fmtDuration(summary.workedMs)} hint={`avg ${fmtDuration(summary.avgMs)} a day`} />
         <Stat
           label={thisWeek ? "This week" : "Avg per week"}
@@ -119,20 +134,35 @@ export default function MonthSheet({
           label="Leaves"
           value={summary.leaves}
           hint={
-            summary.leaves
+            (summary.leaves
               ? notMadeUp
                 ? `${notMadeUp} not made up`
                 : "All made up"
               : summary.leavesPending
                 ? `${summary.leavesPending} pending`
-                : "None taken"
+                : "None taken") + (summary.leaveBalance !== null ? ` · ${summary.leaveBalance} left` : "")
           }
         />
         <Stat
-          label="Absent"
-          value={summary.absent}
-          hint="Without leave"
-          emphasis={summary.absent ? "danger" : undefined}
+          label="Late / early"
+          value={summary.shortLeaves}
+          hint={
+            summary.shortLeaves
+              ? `${Math.min(summary.shortLeaves, 2)} free` +
+                (summary.latePenaltyDays ? ` · ${summary.latePenaltyDays} day absent` : summary.shortLeaves > 2 ? " · 3 = 1 day absent" : "")
+              : "On time"
+          }
+          emphasis={summary.latePenaltyDays ? "warning" : undefined}
+        />
+        <Stat
+          label="Unauthorized"
+          value={summary.absent + summary.latePenaltyDays}
+          hint={
+            summary.latePenaltyDays
+              ? `${summary.absent} absent + ${summary.latePenaltyDays} from lates`
+              : "Absent without leave · 1 day deduction each"
+          }
+          emphasis={summary.absent + summary.latePenaltyDays ? "danger" : undefined}
         />
       </div>
 
@@ -173,11 +203,15 @@ export default function MonthSheet({
                       </p>
                     )}
                     {d.note && <p className="mt-1 text-xs text-zinc-600">{d.note}</p>}
-                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange) && (
+                    {d.plan && <p className="mt-1 line-clamp-2 text-xs text-zinc-600">Plan: {d.plan}</p>}
+                    {d.report && <p className="mt-1 line-clamp-3 text-xs text-zinc-600">Report: {d.report}</p>}
+                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateText(d)) && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                         {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
+                        {lateText(d) && <Tag tone={d.shortLeave === "FREE" ? "zinc" : "amber"}>{lateText(d)}</Tag>}
+                        {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
                         {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                         {d.leave && (
                           <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>
@@ -244,6 +278,19 @@ export default function MonthSheet({
                           )}
                           {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                           {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
+                          {lateText(d) && <Tag tone={d.shortLeave === "FREE" ? "zinc" : "amber"}>{lateText(d)}</Tag>}
+                          {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
+                          {/* WFH plan / report: hover to read the whole text */}
+                          {d.plan && (
+                            <span title={d.plan} className="cursor-help">
+                              <Tag>Plan</Tag>
+                            </span>
+                          )}
+                          {d.report && (
+                            <span title={d.report} className="cursor-help">
+                              <Tag>Report</Tag>
+                            </span>
+                          )}
                           {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                           {d.leave && (
                             <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>

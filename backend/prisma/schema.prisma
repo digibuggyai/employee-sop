@@ -36,21 +36,23 @@ model User {
   employmentType EmploymentType @default(INTERN)
   team           String? // Sales, Ops, Content, Marketing...
   office         String? // AVS / Digibuggy
-  timings        String? // "11:00 to 18:00"
-  birthday       DateTime? @db.Date
-  joinedOn       DateTime? @db.Date
+  timings        String? // "11:00 to 18:00": the shift that late / early-leaving is measured against
+  birthday       DateTime?      @db.Date
+  joinedOn       DateTime?      @db.Date
 
-  mustChangePassword Boolean @default(true) // true until they replace the temporary password
-  active             Boolean @default(true) // false = left the company; can't log in, data kept
+  mustChangePassword Boolean   @default(true) // true until they replace the temporary password
+  active             Boolean   @default(true) // false = left the company; can't log in, data kept
   leftOn             DateTime? @db.Date // last working day (set when they leave); later days aren't absences
-  wfhAllowance       Int     @default(4) // WFH days per month; each WFH day beyond this counts as a half day
+  wfhAllowance       Int       @default(4) // WFH days per month; each WFH day beyond this counts as a half day
   weeklyHours        Int? // hours they should work each week (Mon–Sun); empty = no target set
-  isEmployee         Boolean @default(true) // false = not tracked: no attendance, leave or WFH, never "absent" (e.g. the Hive Leader)
+  leaveOpening       Float     @default(0) // full-time: leave balance carried in from before the app (Oct 2026)
+  isEmployee         Boolean   @default(true) // false = not tracked: no attendance, leave or WFH, never "absent" (e.g. the Hive Leader)
 
   // Profile photo. The image itself lives in UserPhoto (kept out of User so lists stay light);
   // this timestamp tells the app a photo exists and makes the photo's URL change when it's replaced.
   photoUpdatedAt DateTime?
   photo          UserPhoto?
+  weeklyReports  WeeklyReport[]
 
   attendance Attendance[] // one user → many attendance days (a "relation")
 
@@ -84,6 +86,8 @@ model Attendance {
   checkOut DateTime?
   note     String?
   halfDay  Boolean   @default(false) // came late / left early: present, but counts as half a working day
+  plan     String? // WFH (interns): the to-do plan written at check-in
+  report   String? // WFH (interns): the work report written at check-out
   breaks   Break[]
 
   createdAt DateTime @default(now())
@@ -162,6 +166,9 @@ model Leave {
   // 1 worked day covers 1 leave: the unique rule below stops one day being used twice.
   compensatedOn DateTime? @db.Date
 
+  // Taken on the same day it was asked for (only 1 a month); all other leave is asked for in advance
+  emergency Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -210,4 +217,22 @@ model UserPhoto {
   data      Bytes
   mime      String
   updatedAt DateTime @updatedAt
+}
+
+// Remote interns send a written update of their week every Saturday.
+// One per person per week; weekStart is that week's Monday.
+model WeeklyReport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  weekStart DateTime @db.Date
+  text      String // required: what they did this week
+  link      String? // optional: a Google Doc / Drive link
+  fileName  String? // optional PDF
+  fileData  Bytes?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, weekStart])
+  @@index([weekStart])
 }

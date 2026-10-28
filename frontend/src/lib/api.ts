@@ -70,6 +70,7 @@ export type User = {
   active: boolean;
   wfhAllowance: number; // WFH days per month before extra ones count as half days
   weeklyHours: number | null; // hours to work each week (Mon–Sun); null = no target
+  leaveOpening: number; // full-time: leave balance carried in from before the app
   photoUpdatedAt: string | null; // set when the person has a profile photo
   createdAt: string;
   updatedAt: string;
@@ -92,6 +93,8 @@ export type Attendance = {
   checkOut: string | null;
   note: string | null;
   halfDay: boolean; // left early / came late: counts as half a working day
+  plan: string | null; // WFH to-do plan (interns)
+  report: string | null; // WFH work report (interns)
   breaks: Break[];
 };
 
@@ -109,10 +112,15 @@ export type DayRow = {
   breakMs?: number;
   workedMs?: number;
   // Counts as half a working day: MARKED = a half day (left early / came late),
-  // EXTRA_WFH = a WFH day beyond the monthly allowance
-  halfDay?: "MARKED" | "EXTRA_WFH";
+  // EXTRA_WFH = a WFH day beyond the monthly allowance, OVER_2H = over 2 hours late / early
+  halfDay?: "MARKED" | "EXTRA_WFH" | "OVER_2H";
+  lateMin?: number; // minutes late, past the 15 min grace
+  earlyMin?: number; // minutes left early
+  shortLeave?: "FREE" | "COUNTED"; // one of the 2 free a month, or counts toward absence
+  plan?: string | null;
+  report?: string | null;
   compensates?: string; // this worked weekend/holiday makes up for the leave on that date
-  leave?: { id: string; reason: string | null; compensatedOn: string | null };
+  leave?: { id: string; reason: string | null; compensatedOn: string | null; emergency: boolean };
   note?: string | null; // the attendance note
   pendingChange?: string; // id of a change request waiting for an admin
 };
@@ -128,7 +136,10 @@ export type MonthSummary = {
   leaves: number;
   leavesCompensated: number;
   leavesPending: number;
-  absent: number;
+  absent: number; // unauthorized absences
+  shortLeaves: number; // late / early by up to 2 h (first 2 free)
+  latePenaltyDays: number; // days of absence added for lates
+  leaveBalance: number | null; // full-time only
   workedMs: number;
   avgMs: number;
 };
@@ -196,6 +207,7 @@ export type Leave = {
   reason: string | null;
   status: LeaveStatus;
   compensatedOn: string | null; // the weekend/holiday worked to make up for it
+  emergency: boolean; // asked for on the day itself (1 a month)
   reviewedBy: { id: string; name: string } | null;
   reviewedAt: string | null;
   user?: { id: string; name: string; photoUpdatedAt?: string | null }; // included in admin lists
@@ -240,3 +252,15 @@ export type Correction = {
 
 // Red badge numbers in the admin menu
 export type PendingCounts = { leaves: number; corrections: number };
+
+// ---------- Weekly reports (remote interns; backend/src/routes/weeklyReports.ts) ----------
+
+export type WeeklyReport = {
+  id: string;
+  weekStart: string; // the week's Monday
+  text: string;
+  link: string | null;
+  fileName: string | null; // a PDF is attached
+  createdAt: string;
+  updatedAt: string;
+};

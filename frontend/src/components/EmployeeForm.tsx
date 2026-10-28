@@ -5,6 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { api, employmentLabels, roleLabels, type EmploymentType, type Role, type SavedUser, type User } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
 import { toDateInput, todayIST } from "@/lib/format";
+import { fmtMinutes, parseTimings } from "@/lib/shift";
 import PasswordInput from "./PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "./form";
 
@@ -45,6 +46,7 @@ export default function EmployeeForm({
     leftOn: toDateInput(existing?.leftOn ?? null),
     wfhAllowance: String(existing?.wfhAllowance ?? 4),
     weeklyHours: existing?.weeklyHours ? String(existing.weeklyHours) : "",
+    leaveOpening: String(existing?.leaveOpening ?? 0),
     active: existing?.active ?? true,
     password: "", // create: temporary password · edit: leave empty unless resetting
     notify: true, // email the login details
@@ -118,7 +120,7 @@ export default function EmployeeForm({
         <Field label="Office">
           <input name="office" value={form.office} onChange={update} className={inputClass} placeholder="AVS / Digibuggy" />
         </Field>
-        <Field label="Timings">
+        <Field label="Timings" hint={timingsHint(form.timings)}>
           <input name="timings" value={form.timings} onChange={update} className={inputClass} placeholder="11:00 to 18:00" />
         </Field>
         <Field label="Birthday">
@@ -130,6 +132,11 @@ export default function EmployeeForm({
         <Field label="Weekly hours" hint="Hours they should work each week, Monday to Sunday. Leave empty for no target.">
           <input name="weeklyHours" type="number" min={1} max={100} value={form.weeklyHours} onChange={update} className={inputClass} placeholder="e.g. 35" />
         </Field>
+        {form.employmentType === "FULL_TIME" && (
+          <Field label="Leave balance before Oct 2026" hint="Unused leave they already had. They get 1.5 more every month.">
+            <input name="leaveOpening" type="number" min={0} max={60} step={0.5} value={form.leaveOpening} onChange={update} className={inputClass} />
+          </Field>
+        )}
         <Field label="Joined on">
           <input name="joinedOn" type="date" value={form.joinedOn} onChange={update} className={inputClass} />
         </Field>
@@ -210,4 +217,11 @@ export default function EmployeeForm({
       </div>
     </form>
   );
+}
+
+// Shows how the timings will be read, so a typo is caught before late marks are counted against it
+function timingsHint(text: string) {
+  if (!text.trim()) return "Used for late and early-leaving marks. Leave empty for none.";
+  const t = parseTimings(text);
+  return t ? `Read as ${fmtMinutes(t.start)} to ${fmtMinutes(t.end)}. Late after 15 min.` : "Can't read this. Write it like 11:30 to 6:00";
 }

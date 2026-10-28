@@ -2,8 +2,9 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
-import { toDbDate } from "../lib/dates.js";
-import { isOffDay, monthReports, thisMonth } from "../lib/reports.js";
+import { toDbDate, todayString } from "../lib/dates.js";
+import { EMERGENCY_LEAVES_PER_MONTH } from "../lib/policy.js";
+import { daysOfMonth, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -31,7 +32,13 @@ router.get("/", async (req, res) => {
   const { summary: s, days } = report.get(me.id)!;
   // only the WFH days over the limit (not half days marked for leaving early)
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
-  res.json({ leaves, wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh } });
+  const emergencyUsed = await emergencyLeavesIn(me.id, todayString().slice(0, 7));
+  res.json({
+    leaves,
+    wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh },
+    balance: s.leaveBalance, // null unless full-time
+    emergency: { used: emergencyUsed, allowed: EMERGENCY_LEAVES_PER_MONTH },
+  });
 });
 
 const requestSchema = z
@@ -42,11 +49,25 @@ const requestSchema = z
   })
   .refine((v) => v.to >= v.from, "End date can't be before the start date");
 
+// Emergency leaves (asked for on the day itself) in a month, not counting rejected ones
+const emergencyLeavesIn = (userId: string, month: string) =>
+  prisma.leave.count({
+    where: { userId, emergency: true, status: { not: "REJECTED" }, date: { gte: toDbDate(`${month}-01`), lte: toDbDate(daysOfMonth(month).at(-1)!) } },
+  });
+
 // POST /api/leaves  { from, to, reason } → one PENDING row per working day in the range
+// Leave policy: ask in advance. Asking for today is an emergency leave (1 a month).
+// Past days can't be asked for here: that's unauthorized leave, which only an admin can record.
 router.post("/", async (req, res) => {
   const parsed = requestSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { from, to, reason } = parsed.data;
+  const today = todayString();
+  if (from < today) return res.status(400).json({ error: "Leave has to be asked for in advance. For a past day, talk to your admin." });
+  const emergency = from === today;
+  if (emergency && (await emergencyLeavesIn(req.user!.id, today.slice(0, 7))) >= EMERGENCY_LEAVES_PER_MONTH) {
+    return res.status(400).json({ error: "You've already used this month's emergency leave. Other leave must be asked for in advance." });
+  }
 
   const dates = workingDaysBetween(from, to);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
@@ -54,7 +75,7 @@ router.post("/", async (req, res) => {
 
   // skipDuplicates: days that already have a leave row (any status) are left alone
   const { count } = await prisma.leave.createMany({
-    data: dates.map((d) => ({ userId: req.user!.id, date: toDbDate(d), reason })),
+    data: dates.map((d) => ({ userId: req.user!.id, date: toDbDate(d), reason, emergency: d === today })),
     skipDuplicates: true,
   });
   if (count === 0) return res.status(409).json({ error: "You've already requested leave for those days" });

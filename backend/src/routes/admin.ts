@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin, requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
-import { dayStatus, dayTotals, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
+import { dayStatus, dayTotals, isOffDay, mondayOf, monthReports, thisMonth } from "../lib/reports.js";
+import { dueDate, reportSelect } from "./weeklyReports.js";
 import { taskInclude } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
@@ -76,6 +77,27 @@ router.get("/attendance/month", async (req, res) => {
   if (!user) return res.status(404).json({ error: "Employee not found" });
   const report = (await monthReports([userId], month)).get(userId)!;
   res.json({ month, user, ...report });
+});
+
+// GET /api/admin/weekly-reports?week=2026-10-26 → every remote intern and their report for that week
+// (week = its Monday; missing → this week). A report is "missing" once its Saturday has passed.
+router.get("/weekly-reports", async (req, res) => {
+  const week = mondayOf(z.iso.date().catch(() => todayString()).parse(req.query.week));
+  const [people, reports] = await Promise.all([
+    prisma.user.findMany({
+      where: { active: true, isEmployee: true, employmentType: "REMOTE_INTERN" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true },
+    }),
+    prisma.weeklyReport.findMany({ where: { weekStart: toDbDate(week) }, select: { ...reportSelect, userId: true } }),
+  ]);
+  const due = dueDate(week);
+  res.json({
+    weekStart: week,
+    due,
+    overdue: todayString() > due,
+    rows: people.map((u) => ({ user: u, report: reports.find((r) => r.userId === u.id) ?? null })),
+  });
 });
 
 // GET /api/admin/tasks?userId=&status=&from=&to= → everyone's tasks, filtered

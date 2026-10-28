@@ -52,7 +52,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAdmin = hasAdminAccess(user);
   // Not tracked as an employee (e.g. the Hive Leader): no attendance or leave pages
-  const items = (inAdmin ? adminNav : workspaceNav).filter((i) => user.isEmployee || !i.employeeOnly);
+  const items = (inAdmin ? adminNav : workspaceNav).filter(
+    (i) => (user.isEmployee || !i.employeeOnly) && (user.employmentType === "REMOTE_INTERN" || !i.remoteOnly),
+  );
   const groups = [...new Set(items.map((i) => i.group))];
   // "/" and "/admin" only match exactly; others also match their sub-pages
   const isActive = (href: string) =>

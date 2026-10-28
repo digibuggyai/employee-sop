@@ -5,6 +5,7 @@ import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { monthReports, thisMonth } from "../lib/reports.js";
 import { checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
+import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern } from "../lib/policy.js";
 
 const router = Router();
 router.use(requireAuth); // every attendance route needs a logged-in user
@@ -31,16 +32,26 @@ router.get("/month", async (req, res) => {
   res.json({ month, ...report });
 });
 
-// POST /api/attendance/check-in   body: { place: "IN_OFFICE" | "WFH" }
+// WFH policy (interns): a to-do plan before starting, a work report when logging out.
+// Without them the day would count as absent, so the app simply doesn't let them skip it.
+const needsWfhNotes = (user: { employmentType: string }, place: string) => place === "WFH" && isIntern(user.employmentType);
+
+// POST /api/attendance/check-in   body: { place: "IN_OFFICE" | "WFH", plan?: "today's to-do" }
 // Note: the TIME comes from the server clock, never from the browser, so nobody can fake it.
 router.post("/check-in", async (req, res) => {
-  const parsed = z.object({ place: z.enum(["IN_OFFICE", "WFH"]) }).safeParse(req.body);
+  const parsed = z
+    .object({ place: z.enum(["IN_OFFICE", "WFH"]), plan: z.string().trim().max(3000).optional() })
+    .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Choose In-office or WFH" });
+  const { place, plan } = parsed.data;
+  if (needsWfhNotes(req.user!, place) && (plan ?? "").length < PLAN_MIN_CHARS) {
+    return res.status(400).json({ error: "Write today's to-do plan before you start (WFH policy)" });
+  }
 
   if (await findToday(req.user!.id)) return res.status(409).json({ error: "You've already checked in today" });
 
   const day = await prisma.attendance.create({
-    data: { userId: req.user!.id, date: toDbDate(todayString()), place: parsed.data.place, checkIn: new Date() },
+    data: { userId: req.user!.id, date: toDbDate(todayString()), place, plan: plan || null, checkIn: new Date() },
     include: withBreaks,
   });
   res.status(201).json(day);
@@ -68,17 +79,22 @@ router.post("/break/end", async (req, res) => {
 
 // POST /api/attendance/check-out   (also ends a running break)
 // Body { halfDay: true } = "Half day exit": leaving early, the day counts as half a working day.
+// Body { report: "..." } = the WFH work report (required for interns working from home).
 router.post("/check-out", async (req, res) => {
   const halfDay = req.body?.halfDay === true;
+  const report = typeof req.body?.report === "string" ? req.body.report.trim().slice(0, 5000) : "";
   const day = await findToday(req.user!.id);
   if (!day) return res.status(400).json({ error: "Check in first" });
   if (day.checkOut) return res.status(400).json({ error: "You've already checked out" });
+  if (needsWfhNotes(req.user!, day.place) && report.length < REPORT_MIN_CHARS) {
+    return res.status(400).json({ error: "Write your work report before checking out (WFH policy)" });
+  }
 
   const now = new Date();
   // $transaction = both changes happen together, or neither does.
   await prisma.$transaction([
     prisma.break.updateMany({ where: { attendanceId: day.id, end: null }, data: { end: now } }),
-    prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now, halfDay } }),
+    prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now, halfDay, ...(report && { report }) } }),
   ]);
   res.json(await findToday(req.user!.id));
 });

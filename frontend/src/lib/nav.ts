@@ -4,6 +4,7 @@ import {
   CalendarOff,
   CalendarRange,
   ClipboardList,
+  FileText,
   Gauge,
   Inbox,
   LayoutDashboard,
@@ -26,6 +27,7 @@ export type NavItem = {
   mobile?: boolean; // show in the phone tab bar
   badge?: "leaves" | "corrections"; // red count of pending items (admin menu)
   employeeOnly?: boolean; // hidden for accounts that aren't tracked as employees
+  remoteOnly?: boolean; // only for remote interns (weekly reports)
 };
 
 // Everyone's own workspace
@@ -34,6 +36,7 @@ export const workspaceNav: NavItem[] = [
   { href: "/attendance", label: "Attendance", icon: CalendarCheck, group: "Work", mobile: true, employeeOnly: true },
   { href: "/tasks", label: "Tasks", icon: ListTodo, group: "Work", mobile: true },
   { href: "/leave", label: "Leave & WFH", short: "Leave", icon: Plane, group: "Work", mobile: true, employeeOnly: true },
+  { href: "/weekly-report", label: "Weekly report", short: "Report", icon: FileText, group: "Work", mobile: true, remoteOnly: true },
   { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company", mobile: true },
   { href: "/directory", label: "Directory", icon: Users, group: "Company" },
   { href: "/sops", label: "SOPs", icon: BookOpen, group: "Company" },
@@ -46,6 +49,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/tasks", label: "Tasks", icon: ClipboardList, group: "Monitor", mobile: true },
   { href: "/admin/requests", label: "Requests", icon: Inbox, group: "Manage", mobile: true, badge: "corrections" },
   { href: "/admin/leaves", label: "Leaves", icon: CalendarOff, group: "Manage", mobile: true, badge: "leaves" },
+  { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage", mobile: true },
   { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage", mobile: true },
 ];
 

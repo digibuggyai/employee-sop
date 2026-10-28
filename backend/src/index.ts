@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 // Note the ".js": in Node's ES module mode, imports name the compiled file.
 import holidaysRouter from "./routes/holidays.js";
 import noticesRouter from "./routes/notices.js";
+import weeklyReportsRouter from "./routes/weeklyReports.js";
 import authRouter from "./routes/auth.js";
 import usersRouter from "./routes/users.js";
 import directoryRouter from "./routes/directory.js";
@@ -45,6 +46,7 @@ app.use("/api/leaves", leavesRouter);
 app.use("/api/photos", photosRouter);
 app.use("/api/holidays", holidaysRouter);
 app.use("/api/notices", noticesRouter);
+app.use("/api/weekly-reports", weeklyReportsRouter);
 
 // Safety net: if any route throws (e.g. database unreachable), reply with a clean 500
 // instead of crashing. Express recognises an error handler by its 4 parameters.

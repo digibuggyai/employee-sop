@@ -54,9 +54,9 @@ export default function AdminAttendancePage() {
   function exportSummary() {
     if (!rows) return;
     downloadCsv(`attendance-summary-${month}.csv`, [
-      ["Employee", "Days present", "Half days", "Days worked", "In-office", "WFH", "WFH allowed", "Leaves", "Leaves made up", "Absent", "Total worked", "Avg per day"],
+      ["Employee", "Days present", "Half days", "Days worked", "In-office", "WFH", "WFH allowed", "Leaves", "Leaves made up", "Unauthorized absent", "Late / early", "Absence from lates", "Leave balance", "Total worked", "Avg per day"],
       ...rows.map((r) => [
-        r.user.name, r.present, r.halfDays, r.daysWorked, r.inOffice, r.wfh, r.wfhAllowance, r.leaves, r.leavesCompensated, r.absent,
+        r.user.name, r.present, r.halfDays, r.daysWorked, r.inOffice, r.wfh, r.wfhAllowance, r.leaves, r.leavesCompensated, r.absent, r.shortLeaves, r.latePenaltyDays, r.leaveBalance ?? "",
         fmtDuration(r.workedMs), fmtDuration(r.avgMs),
       ]),
     ]);
@@ -122,7 +122,8 @@ export default function AdminAttendancePage() {
                     </p>
                     <p className="text-xs text-zinc-500 tabular-nums">
                       {r.present} present{r.halfDays > 0 && ` (${r.halfDays} half)`} · WFH {r.wfh}/{r.wfhAllowance} · {r.leaves} leave
-                      {r.absent > 0 && <span className="text-red-600"> · {r.absent} absent</span>}
+                      {r.shortLeaves > 0 && ` · ${r.shortLeaves} late`}
+                      {r.absent + r.latePenaltyDays > 0 && <span className="text-red-600"> · {r.absent + r.latePenaltyDays} unauthorized</span>}
                     </p>
                   </div>
                   <span className="text-sm font-medium text-zinc-900 tabular-nums">{fmtDuration(r.workedMs)}</span>
@@ -135,7 +136,7 @@ export default function AdminAttendancePage() {
             <table className={table.table}>
               <thead className={table.thead}>
                 <tr>
-                  {["Employee", "Present", "WFH", "Leaves", "Absent", "Hours", "Avg / day", ""].map((h) => (
+                  {["Employee", "Present", "WFH", "Leaves", "Late / early", "Unauthorized", "Hours", "Avg / day", ""].map((h) => (
                     <th key={h} className={table.th}>
                       {h}
                     </th>
@@ -169,7 +170,13 @@ export default function AdminAttendancePage() {
                       {r.leaves > 0 && <span className="text-xs text-zinc-500"> ({r.leavesCompensated} made up)</span>}
                       {r.leavesPending > 0 && <span className="text-xs text-amber-700"> +{r.leavesPending} pending</span>}
                     </td>
-                    <td className={`${table.td} tabular-nums ${r.absent ? "font-medium text-red-600" : "text-zinc-400"}`}>{r.absent}</td>
+                    <td className={`${table.td} tabular-nums ${r.shortLeaves ? "" : "text-zinc-400"}`}>
+                      {r.shortLeaves}
+                      {r.latePenaltyDays > 0 && <span className="text-xs text-amber-700"> ({r.latePenaltyDays} day absent)</span>}
+                    </td>
+                    <td className={`${table.td} tabular-nums ${r.absent + r.latePenaltyDays ? "font-medium text-red-600" : "text-zinc-400"}`}>
+                      {r.absent + r.latePenaltyDays}
+                    </td>
                     <td className={`${table.td} font-medium text-zinc-900 tabular-nums`}>{fmtDuration(r.workedMs)}</td>
                     <td className={`${table.td} text-zinc-600 tabular-nums`}>{fmtDuration(r.avgMs)}</td>
                     <td className={`${table.td} text-right`}>

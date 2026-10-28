@@ -7,7 +7,7 @@ import { Badge, type Tone } from "./ui";
 const dayStyles: Record<DayRow["status"], [string, Tone]> = {
   PRESENT: ["Present", "green"],
   WORKING: ["Working", "blue"],
-  ABSENT: ["Absent", "red"],
+  ABSENT: ["Unauthorized", "red"], // absent without approved leave: 1 day salary deduction
   LEAVE: ["Leave", "violet"],
   LEAVE_PENDING: ["Leave pending", "violet"],
   WEEKEND: ["Weekend", "zinc"],
