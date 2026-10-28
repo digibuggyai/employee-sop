@@ -4,7 +4,7 @@
 // are waiting. Shown as red badges in the menu. Refreshed every minute, when the tab comes
 // back into view, and right after an admin approves/rejects something (refresh()).
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, type PendingCounts } from "@/lib/api";
+import { api, isAdmin as hasAdminAccess, type PendingCounts } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
 
 const empty: PendingCounts = { leaves: 0, corrections: 0 };
@@ -12,7 +12,7 @@ const PendingContext = createContext<{ counts: PendingCounts; refresh: () => voi
 
 export function PendingProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = hasAdminAccess(user);
   const [counts, setCounts] = useState<PendingCounts>(empty);
 
   const refresh = useCallback(() => {

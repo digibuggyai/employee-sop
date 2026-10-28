@@ -15,9 +15,10 @@ router.use(requireAuth, requireAdmin);
 const dateParam = z.iso.date().catch(() => todayString()); // bad/missing → today
 const monthParam = z.string().regex(/^\d{4}-\d{2}$/).catch(() => thisMonth());
 
+// Everyone the reports track: active accounts that count as employees (not e.g. the Hive Leader).
 const activeUsers = () =>
   prisma.user.findMany({
-    where: { active: true },
+    where: { active: true, isEmployee: true },
     orderBy: { name: "asc" },
     select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true },
   });

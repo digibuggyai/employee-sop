@@ -13,7 +13,8 @@ datasource db {
 // Only two roles for now: employees see their own data, admins see and manage everything.
 enum Role {
   EMPLOYEE
-  ADMIN
+  ADMIN // uses the Admin Panel and manages employees
+  SUPER_ADMIN // everything an admin can do, plus creating and managing admin accounts (Hive Leader / Director)
 }
 
 enum EmploymentType {
@@ -42,6 +43,7 @@ model User {
   mustChangePassword Boolean @default(true) // true until they replace the temporary password
   active             Boolean @default(true) // false = left the company; can't log in, data kept
   wfhAllowance       Int     @default(4) // WFH days per month; each WFH day beyond this counts as a half day
+  isEmployee         Boolean @default(true) // false = not tracked: no attendance, leave or WFH, never "absent" (e.g. the Hive Leader)
 
   // Profile photo. The image itself lives in UserPhoto (kept out of User so lists stay light);
   // this timestamp tells the app a photo exists and makes the photo's URL change when it's replaced.

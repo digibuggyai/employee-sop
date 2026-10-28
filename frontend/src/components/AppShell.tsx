@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LoaderCircle, LogOut } from "lucide-react";
+import { isAdmin as hasAdminAccess } from "@/lib/api";
 import { adminNav, publicPaths, workspaceNav, type NavItem } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
 import { usePending } from "./Pending";
@@ -32,7 +33,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (!user && !isPublic) redirectTo = "/login";
     else if (user && isPublic) redirectTo = "/";
     else if (user?.mustChangePassword && pathname !== "/change-password") redirectTo = "/change-password";
-    else if (user && inAdmin && user.role !== "ADMIN") redirectTo = "/";
+    else if (user && inAdmin && !hasAdminAccess(user)) redirectTo = "/";
   }
 
   useEffect(() => {
@@ -49,8 +50,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Login page: no frame, just the page
   if (!user) return <>{children}</>;
 
-  const isAdmin = user.role === "ADMIN";
-  const items = inAdmin ? adminNav : workspaceNav;
+  const isAdmin = hasAdminAccess(user);
+  // Not tracked as an employee (e.g. the Hive Leader): no attendance or leave pages
+  const items = (inAdmin ? adminNav : workspaceNav).filter((i) => user.isEmployee || !i.employeeOnly);
   const groups = [...new Set(items.map((i) => i.group))];
   // "/" and "/admin" only match exactly; others also match their sub-pages
   const isActive = (href: string) =>

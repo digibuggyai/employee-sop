@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { requireAuth } from "../lib/auth.js";
+import { isAdmin, requireAuth } from "../lib/auth.js";
 
 // Profile photos, stored in Postgres (small: the browser resizes them to 256x256 before upload).
 //   GET    /api/photos/:userId  → the image (any logged-in user; photos aren't public)
@@ -20,7 +20,7 @@ function detectImage(buf: Buffer): string | null {
   return null;
 }
 
-const canEdit = (req: express.Request) => req.user!.id === req.params.userId || req.user!.role === "ADMIN";
+const canEdit = (req: express.Request) => req.user!.id === req.params.userId || isAdmin(req.user!);
 
 router.get("/:userId", async (req, res) => {
   const photo = await prisma.userPhoto.findUnique({ where: { userId: req.params.userId } });

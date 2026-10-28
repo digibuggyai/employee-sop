@@ -25,14 +25,15 @@ export type NavItem = {
   group: string;
   mobile?: boolean; // show in the phone tab bar
   badge?: "leaves" | "corrections"; // red count of pending items (admin menu)
+  employeeOnly?: boolean; // hidden for accounts that aren't tracked as employees
 };
 
 // Everyone's own workspace
 export const workspaceNav: NavItem[] = [
   { href: "/", label: "Dashboard", short: "Home", icon: LayoutDashboard, group: "Work", mobile: true },
-  { href: "/attendance", label: "Attendance", icon: CalendarCheck, group: "Work", mobile: true },
+  { href: "/attendance", label: "Attendance", icon: CalendarCheck, group: "Work", mobile: true, employeeOnly: true },
   { href: "/tasks", label: "Tasks", icon: ListTodo, group: "Work", mobile: true },
-  { href: "/leave", label: "Leave & WFH", short: "Leave", icon: Plane, group: "Work", mobile: true },
+  { href: "/leave", label: "Leave & WFH", short: "Leave", icon: Plane, group: "Work", mobile: true, employeeOnly: true },
   { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company", mobile: true },
   { href: "/directory", label: "Directory", icon: Users, group: "Company" },
   { href: "/sops", label: "SOPs", icon: BookOpen, group: "Company" },

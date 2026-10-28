@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { api, employmentLabels, type EmploymentType, type Role, type SavedUser, type User } from "@/lib/api";
+import { api, employmentLabels, roleLabels, type EmploymentType, type Role, type SavedUser, type User } from "@/lib/api";
+import { useAuth } from "./AuthProvider";
 import { toDateInput } from "@/lib/format";
 import PasswordInput from "./PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "./form";
@@ -25,10 +26,14 @@ export default function EmployeeForm({
   onCancel: () => void;
 }) {
   const isEdit = !!existing;
+  const { user: me } = useAuth();
+  // Only a Super admin hands out (or takes away) admin roles. Plain admins create employees.
+  const canSetRole = me?.role === "SUPER_ADMIN" && existing?.id !== me.id;
   const [form, setForm] = useState({
     name: existing?.name ?? "",
     email: existing?.email ?? "",
     role: existing?.role ?? ("EMPLOYEE" as Role),
+    isEmployee: existing?.isEmployee ?? true,
     employmentType: existing?.employmentType ?? ("INTERN" as EmploymentType),
     phone: existing?.phone ?? "",
     designation: existing?.designation ?? "",
@@ -79,10 +84,15 @@ export default function EmployeeForm({
         <Field label="Email (used to log in) *">
           <input name="email" type="email" required value={form.email} onChange={update} className={inputClass} />
         </Field>
-        <Field label="Role">
-          <select name="role" value={form.role} onChange={update} className={inputClass}>
-            <option value="EMPLOYEE">Employee</option>
-            <option value="ADMIN">Admin</option>
+        <Field label="Role" hint={canSetRole ? undefined : "Only a Super admin can change roles."}>
+          <select name="role" value={form.role} onChange={update} disabled={!canSetRole} className={inputClass}>
+            {(Object.keys(roleLabels) as Role[])
+              .filter((r) => canSetRole || r === form.role)
+              .map((r) => (
+                <option key={r} value={r}>
+                  {roleLabels[r]}
+                </option>
+              ))}
           </select>
         </Field>
         <Field label="Employment">
@@ -148,6 +158,16 @@ export default function EmployeeForm({
           </span>
         </label>
       )}
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
+        <input name="isEmployee" type="checkbox" checked={form.isEmployee} onChange={update} className="mt-0.5 size-4 accent-brand-700" />
+        <span>
+          <span className="block text-sm font-medium text-zinc-900">Track as an employee</span>
+          <span className="block text-[13px] text-zinc-500">
+            Attendance, leave and WFH. Untick for leaders who don&apos;t clock in, like the Hive Leader. They still get tasks, notices and the directory.
+          </span>
+        </span>
+      </label>
 
       {isEdit && (
         <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">

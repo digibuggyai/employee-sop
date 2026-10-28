@@ -125,7 +125,7 @@ const api = (path: string, init: RequestInit = {}) =>
   fetch(`${BASE}${path}`, { ...init, headers: { "Content-Type": "application/json", Cookie: cookie, ...init.headers } });
 
 const me = await (await api("/api/auth/me")).json();
-if (me.role !== "ADMIN") {
+if (me.role !== "ADMIN" && me.role !== "SUPER_ADMIN") {
   console.error("This account isn't an admin.");
   process.exit(1);
 }

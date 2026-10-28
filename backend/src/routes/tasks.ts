@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { requireAuth } from "../lib/auth.js";
+import { isAdmin, requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 
 const router = Router();
@@ -59,7 +59,7 @@ router.post("/", async (req, res) => {
   const me = req.user!;
 
   const ownerId = userId ?? me.id;
-  if (ownerId !== me.id && me.role !== "ADMIN") {
+  if (ownerId !== me.id && !isAdmin(me)) {
     return res.status(403).json({ error: "Only admins can assign tasks to others" });
   }
 
@@ -80,7 +80,7 @@ router.post("/", async (req, res) => {
 async function findEditable(id: string, user: { id: string; role: string }) {
   const task = await prisma.task.findUnique({ where: { id } });
   if (!task) return { ok: false, status: 404, message: "Task not found" } as const;
-  if (task.userId !== user.id && user.role !== "ADMIN") return { ok: false, status: 403, message: "Not your task" } as const;
+  if (task.userId !== user.id && !isAdmin(user)) return { ok: false, status: 403, message: "Not your task" } as const;
   return { ok: true, task } as const;
 }
 
@@ -104,7 +104,7 @@ router.patch("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const found = await findEditable(req.params.id, req.user!);
   if (!found.ok) return res.status(found.status).json({ error: found.message });
-  if (found.task.assignedById && req.user!.role !== "ADMIN") {
+  if (found.task.assignedById && !isAdmin(req.user!)) {
     return res.status(403).json({ error: "Tasks assigned by an admin can't be deleted, mark them Postponed instead" });
   }
   await prisma.task.delete({ where: { id: found.task.id } });

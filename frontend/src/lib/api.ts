@@ -30,7 +30,12 @@ export const apiGet = <T>(path: string) => api<T>(path);
 
 // ---------- Shapes of the data the backend sends (mirror backend types) ----------
 
-export type Role = "EMPLOYEE" | "ADMIN";
+export type Role = "EMPLOYEE" | "ADMIN" | "SUPER_ADMIN";
+
+export const roleLabels: Record<Role, string> = { EMPLOYEE: "Employee", ADMIN: "Admin", SUPER_ADMIN: "Super admin" };
+
+// Admins and Super admins both get the Admin Panel; only Super admins manage admin accounts.
+export const isAdmin = (user: { role: Role } | null | undefined) => user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 export type EmploymentType = "FULL_TIME" | "INTERN" | "REMOTE_INTERN";
 
 export const employmentLabels: Record<EmploymentType, string> = {
@@ -51,6 +56,7 @@ export type User = {
   name: string;
   email: string;
   role: Role;
+  isEmployee: boolean; // false = not tracked: no attendance, leave or WFH (e.g. the Hive Leader)
   phone: string | null;
   designation: string | null;
   employmentType: EmploymentType;

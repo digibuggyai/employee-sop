@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, requireAdmin, requireAuth } from "../lib/auth.js";
@@ -9,6 +9,8 @@ const router = Router();
 
 // Every route in this file: must be logged in AND an admin.
 router.use(requireAuth, requireAdmin);
+
+const isSuperAdmin = (req: Request) => req.user!.role === "SUPER_ADMIN";
 
 // "YYYY-MM-DD" from a form → Date for the database. Empty → null.
 const optionalDate = z
@@ -26,7 +28,9 @@ const optionalText = z
 const profileFields = {
   name: z.string().trim().min(1, "Name is required"),
   email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email")),
-  role: z.enum(["EMPLOYEE", "ADMIN"]),
+  role: z.enum(["EMPLOYEE", "ADMIN", "SUPER_ADMIN"]),
+  // false = not tracked (no attendance, leave or WFH). Optional: the database defaults it to true.
+  isEmployee: z.boolean().optional(),
   employmentType: z.enum(["FULL_TIME", "INTERN", "REMOTE_INTERN"]),
   phone: optionalText,
   designation: optionalText,
@@ -57,6 +61,9 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { password, notify, ...profile } = parsed.data;
 
+  if (profile.role !== "EMPLOYEE" && !isSuperAdmin(req)) {
+    return res.status(403).json({ error: "Only a Super admin can create admin accounts" });
+  }
   if (await prisma.user.findUnique({ where: { email: profile.email } })) {
     return res.status(409).json({ error: "Someone already uses this email" });
   }
@@ -88,13 +95,19 @@ router.patch("/:id", async (req, res) => {
   const { password, notify = true, ...changes } = parsed.data;
   const id = req.params.id;
 
-  // Stop admins from locking themselves out by accident.
-  if (id === req.user!.id && (changes.active === false || changes.role === "EMPLOYEE")) {
-    return res.status(400).json({ error: "You can't deactivate or demote yourself" });
-  }
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  const self = id === req.user!.id;
+  const roleChange = changes.role !== undefined && changes.role !== target.role;
 
-  if (!(await prisma.user.findUnique({ where: { id } }))) {
-    return res.status(404).json({ error: "User not found" });
+  // Stop admins from locking themselves out by accident.
+  if (self && (changes.active === false || roleChange)) {
+    return res.status(400).json({ error: "You can't deactivate yourself or change your own role" });
+  }
+  // A plain admin manages employees only: admin accounts (other than their own profile)
+  // and every role change belong to the Super admins.
+  if (!isSuperAdmin(req) && ((!self && target.role !== "EMPLOYEE") || roleChange)) {
+    return res.status(403).json({ error: "Only a Super admin can change admin accounts or roles" });
   }
   if (changes.email) {
     const other = await prisma.user.findUnique({ where: { email: changes.email } });

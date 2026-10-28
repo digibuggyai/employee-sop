@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, ListTodo, Pencil, Trash2 } from "lucide-react";
-import { api, taskStatusLabels, type Task, type TaskStatus } from "@/lib/api";
+import { api, isAdmin, taskStatusLabels, type Task, type TaskStatus } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 import { useAuth } from "./AuthProvider";
 import Avatar from "./Avatar";
@@ -82,7 +82,7 @@ export default function TaskList({
             <ul className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
               {list.map((t) => {
                 // employees can't delete tasks an admin assigned (the backend checks this too)
-                const canDelete = user?.role === "ADMIN" || !t.assignedBy;
+                const canDelete = isAdmin(user) || !t.assignedBy;
                 const completed = t.status === "COMPLETED";
                 return (
                   // phones: controls drop to their own row under the task; larger screens: on the right

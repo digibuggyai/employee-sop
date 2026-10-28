@@ -8,7 +8,7 @@ import Card from "@/components/Card";
 import PhotoUploader from "@/components/PhotoUploader";
 import { Button, buttonClass } from "@/components/form";
 import { Badge } from "@/components/ui";
-import { employmentLabels } from "@/lib/api";
+import { employmentLabels, roleLabels } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
 export default function ProfilePage() {
@@ -45,7 +45,7 @@ export default function ProfilePage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight text-zinc-900 md:text-2xl">{user.name}</h1>
-            {user.role === "ADMIN" && <Badge tone="brand">Admin</Badge>}
+            {user.role !== "EMPLOYEE" && <Badge tone="brand">{roleLabels[user.role]}</Badge>}
           </div>
           <p className="text-sm text-zinc-500">{user.designation ?? employmentLabels[user.employmentType]}</p>
         </div>

@@ -49,23 +49,34 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) return res.status(401).json({ error: "Not logged in" });
 
-  let userId: string;
+  let payload: jwt.JwtPayload;
   try {
-    userId = (jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload).sub!;
+    payload = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
   } catch {
     return res.status(401).json({ error: "Session expired, please log in again" });
   }
+  const userId = payload.sub!;
 
   // Always re-check the database: an admin may have deactivated this person since they logged in.
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || !user.active) return res.status(401).json({ error: "Account not active" });
 
+  // Sliding session: using the app restarts the 7 days, so only 7 days of NO activity logs you out.
+  // Renewed at most once a day (iat = when the token was issued, in seconds) to keep requests light.
+  if (Date.now() / 1000 - (payload.iat ?? 0) > 24 * 60 * 60) {
+    res.cookie(COOKIE_NAME, signToken(user.id), cookieOptions);
+  }
+
   req.user = user;
   next(); // continue to the actual route
 }
 
-// Use after requireAuth: only admins get through.
+// Admins and Super admins both use the Admin Panel. Only a Super admin can manage admin accounts
+// (that check lives in routes/users.ts).
+export const isAdmin = (user: { role: string }) => user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+
+// Use after requireAuth: only admins (and Super admins) get through.
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.user?.role !== "ADMIN") return res.status(403).json({ error: "Admins only" });
+  if (!req.user || !isAdmin(req.user)) return res.status(403).json({ error: "Admins only" });
   next();
 }

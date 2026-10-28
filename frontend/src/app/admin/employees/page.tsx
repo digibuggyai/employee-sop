@@ -10,11 +10,15 @@ import PageHeader from "@/components/PageHeader";
 import PhotoUploader from "@/components/PhotoUploader";
 import { Button, IconButton, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton, table } from "@/components/ui";
-import { api, employmentLabels, type SavedUser, type User } from "@/lib/api";
+import { useAuth } from "@/components/AuthProvider";
+import { api, employmentLabels, roleLabels, type SavedUser, type User } from "@/lib/api";
 
 // /admin/employees: list everyone, add new accounts, edit or deactivate existing ones.
 export default function EmployeesAdminPage() {
   const toast = useToast();
+  const { user: me } = useAuth();
+  // Admin accounts are managed by Super admins only (the backend enforces this too)
+  const canEdit = (u: User) => me?.role === "SUPER_ADMIN" || u.id === me?.id || u.role === "EMPLOYEE";
   const [users, setUsers] = useState<User[] | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -164,16 +168,19 @@ export default function EmployeesAdminPage() {
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate text-sm font-medium text-zinc-900">
                       {u.name}
-                      {u.role === "ADMIN" && <Badge tone="brand">Admin</Badge>}
+                      {u.role !== "EMPLOYEE" && <Badge tone="brand">{roleLabels[u.role]}</Badge>}
                     </p>
                     <p className="truncate text-xs text-zinc-500">
                       {u.designation ?? employmentLabels[u.employmentType]}
                       {!u.active ? " · Inactive" : u.mustChangePassword ? " · Invited" : ""}
+                      {u.isEmployee ? "" : " · Not tracked"}
                     </p>
                   </div>
-                  <IconButton label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
-                    <Pencil size={15} />
-                  </IconButton>
+                  {canEdit(u) && (
+                    <IconButton label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
+                      <Pencil size={15} />
+                    </IconButton>
+                  )}
                 </li>
               ))}
             </ul>
@@ -200,10 +207,11 @@ export default function EmployeesAdminPage() {
                           </div>
                         </div>
                       </td>
-                      <td className={table.td}>{u.role === "ADMIN" ? <Badge tone="brand">Admin</Badge> : "Employee"}</td>
+                      <td className={table.td}>{u.role === "EMPLOYEE" ? "Employee" : <Badge tone="brand">{roleLabels[u.role]}</Badge>}</td>
                       <td className={table.td}>
                         <span className="block">{employmentLabels[u.employmentType]}</span>
                         {u.designation && <span className="block text-xs text-zinc-500">{u.designation}</span>}
+                        {!u.isEmployee && <span className="block text-xs text-zinc-500">Not tracked</span>}
                       </td>
                       <td className={table.td}>{u.team ?? "—"}</td>
                       <td className={`${table.td} tabular-nums`}>{u.wfhAllowance}</td>
@@ -221,9 +229,11 @@ export default function EmployeesAdminPage() {
                         )}
                       </td>
                       <td className={`${table.td} text-right`}>
-                        <IconButton label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
-                          <Pencil size={15} />
-                        </IconButton>
+                        {canEdit(u) && (
+                          <IconButton label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
+                            <Pencil size={15} />
+                          </IconButton>
+                        )}
                       </td>
                     </tr>
                   ))}
