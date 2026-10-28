@@ -255,20 +255,27 @@ model Sop {
   @@index([team])
 }
 
-// Shared logins (Quick Links / Repository). The password is ENCRYPTED with VAULT_KEY
-// (backend/src/lib/vault.ts): the database alone can't reveal it.
-// Admins see every item; an employee sees only the items they've been given access to.
+// Shared logins, laid out like the sheet they came from: an admin-defined list of columns
+// (VaultColumn) and one row per login (VaultItem). A row's values live in `cells`,
+// keyed by column id. Values in SECRET columns (passwords, PINs...) are each ENCRYPTED with
+// VAULT_KEY (backend/src/lib/vault.ts), never sent in lists, and revealed one at a time.
+// Admins see every row; an employee sees only the rows they've been given access to.
+model VaultColumn {
+  id        String   @id @default(cuid())
+  name      String
+  secret    Boolean  @default(false)
+  position  Int // left to right
+  createdAt DateTime @default(now())
+}
+
 model VaultItem {
-  id          String        @id @default(cuid())
-  title       String
-  url         String?
-  username    String?
-  passwordEnc String? // "v1:iv:tag:data", never sent to the browser in lists
-  notes       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  access      VaultAccess[]
-  views       VaultView[]
+  id        String        @id @default(cuid())
+  title     String // the row's label (its first filled column), used in lists and logs
+  cells     Json          @default("{}") // { [columnId]: "value" }; secret ones are "v1:..." ciphertext
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  access    VaultAccess[]
+  views     VaultView[]
 }
 
 // Who may use which login (given by an admin)

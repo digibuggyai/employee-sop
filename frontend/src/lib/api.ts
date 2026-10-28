@@ -278,15 +278,17 @@ export type Sop = {
 };
 
 // ---------- Shared logins (backend/src/routes/vault.ts) ----------
-// The password is never in a list: it's fetched on its own (POST /api/vault/:id/reveal), and logged.
+// Laid out like a sheet: columns × rows. A secret cell arrives as `true` ("has a value");
+// its value is fetched on its own (POST /api/vault/:id/reveal), and every reveal is logged.
+
+export type VaultColumn = { id: string; name: string; secret: boolean; position: number };
 
 export type VaultItem = {
   id: string;
-  title: string;
-  url: string | null;
-  username: string | null;
-  notes: string | null;
-  hasPassword: boolean;
-  accessCount?: number; // admins only: how many people can use it
+  title: string; // the row's label: its first filled non-secret column
+  cells: Record<string, string | true>; // by column id
+  accessCount?: number; // admins only: how many people can see it
   updatedAt: string;
 };
+
+export type VaultData = { columns: VaultColumn[]; items: VaultItem[] };

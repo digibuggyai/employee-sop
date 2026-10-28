@@ -1,133 +1,141 @@
-// Imports shared logins from a Google Sheet into the Logins page, passwords encrypted.
+// Imports shared logins from a Google Sheet into the Logins page, keeping the sheet's own columns.
 //
 // 1. In Google Sheets: open the tab with the logins → File → Download → Comma-separated values (.csv)
 // 2. Move the file to  imports/  (git-ignores it, so it never reaches GitHub)
-// 3. Preview (saves nothing, prints NO passwords):
+// 3. Preview (saves nothing; prints column names and row labels, never a secret):
 //      npm run import-logins -- "../imports/logins.csv"
 // 4. Save:
 //      npm run import-logins -- "../imports/logins.csv" --save
-// 5. Delete the CSV. Then, in the app, tick who can use each login (Logins → people icon).
+//    --replace        first deletes EVERY login on the Logins page (and who could see them),
+//                     so the page becomes exactly this sheet. Use it to redo an import.
+//    --header-row N   if the column names aren't on the first filled row (N = the sheet's row number)
+// 5. Delete the CSV. Then, in the app, choose who can see what (Logins → Access).
 //
-// Columns are found by their header names, in any order:
-//   name / title / platform / account / tool / service   → the login's name
-//   link / url / website / site                           → link
-//   username / user / email / login / id                  → username
-//   password / pass                                       → password
-//   notes / note / comment / remarks / 2fa                → notes
-// A login whose name already exists on the Logins page is skipped (never overwritten).
+// Every column becomes a Logins column with the same name and order (except a serial-number column). Columns whose name looks
+// secret (password, PIN, OTP, key, token, CVV) are encrypted and hidden behind the eye button.
+// A row with only one filled cell (e.g. "Social Media") is a section title: the rows under it get
+// it in a "Section" column. A row whose label already exists on the page is skipped (not replaced).
 import "dotenv/config";
 import { existsSync, readFileSync } from "node:fs";
 import { prisma } from "../lib/prisma.js";
 import { parseCsv } from "../lib/csv.js";
 import { encrypt, vaultReady } from "../lib/vault.js";
 
-const [file, flag] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const save = args.includes("--save");
+const replace = args.includes("--replace");
+const headerArg = args.indexOf("--header-row");
+const headerRowNumber = headerArg !== -1 ? Number(args[headerArg + 1]) : null;
+const file = args.find((a, i) => !a.startsWith("--") && (headerArg === -1 || i !== headerArg + 1)); // not the N after --header-row
+
 if (!file) {
-  console.error('Usage: npm run import-logins -- "../imports/logins.csv" [--save]');
+  console.error('Usage: npm run import-logins -- "../imports/logins.csv" [--save] [--replace] [--header-row N]');
+  process.exit(1);
+}
+if (!existsSync(file)) {
+  console.error(`File not found: ${file}\nPut the CSV in the imports folder and check the name (Windows may have added a hidden .csv).`);
   process.exit(1);
 }
 if (!vaultReady()) {
   console.error("VAULT_KEY is missing from backend/.env (or isn't 32 bytes of base64). Add the same key as on Railway.");
   process.exit(1);
 }
-if (!existsSync(file)) {
-  console.error(`File not found: ${file}
-Put the CSV in the imports folder and check the name.`);
+
+const isSecretName = (name: string) => /pass|\bpin\b|mpin|otp|secret|token|api.?key|cvv/i.test(name);
+
+// ---------- 1. Read the sheet; find the header row ----------
+// Rows keep the sheet's numbers (1 = first row), so --header-row matches what you see in Sheets
+const all = parseCsv(readFileSync(file, "utf8")).map((cells, i) => ({ n: i + 1, cells: cells.map((c) => c.trim()) }));
+const filledIn = (cells: string[]) => cells.filter(Boolean).length;
+const headerRow = headerRowNumber ? all.find((r) => r.n === headerRowNumber) : all.find((r) => filledIn(r.cells) >= 2);
+if (!headerRow) {
+  console.error("Couldn't find the row with the column names. Add --header-row N (the sheet's row number).");
   process.exit(1);
 }
-const save = flag === "--save";
+// The named header cells are the columns. Left out: unnamed columns, and the sheet's own serial
+// number column (S.No, Sr. No., #): the Logins table numbers its rows itself.
+const isSerial = (name: string) => /^(s\.?\s*no\.?|sr\.?\s*no\.?|serial( no\.?)?|#|no\.?)$/i.test(name.trim());
+const sheetColumns = headerRow.cells
+  .map((name, index) => ({ index, name: name.replace(/\s+/g, " "), secret: isSecretName(name) }))
+  .filter((c) => c.name && !isSerial(c.name));
 
-// ---------- 1. Find the header row and the columns ----------
-const rows = parseCsv(readFileSync(file, "utf8")).filter((r) => r.some((c) => c));
-const patterns = {
-  password: /pass/,
-  url: /link|url|website|site/,
-  username: /user|e-?mail|login|^id$|\bid\b/,
-  notes: /note|comment|remark|2fa|otp/,
-  title: /name|title|platform|account|tool|service|app/,
-} as const;
-type Col = keyof typeof patterns;
+// ---------- 2. Rows → values by column name ----------
+type Row = { label: string; values: Record<string, string>; section: string | null };
+const rows: Row[] = [];
+let section: string | null = null;
 
-// The header is the first row (within the first 5) that has a password column
-const headerIndex = rows.slice(0, 5).findIndex((r) => r.some((c) => patterns.password.test(c.toLowerCase())));
-if (headerIndex === -1) {
-  console.error("Couldn't find a header row with a Password column. First row says:");
-  console.error("  " + (rows[0] ?? []).join(" | "));
-  console.error('Rename the password column to "Password" and download again.');
-  process.exit(1);
-}
-const header = rows[headerIndex].map((h) => h.toLowerCase());
-const col: Partial<Record<Col, number>> = {};
-// password first, so a "Password" header can't also be taken as the name, etc.
-for (const key of ["password", "url", "username", "notes", "title"] as Col[]) {
-  const i = header.findIndex((h, idx) => h && patterns[key].test(h) && !Object.values(col).includes(idx));
-  if (i !== -1) col[key] = i;
-}
-console.log("\nColumns found:");
-for (const key of ["title", "url", "username", "password", "notes"] as Col[]) {
-  console.log(`  ${key.padEnd(9)} ← ${col[key] !== undefined ? `"${rows[headerIndex][col[key]!]}"` : "(none)"}`);
-}
-if (col.title === undefined && col.url === undefined) {
-  console.error('\nNo Name or Link column: rename the column with the platform names to "Name".');
-  process.exit(1);
-}
-
-// ---------- 2. Turn rows into logins ----------
-const cell = (r: string[], key: Col) => (col[key] !== undefined ? (r[col[key]!] ?? "").trim() : "");
-// No name? Use the website: "https://www.instagram.com/x" → "instagram.com"
-const nameFrom = (title: string, url: string) => {
-  if (title) return title;
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
+for (const { n, cells } of all) {
+  if (n <= headerRow.n || filledIn(cells) === 0) continue;
+  // One filled cell, not in a secret column = a section title ("Social Media") for the rows below
+  if (filledIn(cells) === 1) {
+    const at = cells.findIndex(Boolean);
+    if (!sheetColumns.find((c) => c.index === at)?.secret) {
+      section = cells[at];
+      continue;
+    }
   }
-};
-
-const existing = new Set((await prisma.vaultItem.findMany({ select: { title: true } })).map((i) => i.title.toLowerCase()));
-const items: { title: string; url: string | null; username: string | null; password: string; notes: string | null }[] = [];
-const skipped: string[] = [];
-
-for (const r of rows.slice(headerIndex + 1)) {
-  const url = cell(r, "url");
-  const title = nameFrom(cell(r, "title"), url).slice(0, 120);
-  const username = cell(r, "username");
-  const password = cell(r, "password");
-  if (!title) continue; // empty / spacer rows
-  if (!username && !password) {
-    skipped.push(`${title}  (no username or password)`);
-    continue;
-  }
-  if (existing.has(title.toLowerCase()) || items.some((i) => i.title.toLowerCase() === title.toLowerCase())) {
-    skipped.push(`${title}  (already on the Logins page, or twice in the file)`);
-    continue;
-  }
-  items.push({
-    title,
-    url: /^https?:\/\//i.test(url) ? url : url ? `https://${url}` : null,
-    username: username || null,
-    password,
-    notes: cell(r, "notes") || null,
-  });
+  const values: Record<string, string> = {};
+  for (const c of sheetColumns) if (cells[c.index]) values[c.name] = cells[c.index];
+  // A row's label: its first filled non-secret column (what lists and the access screen show)
+  const label = sheetColumns.find((c) => !c.secret && values[c.name]);
+  rows.push({ label: (label ? values[label.name] : "Untitled").slice(0, 150), values, section });
 }
+const hasSections = rows.some((r) => r.section);
 
-// ---------- 3. Preview or save (never prints a password) ----------
-console.log(`\nWill import ${items.length} login(s):`);
-for (const i of items) {
-  console.log(`  ${i.title.padEnd(32)} link ${i.url ? "yes" : "-  "}  user ${i.username ? "yes" : "-  "}  password ${i.password ? "yes" : "-"}`);
+// ---------- 3. Preview (never prints a value from a secret column) ----------
+console.log(`\nColumns (from sheet row ${headerRow.n}):`);
+sheetColumns.forEach((c) => console.log(`  ${c.name}${c.secret ? "   (secret: encrypted, hidden behind the eye)" : ""}`));
+if (hasSections) console.log("  Section   (added: the section titles between rows)");
+
+const existing = replace ? new Set<string>() : new Set((await prisma.vaultItem.findMany({ select: { title: true } })).map((i) => i.title.toLowerCase()));
+const seen = new Set<string>();
+const toImport = rows.filter((r) => {
+  const key = r.label.toLowerCase();
+  if (existing.has(key) || seen.has(key)) return false;
+  seen.add(key);
+  return true;
+});
+
+console.log(`\nWill import ${toImport.length} login(s)${replace ? ", REPLACING everything on the Logins page" : ""}:`);
+let shownSection: string | null | undefined;
+for (const r of toImport) {
+  if (hasSections && r.section !== shownSection) console.log(`  [${(shownSection = r.section) ?? "no section"}]`);
+  const secrets = sheetColumns.filter((c) => c.secret && r.values[c.name]).length;
+  console.log(`    ${r.label.padEnd(36)} ${Object.keys(r.values).length} filled${secrets ? `, ${secrets} secret` : ""}`);
 }
-if (skipped.length) {
-  console.log(`\nSkipped ${skipped.length}:`);
-  skipped.forEach((s) => console.log("  " + s));
+if (rows.length > toImport.length) {
+  console.log(`\nSkipped ${rows.length - toImport.length} row(s): label already on the page, or twice in the file.`);
 }
 
 if (!save) {
-  console.log("\nPreview only. Nothing was saved. Add --save to import.");
-} else {
-  for (const { password, ...data } of items) {
-    await prisma.vaultItem.create({ data: { ...data, passwordEnc: password ? encrypt(password) : null } });
-  }
-  console.log(`\nImported ${items.length} login(s), passwords encrypted.`);
-  console.log("Next: delete the CSV file, then in the app open Logins and use the people icon to choose who can use each one.");
+  console.log(`\nPreview only. Nothing was saved. Add --save to import${replace ? "" : " (--save --replace to redo the page from this sheet)"}.`);
+  await prisma.$disconnect();
+  process.exit(0);
 }
+
+// ---------- 4. Save ----------
+if (replace) {
+  await prisma.$transaction([prisma.vaultItem.deleteMany(), prisma.vaultColumn.deleteMany()]);
+  console.log("\nCleared the Logins page.");
+}
+// Reuse a column with the same name (any case); add the others at the end, in the sheet's order
+const columns = await prisma.vaultColumn.findMany({ orderBy: { position: "asc" } });
+let position = (columns.at(-1)?.position ?? -1) + 1;
+const byName = new Map(columns.map((c) => [c.name.toLowerCase(), { id: c.id, secret: c.secret }]));
+for (const { name, secret } of [...sheetColumns, ...(hasSections ? [{ name: "Section", secret: false }] : [])]) {
+  if (byName.has(name.toLowerCase())) continue;
+  const col = await prisma.vaultColumn.create({ data: { name, secret, position: position++ } });
+  byName.set(name.toLowerCase(), { id: col.id, secret });
+}
+
+for (const r of toImport) {
+  const cells: Record<string, string> = {};
+  for (const [name, value] of Object.entries({ ...r.values, ...(r.section && { Section: r.section }) })) {
+    const col = byName.get(name.toLowerCase())!;
+    cells[col.id] = col.secret ? encrypt(value) : value;
+  }
+  await prisma.vaultItem.create({ data: { title: r.label, cells } });
+}
+console.log(`\nImported ${toImport.length} login(s); secret columns encrypted.`);
+console.log("Next: delete the CSV file, then in the app open Logins → Access to choose who can see what.");
 await prisma.$disconnect();
