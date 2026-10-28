@@ -53,6 +53,10 @@ model User {
   photoUpdatedAt DateTime?
   photo          UserPhoto?
   weeklyReports  WeeklyReport[]
+  sopsWritten    Sop[]          @relation("SopAuthor")
+  vaultAccess    VaultAccess[]  @relation("VaultAccessUser")
+  vaultGrants    VaultAccess[]  @relation("VaultAccessGrantor")
+  vaultViews     VaultView[]
 
   attendance Attendance[] // one user → many attendance days (a "relation")
 
@@ -235,4 +239,59 @@ model WeeklyReport {
 
   @@unique([userId, weekStart])
   @@index([weekStart])
+}
+
+// The SOP library: step-by-step "how we do things". Admins write them; everyone reads them.
+model Sop {
+  id          String   @id @default(cuid())
+  title       String
+  team        String? // Sales, Content, RMA... (filters the library)
+  body        String // the steps, as plain text (one step per line)
+  updatedById String
+  updatedBy   User     @relation("SopAuthor", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([team])
+}
+
+// Shared logins (Quick Links / Repository). The password is ENCRYPTED with VAULT_KEY
+// (backend/src/lib/vault.ts): the database alone can't reveal it.
+// Admins see every item; an employee sees only the items they've been given access to.
+model VaultItem {
+  id          String        @id @default(cuid())
+  title       String
+  url         String?
+  username    String?
+  passwordEnc String? // "v1:iv:tag:data", never sent to the browser in lists
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  access      VaultAccess[]
+  views       VaultView[]
+}
+
+// Who may use which login (given by an admin)
+model VaultAccess {
+  itemId      String
+  item        VaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("VaultAccessUser", fields: [userId], references: [id])
+  grantedById String
+  grantedBy   User      @relation("VaultAccessGrantor", fields: [grantedById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@id([itemId, userId])
+}
+
+// Every time a password is revealed: who, which, when
+model VaultView {
+  id     String    @id @default(cuid())
+  itemId String
+  item   VaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId String
+  user   User      @relation(fields: [userId], references: [id])
+  at     DateTime  @default(now())
+
+  @@index([itemId, at])
 }

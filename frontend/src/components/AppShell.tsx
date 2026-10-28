@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LoaderCircle, LogOut } from "lucide-react";
+import { useState } from "react";
+import { Ellipsis, LoaderCircle, LogOut } from "lucide-react";
 import { isAdmin as hasAdminAccess } from "@/lib/api";
 import { adminNav, publicPaths, workspaceNav, type NavItem } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
@@ -11,6 +12,7 @@ import { usePending } from "./Pending";
 import Avatar from "./Avatar";
 import BackendStatus from "./BackendStatus";
 import BrandLogo from "./BrandLogo";
+import Modal from "./Modal";
 
 // The frame around every page, and the "gatekeeper":
 //  - not logged in            → send to /login
@@ -24,6 +26,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const { counts, refresh } = usePending(); // admin notifications (pending requests)
+  const [moreOpen, setMoreOpen] = useState(false); // phones: the "More" sheet
   const isPublic = publicPaths.includes(pathname);
   const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
 
@@ -60,6 +63,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) =>
     href === "/" || href === "/admin" ? pathname === href : pathname.startsWith(href);
   const badgeOf = (item: NavItem) => (item.badge ? counts[item.badge] : 0);
+  // Phones: the tab bar holds the `mobile` items; everything else goes under a "More" tab
+  const tabItems = items.filter((i) => i.mobile);
+  const moreItems = items.filter((i) => !i.mobile);
+  const moreActive = moreItems.some((i) => isActive(i.href));
   const totalPending = counts.leaves + counts.corrections;
 
   return (
@@ -143,11 +150,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <nav
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-20 grid border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
-        style={{ gridTemplateColumns: `repeat(${items.filter((i) => i.mobile).length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${tabItems.length + (moreItems.length ? 1 : 0)}, minmax(0, 1fr))` }}
       >
-        {items
-          .filter((i) => i.mobile)
-          .map((item) => {
+        {tabItems.map((item) => {
             const { href, label, short, icon: Icon } = item;
             const active = isActive(href);
             const count = badgeOf(item);
@@ -173,7 +178,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+        {moreItems.length > 0 && (
+          <button
+            onClick={() => setMoreOpen(true)}
+            className={`relative flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] font-medium ${
+              moreActive ? "text-brand-700" : "text-zinc-500"
+            }`}
+          >
+            {moreActive && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-brand-700" />}
+            <Ellipsis size={20} strokeWidth={moreActive ? 2.25 : 1.75} />
+            More
+          </button>
+        )}
       </nav>
+
+      {/* Phones: the pages that don't fit in the tab bar */}
+      <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
+        <ul className="-mx-2 space-y-0.5">
+          {moreItems.map(({ href, label, icon: Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                onClick={() => setMoreOpen(false)}
+                aria-current={isActive(href) ? "page" : undefined}
+                className={`flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium ${
+                  isActive(href) ? "bg-zinc-100 text-zinc-900" : "text-zinc-700 hover:bg-zinc-50"
+                }`}
+              >
+                <Icon size={18} className={isActive(href) ? "text-brand-700" : "text-zinc-400"} />
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Modal>
     </div>
   );
 }

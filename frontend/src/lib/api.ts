@@ -265,3 +265,28 @@ export type WeeklyReport = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ---------- SOPs (backend/src/routes/sops.ts) ----------
+
+export type Sop = {
+  id: string;
+  title: string;
+  team: string | null;
+  body: string; // the steps, one per line
+  updatedAt: string;
+  updatedBy: { id: string; name: string };
+};
+
+// ---------- Shared logins (backend/src/routes/vault.ts) ----------
+// The password is never in a list: it's fetched on its own (POST /api/vault/:id/reveal), and logged.
+
+export type VaultItem = {
+  id: string;
+  title: string;
+  url: string | null;
+  username: string | null;
+  notes: string | null;
+  hasPassword: boolean;
+  accessCount?: number; // admins only: how many people can use it
+  updatedAt: string;
+};

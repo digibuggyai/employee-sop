@@ -7,6 +7,7 @@ import {
   FileText,
   Gauge,
   Inbox,
+  KeyRound,
   LayoutDashboard,
   ListTodo,
   Megaphone,
@@ -37,9 +38,11 @@ export const workspaceNav: NavItem[] = [
   { href: "/tasks", label: "Tasks", icon: ListTodo, group: "Work", mobile: true },
   { href: "/leave", label: "Leave & WFH", short: "Leave", icon: Plane, group: "Work", mobile: true, employeeOnly: true },
   { href: "/weekly-report", label: "Weekly report", short: "Report", icon: FileText, group: "Work", mobile: true, remoteOnly: true },
-  { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company", mobile: true },
+  // not in the phone tab bar: these sit under "More" there
+  { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company" },
   { href: "/directory", label: "Directory", icon: Users, group: "Company" },
   { href: "/sops", label: "SOPs", icon: BookOpen, group: "Company" },
+  { href: "/logins", label: "Logins", icon: KeyRound, group: "Company" },
 ];
 
 // The Admin Panel (everything under /admin). The backend also blocks non-admins.
