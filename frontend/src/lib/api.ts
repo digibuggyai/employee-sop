@@ -226,11 +226,22 @@ export type Holiday = {
 };
 
 // backend/src/data/notices.ts
+export type NoticeAudience = "ALL" | "FULL_TIME" | "INTERN" | "REMOTE_INTERN";
+
 export type Notice = {
+  id: string;
   title: string;
   body: string;
   category: "Pay" | "Leave" | "Attendance" | "Work";
+  audience: NoticeAudience[]; // "ALL" = everyone
+  deduction?: boolean; // breaking it costs salary or counts as absence
+  highlight?: { value: string; label: string }; // the key number, shown "at a glance"
+  link?: { href: string; label: string }; // where in the app to act on it
 };
+
+// Does a notice apply to this person?
+export const noticeAppliesTo = (n: Notice, employmentType: EmploymentType | undefined) =>
+  n.audience.includes("ALL") || (!!employmentType && n.audience.includes(employmentType));
 
 // ---------- Attendance change requests (backend: model AttendanceCorrection) ----------
 

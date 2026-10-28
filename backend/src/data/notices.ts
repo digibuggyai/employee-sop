@@ -1,50 +1,108 @@
+// The Notice Board: company policies. The wording matches what the app actually enforces
+// (backend/src/lib/policy.ts), so if a rule changes there, update its notice here too.
+
+export type Audience = "ALL" | "FULL_TIME" | "INTERN" | "REMOTE_INTERN";
+
 export type Notice = {
+  id: string;
   title: string;
   body: string;
   category: "Pay" | "Leave" | "Attendance" | "Work";
+  audience: Audience[]; // who it applies to ("ALL" = everyone)
+  deduction?: boolean; // breaking it costs salary or counts as absence
+  highlight?: { value: string; label: string }; // the key number, shown "at a glance"
+  link?: { href: string; label: string }; // where in the app to act on it
 };
 
 export const notices: Notice[] = [
-  { category: "Pay", title: "Salary disbursement", body: "Salary will be credited by the 8th of each month." },
   {
+    id: "salary",
+    category: "Pay",
+    title: "Salary disbursement",
+    body: "Salary is credited by the 8th of every month.",
+    audience: ["ALL"],
+    highlight: { value: "8th", label: "Salary credited by" },
+  },
+  {
+    id: "reimbursements",
     category: "Pay",
     title: "Reimbursements",
-    body: "Mail reimbursements to Bhavya and the accounts team by the 30th of every month so they are settled with your salary.",
+    body: "Mail your reimbursements to Bhavya and the accounts team by the 30th of every month, so they are settled with that month's salary.",
+    audience: ["ALL"],
+    highlight: { value: "30th", label: "Reimbursements due" },
   },
   {
+    id: "leave-policy",
     category: "Leave",
     title: "Leave policy",
-    body: "Full-time employees get 1.5 leaves per month, which roll over if not used.",
+    body: "Full-time employees get 1.5 leaves every month. Unused leave rolls over to the next month.",
+    audience: ["FULL_TIME"],
+    highlight: { value: "1.5", label: "Leaves a month (full-time)" },
+    link: { href: "/leave", label: "See your balance" },
   },
   {
+    id: "emergency-leave",
     category: "Leave",
     title: "Emergency leave",
-    body: "Up to 1 emergency leave per month can be informed on the same day. All other leaves must be informed and approved in advance.",
+    body: "One emergency leave a month can be asked for on the same day. Every other leave must be asked for and approved in advance.",
+    audience: ["ALL"],
+    highlight: { value: "1", label: "Same-day leave a month" },
+    link: { href: "/leave", label: "Request leave" },
   },
   {
+    id: "uninformed-leave",
     category: "Leave",
-    title: "Uninformed leave",
-    body: "Leave without prior information or approval (other than the emergency leave) is unauthorized and results in 1 day's salary deduction.",
+    title: "Uninformed leave or WFH",
+    body: "Leave or WFH taken without prior approval (other than the emergency leave) is unauthorized: 1 day's salary is deducted. Repeated cases affect your attendance record and performance review.",
+    audience: ["ALL"],
+    deduction: true,
   },
   {
+    id: "grace",
     category: "Attendance",
-    title: "Short leaves / late",
-    body: "Up to 2 short leaves a month (late or early by up to 2 hours) are allowed. More than 2 hours counts as a half day.",
+    title: "Timings and grace period",
+    body: "Check in by your assigned start time. Up to 15 minutes late is fine. Coming in late and staying longer to cover your full shift counts as made up.",
+    audience: ["ALL"],
+    highlight: { value: "15 min", label: "Grace on your start time" },
+    link: { href: "/attendance", label: "Your attendance" },
   },
   {
+    id: "short-leaves",
     category: "Attendance",
-    title: "Late / early leaving",
-    body: "Every 3 instances of late coming or early leaving count as 1 day of absence.",
+    title: "Short leaves",
+    body: "A day that falls short of your shift by up to 2 hours (arriving late or leaving early) is a short leave. 2 short leaves a month are allowed without deduction. Short by more than 2 hours counts as a half day.",
+    audience: ["ALL"],
+    highlight: { value: "2", label: "Free short leaves a month" },
   },
   {
+    id: "late-penalty",
+    category: "Attendance",
+    title: "Late coming / early leaving",
+    body: "After the 2 free short leaves, every 3 late arrivals or early departures in a month count as 1 day of absence.",
+    audience: ["ALL"],
+    deduction: true,
+  },
+  {
+    id: "wfh-interns",
     category: "Work",
     title: "WFH policy (interns)",
-    body: "Extra WFH days beyond your offer letter count as half days. Share a to-do plan in the morning and a work report when logging out, or the day is marked absent.",
+    body: "WFH days beyond those in your offer letter count as half days. On a WFH day, write your to-do plan when you check in and your work report when you check out; without them the day is marked absent.",
+    audience: ["INTERN", "REMOTE_INTERN"],
+    link: { href: "/attendance", label: "Check in" },
   },
   {
+    id: "remote-reports",
     category: "Work",
-    title: "Remote interns",
-    body: "Send a weekly update report every Saturday.",
+    title: "Weekly report (remote interns)",
+    body: "Send your weekly update every Saturday: what you did, results, and plans for next week.",
+    audience: ["REMOTE_INTERN"],
+    link: { href: "/weekly-report", label: "Write this week's report" },
   },
-  { category: "Work", title: "Email", body: "CC Kunj and Bhavya on all external emails." },
+  {
+    id: "email",
+    category: "Work",
+    title: "External emails",
+    body: "CC Kunj and Bhavya on every external email.",
+    audience: ["ALL"],
+  },
 ];

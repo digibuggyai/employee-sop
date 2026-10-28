@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiGet, type Notice } from "@/lib/api";
-import { Badge, Skeleton, type Tone } from "./ui";
+import { apiGet, noticeAppliesTo, type Notice } from "@/lib/api";
+import { useAuth } from "./AuthProvider";
+import { categoryStyle } from "./noticeStyle";
+import { Badge, Skeleton } from "./ui";
 
-const tone: Record<Notice["category"], Tone> = { Pay: "green", Leave: "blue", Attendance: "amber", Work: "violet" };
-
-// limit → dashboard preview; grouped → the full Notice Board page, one section per category
-export default function NoticeList({ limit, grouped = false }: { limit?: number; grouped?: boolean }) {
+// The dashboard's short Notice Board preview: the notices that apply to you, first `limit` of them.
+// (The full board with filters lives on /notices.)
+export default function NoticeList({ limit = 3 }: { limit?: number }) {
+  const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[] | null>(null);
   const [error, setError] = useState("");
 
@@ -25,27 +27,26 @@ export default function NoticeList({ limit, grouped = false }: { limit?: number;
       </div>
     );
 
-  const item = (n: Notice, showCategory: boolean) => (
-    <li key={n.title} className="px-5 py-3.5">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-medium text-zinc-900">{n.title}</p>
-        {showCategory && <Badge tone={tone[n.category]}>{n.category}</Badge>}
-      </div>
-      <p className="mt-1 text-[13px] leading-relaxed text-zinc-600">{n.body}</p>
-    </li>
-  );
-
-  if (!grouped) return <ul className="divide-y divide-zinc-100">{notices.slice(0, limit).map((n) => item(n, true))}</ul>;
-
-  const categories = [...new Set(notices.map((n) => n.category))];
+  const mine = notices.filter((n) => noticeAppliesTo(n, user?.employmentType));
   return (
-    <div className="divide-y divide-zinc-200">
-      {categories.map((c) => (
-        <section key={c}>
-          <h3 className="bg-zinc-50/80 px-5 py-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">{c}</h3>
-          <ul className="divide-y divide-zinc-100">{notices.filter((n) => n.category === c).map((n) => item(n, false))}</ul>
-        </section>
-      ))}
-    </div>
+    <ul className="divide-y divide-zinc-100">
+      {mine.slice(0, limit).map((n) => {
+        const { icon: Icon, chip } = categoryStyle[n.category];
+        return (
+          <li key={n.id} className="flex gap-3 px-5 py-3.5">
+            <span className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg ring-1 ring-inset ${chip}`}>
+              <Icon size={15} />
+            </span>
+            <div className="min-w-0">
+              <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-zinc-900">
+                {n.title}
+                {n.deduction && <Badge tone="red">Deduction</Badge>}
+              </p>
+              <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-zinc-600">{n.body}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
