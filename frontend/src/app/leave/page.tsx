@@ -13,7 +13,7 @@ import { fmtDate, todayIST } from "@/lib/format";
 
 type LeaveData = {
   leaves: Leave[];
-  wfh: { used: number; allowance: number; halfDays: number };
+  wfh: { used: number; allowance: number; halfDays: number; remote: boolean }; // remote: no allowance
   balance: number | null; // full-time: leave left (1.5 a month, rolls over)
   emergency: { used: number; allowed: number }; // same-day leave this month
 };
@@ -103,7 +103,13 @@ export default function LeavePage() {
 
           {/* WFH usage this month */}
           <Card title="WFH this month">
-            {wfh ? (
+            {wfh?.remote ? (
+              // Remote interns work from home by design: nothing to ration
+              <>
+                <span className="text-3xl font-semibold tracking-tight text-zinc-900 tabular-nums">{wfh.used}</span>
+                <p className="mt-3 text-[13px] text-zinc-600">Remote intern: every WFH day counts as a full day.</p>
+              </>
+            ) : wfh ? (
               <>
                 <div className="flex items-baseline gap-1.5">
                   <span className={`text-3xl font-semibold tracking-tight tabular-nums ${wfh.used > wfh.allowance ? "text-red-600" : "text-zinc-900"}`}>

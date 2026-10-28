@@ -130,6 +130,7 @@ export type MonthSummary = {
   inOffice: number;
   wfh: number;
   wfhAllowance: number;
+  remote: boolean; // remote intern: every WFH day counts in full (no allowance)
   halfDays: number; // marked half days + WFH days over the allowance
   daysWorked: number; // present days, each half day counted as 0.5
   weeklyHours: number | null; // weekly target (null = not set)

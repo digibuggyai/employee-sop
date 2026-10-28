@@ -80,7 +80,7 @@ export default function MonthSheet({
       ]),
       [],
       ["Total worked", fmtDuration(summary.workedMs)],
-      ["Days present", summary.present, "In-office", summary.inOffice, "WFH", `${summary.wfh} of ${summary.wfhAllowance}`],
+      ["Days present", summary.present, "In-office", summary.inOffice, "WFH", summary.remote ? `${summary.wfh} (remote)` : `${summary.wfh} of ${summary.wfhAllowance}`],
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
       ["Late / early (short leaves)", summary.shortLeaves, "Absence days from lates", summary.latePenaltyDays],
@@ -92,7 +92,7 @@ export default function MonthSheet({
   }
 
   const notMadeUp = summary.leaves - summary.leavesCompensated;
-  const overWfh = summary.wfh > summary.wfhAllowance;
+  const overWfh = !summary.remote && summary.wfh > summary.wfhAllowance;
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
 
   // Weekly hours: this week while it's running, otherwise the average week of the month
@@ -126,8 +126,8 @@ export default function MonthSheet({
         />
         <Stat
           label="WFH used"
-          value={`${summary.wfh} / ${summary.wfhAllowance}`}
-          hint={extraWfh ? `${extraWfh} counted as half day` : "Within allowance"}
+          value={summary.remote ? summary.wfh : `${summary.wfh} / ${summary.wfhAllowance}`}
+          hint={summary.remote ? "Remote intern: counts in full" : extraWfh ? `${extraWfh} counted as half day` : "Within allowance"}
           emphasis={overWfh ? "warning" : undefined}
         />
         <Stat

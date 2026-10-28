@@ -35,7 +35,7 @@ router.get("/", async (req, res) => {
   const emergencyUsed = await emergencyLeavesIn(me.id, todayString().slice(0, 7));
   res.json({
     leaves,
-    wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh },
+    wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh, remote: s.remote },
     balance: s.leaveBalance, // null unless full-time
     emergency: { used: emergencyUsed, allowed: EMERGENCY_LEAVES_PER_MONTH },
   });

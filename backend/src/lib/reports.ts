@@ -73,6 +73,7 @@ export type MonthSummary = {
   inOffice: number;
   wfh: number;
   wfhAllowance: number;
+  remote: boolean; // remote intern: WFH is their normal place, every WFH day counts in full
   halfDays: number; // marked half days + WFH days over the allowance
   daysWorked: number; // present days, with each half day counted as 0.5
   weeklyHours: number | null; // their weekly target (null = not set)
@@ -170,6 +171,7 @@ export async function monthReports(userIds: string[], month: string) {
       present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
       leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0, daysWorked: 0,
       weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, leaveBalance: null,
+      remote: person?.employmentType === "REMOTE_INTERN",
     };
 
     const days = dates.map((date): DayRow => {
@@ -264,8 +266,9 @@ export async function monthReports(userIds: string[], month: string) {
 
     // WFH policy: the first `wfhAllowance` WFH days of the month are normal; every one after is a half day.
     // (A WFH day already marked as a half day stays one half day, never less.)
+    // Remote interns work from home by design (the office is only for reporting), so it never applies to them.
     days
-      .filter((d) => d.place === "WFH")
+      .filter((d) => d.place === "WFH" && !summary.remote)
       .slice(summary.wfhAllowance)
       .forEach((d) => {
         if (d.halfDay) return;

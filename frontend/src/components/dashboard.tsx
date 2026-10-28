@@ -57,10 +57,10 @@ export function MonthAtGlance() {
         ["Days present", s.present, s.halfDays ? `${s.daysWorked} counting half days` : `${s.inOffice} in-office`],
         [
           "WFH used",
-          <span key="wfh" className={s.wfh > s.wfhAllowance ? "text-red-600" : undefined}>
-            {s.wfh} of {s.wfhAllowance}
+          <span key="wfh" className={!s.remote && s.wfh > s.wfhAllowance ? "text-red-600" : undefined}>
+            {s.remote ? s.wfh : `${s.wfh} of ${s.wfhAllowance}`}
           </span>,
-          extraWfh ? `${extraWfh} counted as half day` : undefined,
+          s.remote ? "Remote: counts in full" : extraWfh ? `${extraWfh} counted as half day` : undefined,
         ],
         ["Leaves", s.leaves, s.leaves ? `${s.leavesCompensated} made up` : undefined],
       ]
