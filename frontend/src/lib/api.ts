@@ -69,6 +69,7 @@ export type User = {
   mustChangePassword: boolean;
   active: boolean;
   wfhAllowance: number; // WFH days per month before extra ones count as half days
+  weeklyHours: number | null; // hours to work each week (Mon–Sun); null = no target
   photoUpdatedAt: string | null; // set when the person has a profile photo
   createdAt: string;
   updatedAt: string;
@@ -123,6 +124,7 @@ export type MonthSummary = {
   wfhAllowance: number;
   halfDays: number; // marked half days + WFH days over the allowance
   daysWorked: number; // present days, each half day counted as 0.5
+  weeklyHours: number | null; // weekly target (null = not set)
   leaves: number;
   leavesCompensated: number;
   leavesPending: number;
@@ -131,7 +133,10 @@ export type MonthSummary = {
   avgMs: number;
 };
 
-export type MonthReport = { month: string; days: DayRow[]; summary: MonthSummary };
+// One Monday–Sunday week touching the month, with ALL its hours (even days in the next/previous month)
+export type WeekRow = { from: string; to: string; workedMs: number };
+
+export type MonthReport = { month: string; days: DayRow[]; summary: MonthSummary; weeks: WeekRow[] };
 
 // A short version of a user, as the admin endpoints send it
 export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team" | "photoUpdatedAt"> &

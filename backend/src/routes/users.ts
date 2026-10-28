@@ -43,6 +43,10 @@ const profileFields = {
   leftOn: optionalDate, // last working day, for someone who has left
   // z.coerce turns the form's "4" (text) into the number 4
   wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
+  // empty in the form = no weekly target
+  weeklyHours: z
+    .preprocess((v) => (v === "" ? null : v), z.coerce.number().int().min(1, "Weekly hours must be at least 1").max(100).nullable())
+    .optional(),
 };
 
 // GET /api/users → everyone, active first, then A–Z

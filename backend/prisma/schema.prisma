@@ -44,6 +44,7 @@ model User {
   active             Boolean @default(true) // false = left the company; can't log in, data kept
   leftOn             DateTime? @db.Date // last working day (set when they leave); later days aren't absences
   wfhAllowance       Int     @default(4) // WFH days per month; each WFH day beyond this counts as a half day
+  weeklyHours        Int? // hours they should work each week (Mon–Sun); empty = no target set
   isEmployee         Boolean @default(true) // false = not tracked: no attendance, leave or WFH, never "absent" (e.g. the Hive Leader)
 
   // Profile photo. The image itself lives in UserPhoto (kept out of User so lists stay light);

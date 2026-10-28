@@ -7,6 +7,7 @@ import { ListTodo, Plus } from "lucide-react";
 import { api, type MonthReport, type Task } from "@/lib/api";
 import { fmtDuration, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
 import { useNow } from "@/lib/useNow";
+import { currentWeek, weekProgress } from "@/lib/weeks";
 import { useAuth } from "./AuthProvider";
 import { PriorityBadge, TaskStatusBadge } from "./Badges";
 import Card from "./Card";
@@ -44,9 +45,15 @@ export function MonthAtGlance() {
 
   const s = report?.summary;
   const extraWfh = report?.days.filter((d) => d.halfDay === "EXTRA_WFH").length ?? 0;
+  const week = report && currentWeek(report.weeks, todayIST());
   const rows: [string, React.ReactNode, string?][] = s
     ? [
         ["Hours worked", fmtDuration(s.workedMs), `avg ${fmtDuration(s.avgMs)} a day`],
+        [
+          "This week",
+          fmtDuration(week?.workedMs),
+          s.weeklyHours && week ? `of ${s.weeklyHours}h · ${weekProgress(week, s.weeklyHours, todayIST())!.text.toLowerCase()}` : undefined,
+        ],
         ["Days present", s.present, s.halfDays ? `${s.daysWorked} counting half days` : `${s.inOffice} in-office`],
         [
           "WFH used",

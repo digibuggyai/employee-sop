@@ -44,6 +44,7 @@ export default function EmployeeForm({
     joinedOn: toDateInput(existing?.joinedOn ?? null),
     leftOn: toDateInput(existing?.leftOn ?? null),
     wfhAllowance: String(existing?.wfhAllowance ?? 4),
+    weeklyHours: existing?.weeklyHours ? String(existing.weeklyHours) : "",
     active: existing?.active ?? true,
     password: "", // create: temporary password · edit: leave empty unless resetting
     notify: true, // email the login details
@@ -125,6 +126,9 @@ export default function EmployeeForm({
         </Field>
         <Field label="WFH days allowed per month" hint="Each WFH day beyond this counts as a half day.">
           <input name="wfhAllowance" type="number" min={0} max={31} required value={form.wfhAllowance} onChange={update} className={inputClass} />
+        </Field>
+        <Field label="Weekly hours" hint="Hours they should work each week, Monday to Sunday. Leave empty for no target.">
+          <input name="weeklyHours" type="number" min={1} max={100} value={form.weeklyHours} onChange={update} className={inputClass} placeholder="e.g. 35" />
         </Field>
         <Field label="Joined on">
           <input name="joinedOn" type="date" value={form.joinedOn} onChange={update} className={inputClass} />

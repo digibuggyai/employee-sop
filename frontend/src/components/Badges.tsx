@@ -76,6 +76,6 @@ export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {
 }
 
 // Extra info inside table cells ("Made up 17 Oct", "Half day")
-export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" }) {
+export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" | "green" }) {
   return <Badge tone={tone}>{children}</Badge>;
 }

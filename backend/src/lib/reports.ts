@@ -66,6 +66,7 @@ export type MonthSummary = {
   wfhAllowance: number;
   halfDays: number; // marked half days + WFH days over the allowance
   daysWorked: number; // present days, with each half day counted as 0.5
+  weeklyHours: number | null; // their weekly target (null = not set)
   leaves: number; // approved leave days
   leavesCompensated: number; // ...of which made up on a weekend/holiday
   leavesPending: number;
@@ -76,21 +77,33 @@ export type MonthSummary = {
 
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
+// Weeks run Monday to Sunday. Hours of a week that spills into the next/previous month
+// still count in full, so a week's total never depends on where the month ends.
+export type WeekRow = { from: string; to: string; workedMs: number };
+const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+const mondayOf = (date: string) => addDays(date, -((new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7));
+
 // Monthly sheet for several people at once, with ONE query per table.
 export async function monthReports(userIds: string[], month: string) {
   const dates = daysOfMonth(month);
   const range = { gte: toDbDate(dates[0]), lte: toDbDate(dates.at(-1)!) };
+  // attendance is fetched for whole weeks around the month, for the weekly totals
+  const firstMonday = mondayOf(dates[0]);
+  const lastSunday = addDays(mondayOf(dates.at(-1)!), 6);
 
   // When each person started: joining date, or the day their account was made.
   // Days before that are "not joined yet", not absences.
   const people = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, joinedOn: true, leftOn: true, createdAt: true, wfhAllowance: true },
+    select: { id: true, joinedOn: true, leftOn: true, createdAt: true, wfhAllowance: true, weeklyHours: true },
   });
   const personOf = new Map(people.map((p) => [p.id, p]));
 
   const [rows, leaves, pendingChanges] = await Promise.all([
-    prisma.attendance.findMany({ where: { userId: { in: userIds }, date: range }, include: { breaks: true } }),
+    prisma.attendance.findMany({
+      where: { userId: { in: userIds }, date: { gte: toDbDate(firstMonday), lte: toDbDate(lastSunday) } },
+      include: { breaks: true },
+    }),
     // Leaves IN this month, plus leaves made up IN this month (the leave itself may be in an earlier month)
     prisma.leave.findMany({
       where: { userId: { in: userIds }, status: { not: "REJECTED" }, OR: [{ date: range }, { compensatedOn: range }] },
@@ -103,7 +116,7 @@ export async function monthReports(userIds: string[], month: string) {
 
   const today = todayString();
   const holidayByDate = new Map(holidays.map((h) => [h.date, h.name]));
-  const reports = new Map<string, { days: DayRow[]; summary: MonthSummary }>();
+  const reports = new Map<string, { days: DayRow[]; summary: MonthSummary; weeks: WeekRow[] }>();
 
   for (const userId of userIds) {
     const person = personOf.get(userId);
@@ -123,6 +136,7 @@ export async function monthReports(userIds: string[], month: string) {
     const summary: MonthSummary = {
       present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
       leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0, daysWorked: 0,
+      weeklyHours: person?.weeklyHours ?? null,
     };
 
     const days = dates.map((date): DayRow => {
@@ -190,7 +204,16 @@ export async function monthReports(userIds: string[], month: string) {
     summary.daysWorked = summary.present - summary.halfDays / 2;
 
     summary.avgMs = summary.present ? Math.round(summary.workedMs / summary.present) : 0;
-    reports.set(userId, { days, summary });
+
+    const weeks: WeekRow[] = [];
+    for (let from = firstMonday; from <= dates.at(-1)!; from = addDays(from, 7)) {
+      const to = addDays(from, 6);
+      const workedMs = rows
+        .filter((r) => r.userId === userId && dayKey(r.date) >= from && dayKey(r.date) <= to)
+        .reduce((sum, r) => sum + dayTotals(r).workedMs, 0);
+      weeks.push({ from, to, workedMs });
+    }
+    reports.set(userId, { days, summary, weeks });
   }
   return reports;
 }
