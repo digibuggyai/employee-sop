@@ -87,7 +87,7 @@ export default function MonthSheet({
         dayNotes(d).join("; "),
       ]),
       [],
-      ["Total worked", fmtDuration(summary.workedMs)],
+      ["Total worked", fmtDuration(summary.workedMs), "Extra hours (beyond the shift)", fmtDuration(summary.extraMs)],
       ["Days present", summary.present, "In-office", summary.inOffice, "WFH", summary.remote ? `${summary.wfh} (remote)` : `${summary.wfh} of ${summary.wfhAllowance}`],
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
@@ -102,6 +102,7 @@ export default function MonthSheet({
   const notMadeUp = summary.leaves - summary.leavesCompensated;
   const overWfh = !summary.remote && summary.wfh > summary.wfhAllowance;
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
+  const extraDays = days.filter((d) => d.extraMin).length;
 
   // Weekly hours: this week while it's running, otherwise the average week of the month
   const thisWeek = currentWeek(weeks, today);
@@ -118,12 +119,12 @@ export default function MonthSheet({
 
   return (
     <div className="space-y-6">
-      {/* 2 columns on phones (the last tile spans both), 4 on larger screens */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
+      {/* 8 tiles: 2 columns on phones, 4 on larger screens */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         <Stat
           label="Hours worked"
           value={fmtDuration(summary.workedMs)}
-          hint={`avg ${fmtDuration(summary.avgMs)} a day` + (summary.extraMs ? ` · +${fmtDuration(summary.extraMs)} extra` : "")}
+          hint={`avg ${fmtDuration(summary.avgMs)} a day`}
         />
         <Stat
           label={thisWeek ? "This week" : "Avg per week"}
@@ -165,6 +166,12 @@ export default function MonthSheet({
               : "On time"
           }
           emphasis={summary.latePenaltyDays ? "warning" : undefined}
+        />
+        <Stat
+          label="Extra hours"
+          value={summary.extraMs ? `+${fmtDuration(summary.extraMs)}` : "0h 0m"}
+          hint={extraDays ? `On ${extraDays} day${extraDays === 1 ? "" : "s"}, beyond the shift` : "Time beyond your shift shows here"}
+          emphasis={summary.extraMs ? "positive" : undefined}
         />
         <Stat
           label="Unauthorized"

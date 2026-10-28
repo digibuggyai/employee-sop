@@ -39,7 +39,7 @@ export function Stat({
   value: React.ReactNode;
   hint?: React.ReactNode;
   icon?: LucideIcon;
-  emphasis?: "warning" | "danger";
+  emphasis?: "warning" | "danger" | "positive";
 }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
@@ -49,7 +49,13 @@ export function Stat({
       </div>
       <p
         className={`mt-2 text-2xl font-semibold tracking-tight tabular-nums ${
-          emphasis === "danger" ? "text-red-600" : emphasis === "warning" ? "text-amber-600" : "text-zinc-900"
+          emphasis === "danger"
+            ? "text-red-600"
+            : emphasis === "warning"
+              ? "text-amber-600"
+              : emphasis === "positive"
+                ? "text-emerald-600"
+                : "text-zinc-900"
         }`}
       >
         {value}
