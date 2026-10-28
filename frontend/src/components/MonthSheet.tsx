@@ -10,12 +10,14 @@ import { Stat, table } from "./ui";
 
 const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
 
+const halfDayLabel = { MARKED: "Half day", EXTRA_WFH: "Half day, extra WFH" } as const;
+
 // Extra notes for a day: holiday name, half day, make-up links, leave reason
 function dayNotes(d: DayRow): string[] {
   const notes: string[] = [];
   if (d.note) notes.push(d.note);
   if (d.holiday) notes.push(d.holiday);
-  if (d.halfDay) notes.push("Half day (WFH over limit)");
+  if (d.halfDay) notes.push(halfDayLabel[d.halfDay]);
   if (d.compensates) notes.push(`Makes up leave of ${fmtDate(d.compensates, false)}`);
   if (d.leave) {
     if (d.leave.reason) notes.push(d.leave.reason);
@@ -27,16 +29,19 @@ function dayNotes(d: DayRow): string[] {
 // The old attendance sheet, rebuilt: one row per day + totals.
 // Used on /attendance (my month) and /admin/attendance (anyone's month).
 // onEditDay: when given, past days get an edit button (admins edit; employees request a change)
+// canExport: shows "Export CSV" (admins only)
 export default function MonthSheet({
   report,
   name,
   onEditDay,
   editLabel = "Edit day",
+  canExport = false,
 }: {
   report: MonthReport;
   name: string;
   onEditDay?: (day: DayRow) => void;
   editLabel?: string;
+  canExport?: boolean;
 }) {
   const { days, summary } = report;
   const today = todayIST();
@@ -61,24 +66,29 @@ export default function MonthSheet({
       [],
       ["Total worked", fmtDuration(summary.workedMs)],
       ["Days present", summary.present, "In-office", summary.inOffice, "WFH", `${summary.wfh} of ${summary.wfhAllowance}`],
-      ["Half days (extra WFH)", summary.halfDays],
+      ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Absent", summary.absent],
     ]);
   }
 
   const notMadeUp = summary.leaves - summary.leavesCompensated;
   const overWfh = summary.wfh > summary.wfhAllowance;
+  const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
 
   return (
     <div className="space-y-6">
       {/* 2 columns on phones (the 5th tile spans both), 5 in a row on large screens */}
       <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
         <Stat label="Hours worked" value={fmtDuration(summary.workedMs)} hint={`avg ${fmtDuration(summary.avgMs)} a day`} />
-        <Stat label="Days present" value={summary.present} hint={`${summary.inOffice} in-office`} />
+        <Stat
+          label="Days present"
+          value={summary.present}
+          hint={summary.halfDays ? `${summary.daysWorked} counting half days` : `${summary.inOffice} in-office`}
+        />
         <Stat
           label="WFH used"
           value={`${summary.wfh} / ${summary.wfhAllowance}`}
-          hint={summary.halfDays ? `${summary.halfDays} counted as half day` : "Within allowance"}
+          hint={extraWfh ? `${extraWfh} counted as half day` : "Within allowance"}
           emphasis={overWfh ? "warning" : undefined}
         />
         <Stat
@@ -106,9 +116,11 @@ export default function MonthSheet({
         title="Day by day"
         flush
         actions={
-          <Button variant="secondary" size="sm" onClick={exportCsv}>
-            <Download size={14} /> Export CSV
-          </Button>
+          canExport && (
+            <Button variant="secondary" size="sm" onClick={exportCsv}>
+              <Download size={14} /> Export CSV
+            </Button>
+          )
         }
       >
         {/* Phones: one compact row per day */}
@@ -139,7 +151,7 @@ export default function MonthSheet({
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
                       {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
-                      {d.halfDay && <Tag tone="amber">Half day, extra WFH</Tag>}
+                      {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
                       {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                       {d.leave && (
                         <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>
@@ -201,7 +213,7 @@ export default function MonthSheet({
                           </span>
                         )}
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
-                        {d.halfDay && <Tag tone="amber">Half day, extra WFH</Tag>}
+                        {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
                         {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                         {d.leave && (
                           <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>

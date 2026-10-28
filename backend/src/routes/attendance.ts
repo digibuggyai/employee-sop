@@ -67,7 +67,9 @@ router.post("/break/end", async (req, res) => {
 });
 
 // POST /api/attendance/check-out   (also ends a running break)
+// Body { halfDay: true } = "Half day exit": leaving early, the day counts as half a working day.
 router.post("/check-out", async (req, res) => {
+  const halfDay = req.body?.halfDay === true;
   const day = await findToday(req.user!.id);
   if (!day) return res.status(400).json({ error: "Check in first" });
   if (day.checkOut) return res.status(400).json({ error: "You've already checked out" });
@@ -76,7 +78,7 @@ router.post("/check-out", async (req, res) => {
   // $transaction = both changes happen together, or neither does.
   await prisma.$transaction([
     prisma.break.updateMany({ where: { attendanceId: day.id, end: null }, data: { end: now } }),
-    prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now } }),
+    prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now, halfDay } }),
   ]);
   res.json(await findToday(req.user!.id));
 });

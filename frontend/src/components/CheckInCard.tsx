@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Coffee, House, LogIn, LogOut, Play } from "lucide-react";
+import { Building2, Coffee, House, LogIn, LogOut, Play, TimerOff } from "lucide-react";
 import { api, type Attendance, type Place } from "@/lib/api";
 import { fmtDuration, fmtTime } from "@/lib/format";
 import { useNow } from "@/lib/useNow";
+import { useConfirm } from "./Feedback";
 import { Button, Segmented } from "./form";
 import { Badge, Skeleton, type Tone } from "./ui";
 
@@ -38,6 +39,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
   const [place, setPlace] = useState<Place>("IN_OFFICE"); // choice before checking in
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const confirm = useConfirm();
 
   // Load today's record once, so a refresh shows where you left off.
   useEffect(() => {
@@ -59,6 +61,16 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  // "Half day exit": leaving early. The day still counts as present, but as half a working day.
+  async function halfDayExit() {
+    const ok = await confirm({
+      title: "Leave as a half day?",
+      description: "You'll be checked out now and today will count as a half day.",
+      confirmLabel: "Half day exit",
+    });
+    if (ok) act("check-out", { halfDay: true });
   }
 
   const openBreak = day?.breaks.find((b) => !b.end);
@@ -131,7 +143,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
             )
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {loaded && state === "out" && (
               <Button loading={busy} onClick={() => act("check-in", { place })}>
                 <LogIn size={16} /> Check in
@@ -140,7 +152,10 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
             {state === "working" && (
               <>
                 <Button variant="secondary" disabled={busy} onClick={() => act("break/start")}>
-                  <Coffee size={16} /> Take a break
+                  <Coffee size={16} /> Break
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={halfDayExit}>
+                  <TimerOff size={16} /> Half day
                 </Button>
                 <Button loading={busy} onClick={() => act("check-out")}>
                   <LogOut size={16} /> Check out
@@ -157,7 +172,9 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
                 </Button>
               </>
             )}
-            {state === "done" && <p className="text-[13px] text-zinc-500">See you tomorrow.</p>}
+            {state === "done" && (
+              <p className="text-[13px] text-zinc-500">{day?.halfDay ? "Half day. " : ""}See you tomorrow.</p>
+            )}
           </div>
         </div>
 

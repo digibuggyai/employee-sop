@@ -64,6 +64,7 @@ function DayForm({
     checkIn: toTimeInput(day.checkIn),
     checkOut: toTimeInput(day.checkOut),
     note: day.note ?? "",
+    halfDay: day.halfDay === "MARKED",
   };
   const [form, setForm] = useState({ ...original, reason: "" });
   const [error, setError] = useState("");
@@ -78,12 +79,13 @@ function DayForm({
     setError("");
 
     // Only send what actually changed (a new day sends everything)
-    const changed = (k: "place" | "checkIn" | "checkOut" | "note") => !hasRecord || form[k] !== original[k];
-    const body: Record<string, string | null> = { date: day.date };
+    const changed = (k: "place" | "checkIn" | "checkOut" | "note" | "halfDay") => !hasRecord || form[k] !== original[k];
+    const body: Record<string, string | boolean | null> = { date: day.date };
     if (changed("place")) body.place = form.place;
     if (changed("checkIn") && form.checkIn) body.checkIn = form.checkIn;
     if (changed("checkOut")) body.checkOut = form.checkOut || null;
     if (changed("note")) body.note = form.note || null;
+    if (changed("halfDay")) body.halfDay = form.halfDay;
     if (Object.keys(body).length === 1) return setError("Nothing has changed yet");
 
     setLoading(true);
@@ -148,6 +150,18 @@ function DayForm({
       <Field label="Note" hint="Optional, e.g. 'Client visit'">
         <input value={form.note} onChange={set("note")} maxLength={300} className={inputClass} />
       </Field>
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
+        <input
+          type="checkbox"
+          checked={form.halfDay}
+          onChange={(e) => setForm({ ...form, halfDay: e.target.checked })}
+          className="mt-0.5 size-4 accent-brand-700"
+        />
+        <span>
+          <span className="block text-sm font-medium text-zinc-900">Half day</span>
+          <span className="block text-[13px] text-zinc-500">Came late or left early. Counts as half a working day.</span>
+        </span>
+      </label>
       {mode === "request" && (
         <Field label="Reason for the change">
           <textarea

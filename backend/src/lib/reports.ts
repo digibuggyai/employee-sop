@@ -50,7 +50,9 @@ export type DayRow = {
   breaks?: number;
   breakMs?: number;
   workedMs?: number;
-  halfDay?: boolean; // a WFH day beyond the person's monthly allowance
+  // Counts as half a working day: MARKED = a half day (left early / came late),
+  // EXTRA_WFH = a WFH day beyond the person's monthly allowance
+  halfDay?: "MARKED" | "EXTRA_WFH";
   compensates?: string; // this worked day makes up for the leave on that date
   leave?: { id: string; reason: string | null; compensatedOn: string | null };
   note?: string | null; // the attendance note (e.g. "Due to college")
@@ -62,7 +64,8 @@ export type MonthSummary = {
   inOffice: number;
   wfh: number;
   wfhAllowance: number;
-  halfDays: number; // WFH days over the allowance
+  halfDays: number; // marked half days + WFH days over the allowance
+  daysWorked: number; // present days, with each half day counted as 0.5
   leaves: number; // approved leave days
   leavesCompensated: number; // ...of which made up on a weekend/holiday
   leavesPending: number;
@@ -118,7 +121,7 @@ export async function monthReports(userIds: string[], month: string) {
 
     const summary: MonthSummary = {
       present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
-      leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0,
+      leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0, daysWorked: 0,
     };
 
     const days = dates.map((date): DayRow => {
@@ -135,6 +138,7 @@ export async function monthReports(userIds: string[], month: string) {
         summary.present++;
         summary[att.place === "WFH" ? "wfh" : "inOffice"]++;
         summary.workedMs += workedMs;
+        if (att.halfDay) summary.halfDays++;
         const madeUp = leaveByMakeUpDay.get(date);
         return {
           ...base,
@@ -146,6 +150,7 @@ export async function monthReports(userIds: string[], month: string) {
           breakMs,
           workedMs,
           note: att.note,
+          ...(att.halfDay && { halfDay: "MARKED" as const }),
           ...flags,
           ...(madeUp && { compensates: dayKey(madeUp.date) }),
         };
@@ -171,13 +176,16 @@ export async function monthReports(userIds: string[], month: string) {
     });
 
     // WFH policy: the first `wfhAllowance` WFH days of the month are normal; every one after is a half day.
+    // (A WFH day already marked as a half day stays one half day, never less.)
     days
       .filter((d) => d.place === "WFH")
       .slice(summary.wfhAllowance)
       .forEach((d) => {
-        d.halfDay = true;
+        if (d.halfDay) return;
+        d.halfDay = "EXTRA_WFH";
         summary.halfDays++;
       });
+    summary.daysWorked = summary.present - summary.halfDays / 2;
 
     summary.avgMs = summary.present ? Math.round(summary.workedMs / summary.present) : 0;
     reports.set(userId, { days, summary });

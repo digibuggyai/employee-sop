@@ -274,7 +274,7 @@ router.get("/corrections", async (req, res) => {
   res.json(
     corrections.map((c) => {
       const a = find(c.userId, c.date);
-      return { ...c, current: a && { place: a.place, checkIn: a.checkIn, checkOut: a.checkOut, note: a.note } };
+      return { ...c, current: a && { place: a.place, checkIn: a.checkIn, checkOut: a.checkOut, note: a.note, halfDay: a.halfDay } };
     }),
   );
 });
@@ -297,6 +297,7 @@ router.patch("/corrections/:id", async (req, res) => {
       checkIn: c.checkIn ?? undefined,
       checkOut: c.checkOut ?? undefined,
       note: c.note ?? undefined,
+      halfDay: c.halfDay ?? undefined,
     };
     // Re-check: the day may have changed since the employee asked
     const problem = await checkDayChange(c.userId, date, change);

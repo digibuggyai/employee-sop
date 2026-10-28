@@ -81,6 +81,7 @@ model Attendance {
   checkIn  DateTime // exact moment, set by the server
   checkOut DateTime?
   note     String?
+  halfDay  Boolean   @default(false) // came late / left early: present, but counts as half a working day
   breaks   Break[]
 
   createdAt DateTime @default(now())
@@ -185,6 +186,7 @@ model AttendanceCorrection {
   checkIn  DateTime?
   checkOut DateTime?
   note     String?
+  halfDay  Boolean? // null = no change requested
   reason   String // why the change is needed (shown to the admin)
 
   status       RequestStatus @default(PENDING)

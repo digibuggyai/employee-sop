@@ -43,16 +43,17 @@ export function MonthAtGlance() {
   }, [month]);
 
   const s = report?.summary;
+  const extraWfh = report?.days.filter((d) => d.halfDay === "EXTRA_WFH").length ?? 0;
   const rows: [string, React.ReactNode, string?][] = s
     ? [
         ["Hours worked", fmtDuration(s.workedMs), `avg ${fmtDuration(s.avgMs)} a day`],
-        ["Days present", s.present, `${s.inOffice} in-office`],
+        ["Days present", s.present, s.halfDays ? `${s.daysWorked} counting half days` : `${s.inOffice} in-office`],
         [
           "WFH used",
           <span key="wfh" className={s.wfh > s.wfhAllowance ? "text-red-600" : undefined}>
             {s.wfh} of {s.wfhAllowance}
           </span>,
-          s.halfDays ? `${s.halfDays} counted as half day` : undefined,
+          extraWfh ? `${extraWfh} counted as half day` : undefined,
         ],
         ["Leaves", s.leaves, s.leaves ? `${s.leavesCompensated} made up` : undefined],
       ]

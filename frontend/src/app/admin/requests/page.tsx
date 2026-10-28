@@ -93,6 +93,8 @@ function RequestCard({ c, onDone }: { c: Correction; onDone: () => void }) {
   if (c.checkIn) rows.push(["In", c.current ? fmtTime(c.current.checkIn) : "—", fmtTime(c.checkIn)]);
   if (c.checkOut) rows.push(["Out", c.current?.checkOut ? fmtTime(c.current.checkOut) : "—", fmtTime(c.checkOut)]);
   if (c.note) rows.push(["Note", c.current?.note ?? "—", c.note]);
+  const yesNo = (v: boolean | undefined) => (v ? "Half day" : "Full day");
+  if (c.halfDay !== null) rows.push(["Day", c.current ? yesNo(c.current.halfDay) : "—", yesNo(c.halfDay)]);
 
   async function review(status: "APPROVED" | "REJECTED") {
     if (status === "REJECTED") {

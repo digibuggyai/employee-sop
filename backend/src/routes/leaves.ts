@@ -28,8 +28,10 @@ router.get("/", async (req, res) => {
     prisma.leave.findMany({ where: { userId: me.id }, include: leaveInclude, orderBy: { date: "desc" }, take: 100 }),
     monthReports([me.id], thisMonth()),
   ]);
-  const s = report.get(me.id)!.summary;
-  res.json({ leaves, wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: s.halfDays } });
+  const { summary: s, days } = report.get(me.id)!;
+  // only the WFH days over the limit (not half days marked for leaving early)
+  const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
+  res.json({ leaves, wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh } });
 });
 
 const requestSchema = z

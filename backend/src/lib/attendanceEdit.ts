@@ -14,6 +14,7 @@ export const dayChangeSchema = z.object({
   checkIn: z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM for the in time").optional(),
   checkOut: z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM for the out time").nullable().optional(),
   note: z.string().trim().max(300).nullable().optional(),
+  halfDay: z.boolean().optional(),
 });
 export type DayChangeInput = z.infer<typeof dayChangeSchema>;
 
@@ -23,6 +24,7 @@ export type DayChange = {
   checkIn?: Date;
   checkOut?: Date | null;
   note?: string | null;
+  halfDay?: boolean;
 };
 
 export function toDayChange(input: DayChangeInput): DayChange {
@@ -31,6 +33,7 @@ export function toDayChange(input: DayChangeInput): DayChange {
     checkIn: input.checkIn ? istDateTime(input.date, input.checkIn) : undefined,
     checkOut: input.checkOut === undefined ? undefined : input.checkOut ? istDateTime(input.date, input.checkOut) : null,
     note: input.note === undefined ? undefined : input.note || null,
+    halfDay: input.halfDay,
   };
 }
 
@@ -61,6 +64,6 @@ export async function applyDayChange(userId: string, date: string, change: DayCh
   }
   // checkDayChange already made sure place + checkIn exist for a new day
   return prisma.attendance.create({
-    data: { userId, date: toDbDate(date), place: change.place!, checkIn: change.checkIn!, checkOut: change.checkOut ?? null, note: change.note ?? null },
+    data: { userId, date: toDbDate(date), place: change.place!, checkIn: change.checkIn!, checkOut: change.checkOut ?? null, note: change.note ?? null, halfDay: change.halfDay ?? false },
   });
 }

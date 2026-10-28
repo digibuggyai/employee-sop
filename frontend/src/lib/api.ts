@@ -89,6 +89,7 @@ export type Attendance = {
   checkIn: string;
   checkOut: string | null;
   note: string | null;
+  halfDay: boolean; // left early / came late: counts as half a working day
   breaks: Break[];
 };
 
@@ -105,7 +106,9 @@ export type DayRow = {
   breaks?: number;
   breakMs?: number;
   workedMs?: number;
-  halfDay?: boolean; // WFH beyond the monthly allowance
+  // Counts as half a working day: MARKED = a half day (left early / came late),
+  // EXTRA_WFH = a WFH day beyond the monthly allowance
+  halfDay?: "MARKED" | "EXTRA_WFH";
   compensates?: string; // this worked weekend/holiday makes up for the leave on that date
   leave?: { id: string; reason: string | null; compensatedOn: string | null };
   note?: string | null; // the attendance note
@@ -117,7 +120,8 @@ export type MonthSummary = {
   inOffice: number;
   wfh: number;
   wfhAllowance: number;
-  halfDays: number;
+  halfDays: number; // marked half days + WFH days over the allowance
+  daysWorked: number; // present days, each half day counted as 0.5
   leaves: number;
   leavesCompensated: number;
   leavesPending: number;
@@ -216,6 +220,7 @@ export type Correction = {
   checkIn: string | null;
   checkOut: string | null;
   note: string | null;
+  halfDay: boolean | null; // null = not part of this request
   reason: string;
   status: RequestStatus;
   reviewedBy: { id: string; name: string } | null;
@@ -223,7 +228,7 @@ export type Correction = {
   createdAt: string;
   user?: { id: string; name: string; photoUpdatedAt?: string | null }; // admin lists
   // admin lists: the day as it is now (null = no attendance that day)
-  current?: { place: Place; checkIn: string; checkOut: string | null; note: string | null } | null;
+  current?: { place: Place; checkIn: string; checkOut: string | null; note: string | null; halfDay: boolean } | null;
 };
 
 // Red badge numbers in the admin menu

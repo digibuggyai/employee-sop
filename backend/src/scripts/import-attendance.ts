@@ -83,7 +83,7 @@ const istMoment = (date: string, t: { h: number; m: number }) =>
 const fmt = (t: { h: number; m: number }) => `${String(t.h).padStart(2, "0")}:${String(t.m).padStart(2, "0")}`;
 
 // ---------- 3. Turn rows into attendance days ----------
-type Day = { date: string; place: "IN_OFFICE" | "WFH"; checkIn: Date; checkOut: Date; note: string | null; label: string };
+type Day = { date: string; place: "IN_OFFICE" | "WFH"; halfDay: boolean; checkIn: Date; checkOut: Date; note: string | null; label: string };
 const days: Day[] = [];
 const skipped: string[] = [];
 
@@ -109,13 +109,17 @@ for (const row of parseCsv(readFileSync(file, "utf8"))) {
     continue;
   }
   const mins = (checkOut.getTime() - checkIn.getTime()) / 60000;
+  const wfh = /wfh|work\s*from\s*home/i.test(place);
+  // "Half Day" in the Place or Notes column → present, but counts as half a working day
+  const halfDay = /half\s*day/i.test(`${place} ${note}`);
   days.push({
     date,
-    place: /wfh/i.test(place) ? "WFH" : "IN_OFFICE",
+    place: wfh ? "WFH" : "IN_OFFICE",
+    halfDay,
     checkIn,
     checkOut,
     note: note || null,
-    label: `${date}  ${/wfh/i.test(place) ? "WFH      " : "In-office"}  ${fmt(inT)}–${fmt(outT)}  ${Math.floor(mins / 60)}h ${mins % 60}m${note ? "  · " + note : ""}`,
+    label: `${date}  ${wfh ? "WFH      " : "In-office"}  ${fmt(inT)}–${fmt(outT)}  ${Math.floor(mins / 60)}h ${mins % 60}m${halfDay ? "  [half day]" : ""}${note ? "  · " + note : ""}`,
   });
 }
 
@@ -137,7 +141,7 @@ if (!save) {
   console.log("\nPreview only. Nothing was saved. Add --save to write to the database.");
 } else {
   for (const d of days) {
-    const data = { place: d.place, checkIn: d.checkIn, checkOut: d.checkOut, note: d.note };
+    const data = { place: d.place, halfDay: d.halfDay, checkIn: d.checkIn, checkOut: d.checkOut, note: d.note };
     // upsert on the (userId, date) unique key: update if the day exists, else create
     await prisma.attendance.upsert({
       where: { userId_date: { userId: user.id, date: toDbDate(d.date) } },

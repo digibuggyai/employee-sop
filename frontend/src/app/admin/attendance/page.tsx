@@ -54,9 +54,9 @@ export default function AdminAttendancePage() {
   function exportSummary() {
     if (!rows) return;
     downloadCsv(`attendance-summary-${month}.csv`, [
-      ["Employee", "Days present", "In-office", "WFH", "WFH allowed", "Half days", "Leaves", "Leaves made up", "Absent", "Total worked", "Avg per day"],
+      ["Employee", "Days present", "Half days", "Days worked", "In-office", "WFH", "WFH allowed", "Leaves", "Leaves made up", "Absent", "Total worked", "Avg per day"],
       ...rows.map((r) => [
-        r.user.name, r.present, r.inOffice, r.wfh, r.wfhAllowance, r.halfDays, r.leaves, r.leavesCompensated, r.absent,
+        r.user.name, r.present, r.halfDays, r.daysWorked, r.inOffice, r.wfh, r.wfhAllowance, r.leaves, r.leavesCompensated, r.absent,
         fmtDuration(r.workedMs), fmtDuration(r.avgMs),
       ]),
     ]);
@@ -101,7 +101,7 @@ export default function AdminAttendancePage() {
 
       {selected ? (
         report ? (
-          <MonthSheet report={report} name={selected.name} onEditDay={setEditing} />
+          <MonthSheet report={report} name={selected.name} onEditDay={setEditing} canExport />
         ) : (
           <Skeleton className="h-96" />
         )
@@ -118,7 +118,7 @@ export default function AdminAttendancePage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
                     <p className="text-xs text-zinc-500 tabular-nums">
-                      {r.present} present · WFH {r.wfh}/{r.wfhAllowance} · {r.leaves} leave
+                      {r.present} present{r.halfDays > 0 && ` (${r.halfDays} half)`} · WFH {r.wfh}/{r.wfhAllowance} · {r.leaves} leave
                       {r.absent > 0 && <span className="text-red-600"> · {r.absent} absent</span>}
                     </p>
                   </div>
@@ -151,13 +151,14 @@ export default function AdminAttendancePage() {
                     </td>
                     <td className={`${table.td} tabular-nums`}>
                       {r.present}
-                      <span className="text-xs text-zinc-500"> ({r.inOffice} office)</span>
+                      <span className="text-xs text-zinc-500">
+                        {r.halfDays > 0 ? ` (${r.halfDays} half)` : ` (${r.inOffice} office)`}
+                      </span>
                     </td>
                     <td className={`${table.td} tabular-nums`}>
                       <span className={r.wfh > r.wfhAllowance ? "font-medium text-amber-700" : ""}>
                         {r.wfh} / {r.wfhAllowance}
                       </span>
-                      {r.halfDays > 0 && <span className="text-xs text-zinc-500"> ({r.halfDays} half)</span>}
                     </td>
                     <td className={`${table.td} tabular-nums`}>
                       {r.leaves}
