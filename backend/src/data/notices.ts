@@ -29,7 +29,7 @@ export const notices: Notice[] = [
     title: "Reimbursements",
     body: "Mail your reimbursements to Bhavya and the accounts team by the 30th of every month, so they are settled with that month's salary.",
     audience: ["ALL"],
-    highlight: { value: "30th", label: "Reimbursements due" },
+    highlight: { value: "30th", label: "Report reimbursements due by" },
   },
   {
     id: "leave-policy",
