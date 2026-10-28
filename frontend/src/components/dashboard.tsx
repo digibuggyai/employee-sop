@@ -48,7 +48,7 @@ export function MonthAtGlance() {
   const week = report && currentWeek(report.weeks, todayIST());
   const rows: [string, React.ReactNode, string?][] = s
     ? [
-        ["Hours worked", fmtDuration(s.workedMs), `avg ${fmtDuration(s.avgMs)} a day`],
+        ["Hours worked", fmtDuration(s.workedMs), `avg ${fmtDuration(s.avgMs)} a day` + (s.extraMs ? ` · +${fmtDuration(s.extraMs)} extra` : "")],
         [
           "This week",
           fmtDuration(week?.workedMs),

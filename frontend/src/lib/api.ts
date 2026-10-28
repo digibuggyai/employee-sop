@@ -116,6 +116,9 @@ export type DayRow = {
   halfDay?: "MARKED" | "EXTRA_WFH" | "OVER_2H";
   lateMin?: number; // minutes late, past the 15 min grace
   earlyMin?: number; // minutes left early
+  shortMin?: number; // minutes short of the shift's length, after making up
+  madeUp?: boolean; // late / left early, but the shift's hours were covered
+  extraMin?: number; // minutes beyond the shift's length
   shortLeave?: "FREE" | "COUNTED"; // one of the 2 free a month, or counts toward absence
   plan?: string | null;
   report?: string | null;
@@ -138,7 +141,8 @@ export type MonthSummary = {
   leavesCompensated: number;
   leavesPending: number;
   absent: number; // unauthorized absences
-  shortLeaves: number; // late / early by up to 2 h (first 2 free)
+  shortLeaves: number; // short of the shift by up to 2 h (first 2 free)
+  extraMs: number; // time beyond the shift's length this month
   latePenaltyDays: number; // days of absence added for lates
   leaveBalance: number | null; // full-time only
   workedMs: number;

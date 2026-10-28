@@ -59,7 +59,10 @@ export type DayRow = {
   halfDay?: "MARKED" | "EXTRA_WFH" | "OVER_2H";
   lateMin?: number; // minutes after their start time (only when past the 15 min grace)
   earlyMin?: number; // minutes before their end time (same)
-  shortLeave?: "FREE" | "COUNTED"; // late/early up to 2 h: one of the 2 free a month, or counts toward absence
+  shortMin?: number; // minutes the day fell short of the shift's length (after making up)
+  madeUp?: boolean; // late or left early, but stayed long enough to cover the shift
+  extraMin?: number; // minutes beyond the shift's length (15 min or more)
+  shortLeave?: "FREE" | "COUNTED"; // short by up to 2 h: one of the 2 free a month, or counts toward absence
   plan?: string | null; // WFH to-do plan (interns)
   report?: string | null; // WFH work report (interns)
   compensates?: string; // this worked day makes up for the leave on that date
@@ -81,7 +84,8 @@ export type MonthSummary = {
   leavesCompensated: number; // ...of which made up on a weekend/holiday
   leavesPending: number;
   absent: number; // unauthorized: past working days with no check-in and no approved/pending leave
-  shortLeaves: number; // days late / leaving early by up to 2 h (the first 2 are free)
+  shortLeaves: number; // days short of the shift by up to 2 h (the first 2 are free)
+  extraMs: number; // time worked beyond the shift's length, this month
   latePenaltyDays: number; // every 3 short leaves after the free ones = 1 day of absence
   leaveBalance: number | null; // full-time only: leave left after this month (1.5 a month, rolls over)
   workedMs: number;
@@ -170,7 +174,7 @@ export async function monthReports(userIds: string[], month: string) {
     const summary: MonthSummary = {
       present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
       leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0, daysWorked: 0,
-      weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, leaveBalance: null,
+      weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, leaveBalance: null, extraMs: 0,
       remote: person?.employmentType === "REMOTE_INTERN",
     };
 
@@ -229,28 +233,43 @@ export async function monthReports(userIds: string[], month: string) {
     });
 
     // Late / early leaving, against their timings (working days only: a make-up weekend has no shift).
-    // Up to 2 h = a short leave: the first 2 of the month are free, then every 3 = 1 day of absence.
-    // More than 2 h = a half day. A day already marked as a half day isn't counted twice.
+    // What counts is whether the day covered the shift's LENGTH (out − in, like the old sheet's "Hours"):
+    // coming in 30 min late and staying 30 min longer is made up. What's still missing ("short"):
+    //   up to 15 min       → fine
+    //   up to 2 h          → a short leave: the first 2 of the month are free, then every 3 = 1 day of absence
+    //   more than 2 h      → a half day
+    // Time beyond the shift's length is extra, shown per day and totalled for the month.
+    // A day already marked as a half day isn't counted twice.
     const shift = parseTimings(person?.timings);
     if (shift) {
+      const shiftLength = shift.end - shift.start;
       for (const d of days) {
-        if (!d.checkIn || d.halfDay || isOffDay(d.date)) continue;
+        if (!d.checkIn || isOffDay(d.date)) continue;
         const dayStart = Date.parse(`${d.date}T00:00:00+05:30`); // midnight in India
         const minuteOf = (t: Date) => Math.round((t.getTime() - dayStart) / 60000);
         const late = minuteOf(d.checkIn) - shift.start;
-        const early = d.checkOut ? shift.end - minuteOf(d.checkOut) : 0; // still working: not early (yet)
-        const lateMin = late > GRACE_MIN ? late : 0;
-        const earlyMin = early > GRACE_MIN ? early : 0;
-        if (!lateMin && !earlyMin) continue;
-        if (lateMin) d.lateMin = lateMin;
-        if (earlyMin) d.earlyMin = earlyMin;
-        if (lateMin + earlyMin > SHORT_LEAVE_MAX_MIN) {
+        if (late > GRACE_MIN) d.lateMin = late;
+        if (!d.checkOut) continue; // still working: the day isn't settled yet
+        const early = shift.end - minuteOf(d.checkOut);
+        if (early > GRACE_MIN) d.earlyMin = early;
+        if (d.halfDay) continue; // marked as a half day: already counted
+
+        const short = shiftLength - (minuteOf(d.checkOut) - minuteOf(d.checkIn)); // negative = extra time
+        if (-short >= GRACE_MIN) {
+          d.extraMin = -short;
+          summary.extraMs += -short * 60000;
+        }
+        if (short > SHORT_LEAVE_MAX_MIN) {
+          d.shortMin = short;
           d.halfDay = "OVER_2H";
           summary.halfDays++;
-          continue;
+        } else if (short > GRACE_MIN) {
+          d.shortMin = short;
+          summary.shortLeaves++;
+          d.shortLeave = summary.shortLeaves <= FREE_SHORT_LEAVES ? "FREE" : "COUNTED";
+        } else if (d.lateMin || d.earlyMin) {
+          d.madeUp = true; // late or left early, but the hours were covered
         }
-        summary.shortLeaves++;
-        d.shortLeave = summary.shortLeaves <= FREE_SHORT_LEAVES ? "FREE" : "COUNTED";
       }
       summary.latePenaltyDays = Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE);
     }

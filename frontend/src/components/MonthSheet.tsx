@@ -14,13 +14,20 @@ const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
 
 const halfDayLabel = { MARKED: "Half day", EXTRA_WFH: "Half day, extra WFH", OVER_2H: "Half day, over 2h" } as const;
 
-// "Late 25m · free" / "Left early 40m · counts": against their timings (first 2 short leaves a month are free)
-function lateText(d: DayRow): string | null {
+const mins = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`); // 25m, 1h 5m
+
+// Against their timings: "Late 30m · made up" (stayed longer), "Late 1h 10m · 40m short · free",
+// "Left early 20m · counts". The first 2 short days of a month are free.
+function lateTag(d: DayRow): { text: string; tone: "zinc" | "amber" | "green" } | null {
   if (!d.lateMin && !d.earlyMin) return null;
-  const mins = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`); // 25m, 1h 5m
-  const parts = [d.lateMin && `Late ${mins(d.lateMin)}`, d.earlyMin && `Left early ${mins(d.earlyMin)}`];
-  const suffix = d.shortLeave === "FREE" ? " · free" : d.shortLeave === "COUNTED" ? " · counts" : "";
-  return parts.filter(Boolean).join(", ") + suffix;
+  const base = [d.lateMin && `Late ${mins(d.lateMin)}`, d.earlyMin && `Left early ${mins(d.earlyMin)}`].filter(Boolean).join(", ");
+  if (d.madeUp) return { text: `${base} · made up`, tone: "green" };
+  if (d.shortLeave) {
+    // say how short the day was only when making up changed it
+    const short = d.shortMin && d.shortMin !== (d.lateMin ?? 0) + (d.earlyMin ?? 0) ? ` · ${mins(d.shortMin)} short` : "";
+    return { text: `${base}${short} · ${d.shortLeave === "FREE" ? "free" : "counts"}`, tone: d.shortLeave === "FREE" ? "zinc" : "amber" };
+  }
+  return { text: base, tone: d.halfDay ? "amber" : "zinc" }; // over 2 h (half day), or still at work today
 }
 
 // Extra notes for a day: holiday name, half day, make-up links, leave reason
@@ -29,8 +36,9 @@ function dayNotes(d: DayRow): string[] {
   if (d.note) notes.push(d.note);
   if (d.holiday) notes.push(d.holiday);
   if (d.halfDay) notes.push(halfDayLabel[d.halfDay]);
-  const late = lateText(d);
-  if (late) notes.push(late);
+  const late = lateTag(d);
+  if (late) notes.push(late.text);
+  if (d.extraMin) notes.push(`+${mins(d.extraMin)} extra`);
   if (d.plan) notes.push(`Plan: ${d.plan}`);
   if (d.report) notes.push(`Report: ${d.report}`);
   if (d.compensates) notes.push(`Makes up leave of ${fmtDate(d.compensates, false)}`);
@@ -112,7 +120,11 @@ export default function MonthSheet({
     <div className="space-y-6">
       {/* 2 columns on phones (the last tile spans both), 4 on larger screens */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
-        <Stat label="Hours worked" value={fmtDuration(summary.workedMs)} hint={`avg ${fmtDuration(summary.avgMs)} a day`} />
+        <Stat
+          label="Hours worked"
+          value={fmtDuration(summary.workedMs)}
+          hint={`avg ${fmtDuration(summary.avgMs)} a day` + (summary.extraMs ? ` · +${fmtDuration(summary.extraMs)} extra` : "")}
+        />
         <Stat
           label={thisWeek ? "This week" : "Avg per week"}
           value={fmtDuration(weekMs)}
@@ -205,12 +217,13 @@ export default function MonthSheet({
                     {d.note && <p className="mt-1 text-xs text-zinc-600">{d.note}</p>}
                     {d.plan && <p className="mt-1 line-clamp-2 text-xs text-zinc-600">Plan: {d.plan}</p>}
                     {d.report && <p className="mt-1 line-clamp-3 text-xs text-zinc-600">Report: {d.report}</p>}
-                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateText(d)) && (
+                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || d.extraMin) && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                         {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
-                        {lateText(d) && <Tag tone={d.shortLeave === "FREE" ? "zinc" : "amber"}>{lateText(d)}</Tag>}
+                        {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
+                        {!!d.extraMin && <Tag tone="green">+{mins(d.extraMin)} extra</Tag>}
                         {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
                         {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                         {d.leave && (
@@ -278,7 +291,8 @@ export default function MonthSheet({
                           )}
                           {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                           {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
-                          {lateText(d) && <Tag tone={d.shortLeave === "FREE" ? "zinc" : "amber"}>{lateText(d)}</Tag>}
+                          {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
+                          {!!d.extraMin && <Tag tone="green">+{mins(d.extraMin)} extra</Tag>}
                           {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
                           {/* WFH plan / report: hover to read the whole text */}
                           {d.plan && (
