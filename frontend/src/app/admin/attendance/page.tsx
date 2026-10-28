@@ -9,9 +9,9 @@ import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/form";
-import { Skeleton, table } from "@/components/ui";
+import { Badge, Skeleton, table } from "@/components/ui";
 import { api, type DayRow, type MonthReport, type MonthSummary, type UserBrief } from "@/lib/api";
-import { downloadCsv, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
+import { downloadCsv, fmtDate, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
 
 type SummaryRow = MonthSummary & { user: UserBrief };
 
@@ -116,7 +116,10 @@ export default function AdminAttendancePage() {
                 <button onClick={() => open(r.user)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50">
                   <Avatar person={r.user} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
+                    <p className="flex items-center gap-2 truncate text-sm font-medium text-zinc-900">
+                      {r.user.name}
+                      {r.user.leftOn && <Badge>Left {fmtDate(r.user.leftOn, false)}</Badge>}
+                    </p>
                     <p className="text-xs text-zinc-500 tabular-nums">
                       {r.present} present{r.halfDays > 0 && ` (${r.halfDays} half)`} · WFH {r.wfh}/{r.wfhAllowance} · {r.leaves} leave
                       {r.absent > 0 && <span className="text-red-600"> · {r.absent} absent</span>}
@@ -147,6 +150,7 @@ export default function AdminAttendancePage() {
                       <div className="flex items-center gap-3">
                         <Avatar person={r.user} size="sm" />
                         <span className="font-medium text-zinc-900">{r.user.name}</span>
+                        {r.user.leftOn && <Badge>Left {fmtDate(r.user.leftOn, false)}</Badge>}
                       </div>
                     </td>
                     <td className={`${table.td} tabular-nums`}>

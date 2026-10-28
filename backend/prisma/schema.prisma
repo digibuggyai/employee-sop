@@ -42,6 +42,7 @@ model User {
 
   mustChangePassword Boolean @default(true) // true until they replace the temporary password
   active             Boolean @default(true) // false = left the company; can't log in, data kept
+  leftOn             DateTime? @db.Date // last working day (set when they leave); later days aren't absences
   wfhAllowance       Int     @default(4) // WFH days per month; each WFH day beyond this counts as a half day
   isEmployee         Boolean @default(true) // false = not tracked: no attendance, leave or WFH, never "absent" (e.g. the Hive Leader)
 

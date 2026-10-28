@@ -4,7 +4,7 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { api, employmentLabels, roleLabels, type EmploymentType, type Role, type SavedUser, type User } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
-import { toDateInput } from "@/lib/format";
+import { toDateInput, todayIST } from "@/lib/format";
 import PasswordInput from "./PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "./form";
 
@@ -42,6 +42,7 @@ export default function EmployeeForm({
     timings: existing?.timings ?? "",
     birthday: toDateInput(existing?.birthday ?? null),
     joinedOn: toDateInput(existing?.joinedOn ?? null),
+    leftOn: toDateInput(existing?.leftOn ?? null),
     wfhAllowance: String(existing?.wfhAllowance ?? 4),
     active: existing?.active ?? true,
     password: "", // create: temporary password · edit: leave empty unless resetting
@@ -171,14 +172,27 @@ export default function EmployeeForm({
 
       {isEdit && (
         <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
-          <input name="active" type="checkbox" checked={form.active} onChange={update} className="mt-0.5 size-4 accent-brand-700" />
+          <input
+            name="active"
+            type="checkbox"
+            checked={form.active}
+            // leaving: suggest today as the last working day · coming back: clear it
+            onChange={(e) => setForm({ ...form, active: e.target.checked, leftOn: e.target.checked ? "" : form.leftOn || todayIST() })}
+            className="mt-0.5 size-4 accent-brand-700"
+          />
           <span>
             <span className="block text-sm font-medium text-zinc-900">Active account</span>
             <span className="block text-[13px] text-zinc-500">
-              Untick when someone leaves. They can no longer log in, but their records are kept.
+              Untick when someone leaves. They can no longer log in, but their attendance, tasks and leaves are kept.
             </span>
           </span>
         </label>
+      )}
+
+      {isEdit && !form.active && (
+        <Field label="Last working day" hint="Days after this aren't counted as absent. Their past months stay in Admin → Attendance.">
+          <input name="leftOn" type="date" required value={form.leftOn} onChange={update} className={inputClass} />
+        </Field>
       )}
 
       <ErrorBox message={error} />

@@ -52,10 +52,15 @@ router.get("/overview", async (req, res) => {
   res.json({ date, rows });
 });
 
-// GET /api/admin/attendance/summary?month=2026-10 → one line per employee for the month
+// GET /api/admin/attendance/summary?month=2026-10 → one line per employee for the month.
+// Includes people who have left, for the months they still worked in (their records are kept).
 router.get("/attendance/summary", async (req, res) => {
   const month = monthParam.parse(req.query.month);
-  const users = await activeUsers();
+  const users = await prisma.user.findMany({
+    where: { isEmployee: true, OR: [{ active: true }, { leftOn: { gte: toDbDate(`${month}-01`) } }] },
+    orderBy: [{ active: "desc" }, { name: "asc" }],
+    select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true, active: true, leftOn: true },
+  });
   const reports = await monthReports(
     users.map((u) => u.id),
     month,

@@ -46,7 +46,7 @@ export default function MonthSheet({
   const { days, summary } = report;
   const today = todayIST();
   // Only past days (today is handled by the check-in card), and not before someone joined
-  const canEdit = (d: DayRow) => !!onEditDay && d.date < today && d.status !== "NOT_JOINED";
+  const canEdit = (d: DayRow) => !!onEditDay && d.date < today && d.status !== "NOT_JOINED" && d.status !== "LEFT";
 
   function exportCsv() {
     downloadCsv(`attendance-${name.replaceAll(" ", "-")}-${report.month}.csv`, [
@@ -126,7 +126,7 @@ export default function MonthSheet({
         {/* Phones: one compact row per day */}
         <ul className="divide-y divide-zinc-100 md:hidden">
           {days.map((d) => {
-            const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED";
+            const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED" || d.status === "LEFT";
             return (
               <li key={d.date} className={`flex gap-3 px-4 ${quiet ? "bg-zinc-50/50 py-2" : "py-3"}`}>
                 <div className={`w-9 shrink-0 text-center ${quiet ? "text-zinc-400" : ""}`}>
@@ -185,7 +185,7 @@ export default function MonthSheet({
             </thead>
             <tbody className={table.tbody}>
               {days.map((d) => {
-                const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED";
+                const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED" || d.status === "LEFT";
                 return (
                   <tr key={d.date} className={quiet ? "bg-zinc-50/50 text-zinc-400" : table.tr}>
                     <td className={`${table.td} py-2.5`}>

@@ -42,7 +42,7 @@ export type DayRow = {
   date: string;
   weekday: string;
   // what kind of day it is, and what happened
-  status: "PRESENT" | "WORKING" | "ABSENT" | "LEAVE" | "LEAVE_PENDING" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
+  status: "PRESENT" | "WORKING" | "ABSENT" | "LEAVE" | "LEAVE_PENDING" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED" | "LEFT";
   holiday?: string;
   place?: "IN_OFFICE" | "WFH";
   checkIn?: Date;
@@ -85,7 +85,7 @@ export async function monthReports(userIds: string[], month: string) {
   // Days before that are "not joined yet", not absences.
   const people = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, joinedOn: true, createdAt: true, wfhAllowance: true },
+    select: { id: true, joinedOn: true, leftOn: true, createdAt: true, wfhAllowance: true },
   });
   const personOf = new Map(people.map((p) => [p.id, p]));
 
@@ -111,6 +111,7 @@ export async function monthReports(userIds: string[], month: string) {
       person?.joinedOn?.toISOString().slice(0, 10) ??
       person?.createdAt.toLocaleDateString("en-CA", { timeZone: TIMEZONE }) ??
       dates[0];
+    const leftOn = person?.leftOn?.toISOString().slice(0, 10); // after this day they no longer work here
     // quick lookups by "2026-10-05"
     const attByDate = new Map(rows.filter((r) => r.userId === userId).map((r) => [dayKey(r.date), r]));
     const myLeaves = leaves.filter((l) => l.userId === userId);
@@ -167,6 +168,7 @@ export async function monthReports(userIds: string[], month: string) {
           leave: { id: leave.id, reason: leave.reason, compensatedOn },
         };
       }
+      if (leftOn && date > leftOn) return { ...base, status: "LEFT" };
       if (holidayByDate.has(date)) return { ...base, status: "HOLIDAY" };
       if (weekdayIndex === 0 || weekdayIndex === 6) return { ...base, status: "WEEKEND" };
       if (date >= today) return { ...base, status: "UPCOMING" };

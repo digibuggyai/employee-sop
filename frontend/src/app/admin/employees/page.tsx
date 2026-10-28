@@ -12,6 +12,7 @@ import { Button, IconButton, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton, table } from "@/components/ui";
 import { useAuth } from "@/components/AuthProvider";
 import { api, employmentLabels, roleLabels, type SavedUser, type User } from "@/lib/api";
+import { fmtDate } from "@/lib/format";
 
 // /admin/employees: list everyone, add new accounts, edit or deactivate existing ones.
 export default function EmployeesAdminPage() {
@@ -73,16 +74,25 @@ export default function EmployeesAdminPage() {
   }
 
   const q = query.trim().toLowerCase();
+  // People who left are kept as ex-employees: a separate list, with all their records intact
+  const formerCount = users?.filter((u) => !u.active).length ?? 0;
+  const activeCount = (users?.length ?? 0) - formerCount;
   const shown = (users ?? []).filter((u) =>
     [u.name, u.email, u.designation, u.team].some((f) => f?.toLowerCase().includes(q)),
   );
-  const activeCount = users?.filter((u) => u.active).length ?? 0;
+  const current = shown.filter((u) => u.active);
+  const former = shown.filter((u) => !u.active);
 
   return (
     <>
       <PageHeader
         title="Employees"
-        subtitle={users ? `${activeCount} active account${activeCount === 1 ? "" : "s"}` : "Create and manage accounts."}
+        subtitle={
+          users
+            ? `${activeCount} active account${activeCount === 1 ? "" : "s"}` +
+              (formerCount ? ` · ${formerCount} ex-employee${formerCount === 1 ? "" : "s"}` : "")
+            : "Create and manage accounts."
+        }
         actions={
           !editing && (
             <Button onClick={() => setEditing("new")}>
@@ -153,107 +163,144 @@ export default function EmployeesAdminPage() {
       {!users && !error && <Skeleton className="h-64" />}
 
       {users && (
-        <Card flush>
-          <div className="border-b border-zinc-100 p-3">
-            <div className="relative max-w-xs">
-              <Search size={15} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search people"
-                aria-label="Search people"
-                className={`${inputClass} pl-9`}
-              />
-            </div>
+        <>
+          <div className="relative mb-4 max-w-xs">
+            <Search size={15} className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search people"
+              aria-label="Search people"
+              className={`${inputClass} pl-9`}
+            />
           </div>
-          {shown.length === 0 ? (
-            <EmptyState compact icon={Users} title={query ? `No one matches "${query}"` : "No employees yet"} />
-          ) : (
-            <>
-            {/* Phones: compact list; tap the pencil to edit */}
-            <ul className="divide-y divide-zinc-100 md:hidden">
-              {shown.map((u) => (
-                <li key={u.id} className={`flex items-center gap-3 px-4 py-3 ${u.active ? "" : "opacity-60"}`}>
-                  <Avatar person={u} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-2 truncate text-sm font-medium text-zinc-900">
-                      {u.name}
-                      {u.role !== "EMPLOYEE" && <Badge tone="brand">{roleLabels[u.role]}</Badge>}
-                    </p>
-                    <p className="truncate text-xs text-zinc-500">
-                      {u.designation ?? employmentLabels[u.employmentType]}
-                      {!u.active ? " · Inactive" : u.mustChangePassword ? " · Invited" : ""}
-                      {u.isEmployee ? "" : " · Not tracked"}
-                    </p>
-                  </div>
-                  {canEdit(u) && (
-                    <IconButton label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
-                      <Pencil size={15} />
-                    </IconButton>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <div className={`${table.wrap} hidden md:block`}>
-              <table className={table.table}>
-                <thead className={table.thead}>
-                  <tr>
-                    {["Name", "Role", "Employment", "Team", "WFH / month", "Status", ""].map((h) => (
-                      <th key={h} className={table.th}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={table.tbody}>
-                  {shown.map((u) => (
-                    <tr key={u.id} className={`${table.tr} ${u.active ? "" : "text-zinc-400"}`}>
-                      <td className={table.td}>
-                        <div className="flex items-center gap-3">
-                          <Avatar person={u} size="sm" />
-                          <div className="min-w-0">
-                            <p className={`font-medium ${u.active ? "text-zinc-900" : ""}`}>{u.name}</p>
-                            <p className="text-xs text-zinc-500">{u.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={table.td}>{u.role === "EMPLOYEE" ? "Employee" : <Badge tone="brand">{roleLabels[u.role]}</Badge>}</td>
-                      <td className={table.td}>
-                        <span className="block">{employmentLabels[u.employmentType]}</span>
-                        {u.designation && <span className="block text-xs text-zinc-500">{u.designation}</span>}
-                        {!u.isEmployee && <span className="block text-xs text-zinc-500">Not tracked</span>}
-                      </td>
-                      <td className={table.td}>{u.team ?? "—"}</td>
-                      <td className={`${table.td} tabular-nums`}>{u.wfhAllowance}</td>
-                      <td className={table.td}>
-                        {!u.active ? (
-                          <Badge>Inactive</Badge>
-                        ) : u.mustChangePassword ? (
-                          <Badge tone="amber" dot>
-                            Invited
-                          </Badge>
-                        ) : (
-                          <Badge tone="green" dot>
-                            Active
-                          </Badge>
-                        )}
-                      </td>
-                      <td className={`${table.td} text-right`}>
-                        {canEdit(u) && (
-                          <IconButton label={`Edit ${u.name}`} onClick={() => setEditing(u)}>
-                            <Pencil size={15} />
-                          </IconButton>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            </>
+
+          <Card title={`Current employees (${current.length})`} flush>
+            <PeopleList
+              people={current}
+              empty={query ? `No current employee matches "${query}"` : "No employees yet"}
+              canEdit={canEdit}
+              onEdit={setEditing}
+            />
+          </Card>
+
+          {/* People who left: kept as ex-employees, with all their attendance, tasks and leaves */}
+          {former.length > 0 && (
+            <Card
+              title={`Ex-employees (${former.length})`}
+              description="Can't log in. Their records are kept and their past months stay in Admin → Attendance."
+              flush
+              className="mt-6"
+            >
+              <PeopleList people={former} empty="" canEdit={canEdit} onEdit={setEditing} />
+            </Card>
           )}
-        </Card>
+        </>
       )}
     </>
   );
 }
+
+// One table of people: a compact list on phones, a full table on larger screens.
+function PeopleList({
+  people,
+  empty,
+  canEdit,
+  onEdit,
+}: {
+  people: User[];
+  empty: string;
+  canEdit: (u: User) => boolean;
+  onEdit: (u: User) => void;
+}) {
+  if (people.length === 0) return <EmptyState compact icon={Users} title={empty} />;
+  return (
+    <>
+      {/* Phones: compact list; tap the pencil to edit */}
+      <ul className="divide-y divide-zinc-100 md:hidden">
+        {people.map((u, i) => (
+          <li key={u.id} className="flex items-center gap-3 px-4 py-3">
+            <span className="w-5 shrink-0 text-right text-xs text-zinc-400 tabular-nums">{i + 1}</span>
+            <Avatar person={u} size="sm" />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 truncate text-sm font-medium text-zinc-900">
+                {u.name}
+                {u.role !== "EMPLOYEE" && <Badge tone="brand">{roleLabels[u.role]}</Badge>}
+              </p>
+              <p className="truncate text-xs text-zinc-500">
+                {u.designation ?? employmentLabels[u.employmentType]}
+                {!u.active ? ` · ${leftLabel(u)}` : u.mustChangePassword ? " · Invited" : ""}
+                {u.isEmployee ? "" : " · Not tracked"}
+              </p>
+            </div>
+            {canEdit(u) && (
+              <IconButton label={`Edit ${u.name}`} onClick={() => onEdit(u)}>
+                <Pencil size={15} />
+              </IconButton>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className={`${table.wrap} hidden md:block`}>
+        <table className={table.table}>
+          <thead className={table.thead}>
+            <tr>
+              {["#", "Name", "Role", "Employment", "Team", "WFH / month", "Status", ""].map((h) => (
+                <th key={h} className={table.th}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className={table.tbody}>
+            {people.map((u, i) => (
+              <tr key={u.id} className={table.tr}>
+                <td className={`${table.td} w-10 text-zinc-400 tabular-nums`}>{i + 1}</td>
+                <td className={table.td}>
+                  <div className="flex items-center gap-3">
+                    <Avatar person={u} size="sm" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-zinc-900">{u.name}</p>
+                      <p className="text-xs text-zinc-500">{u.email}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className={table.td}>{u.role === "EMPLOYEE" ? "Employee" : <Badge tone="brand">{roleLabels[u.role]}</Badge>}</td>
+                <td className={table.td}>
+                  <span className="block">{employmentLabels[u.employmentType]}</span>
+                  {u.designation && <span className="block text-xs text-zinc-500">{u.designation}</span>}
+                  {!u.isEmployee && <span className="block text-xs text-zinc-500">Not tracked</span>}
+                </td>
+                <td className={table.td}>{u.team ?? "—"}</td>
+                <td className={`${table.td} tabular-nums`}>{u.wfhAllowance}</td>
+                <td className={table.td}>
+                  {!u.active ? (
+                    <Badge>{leftLabel(u)}</Badge>
+                  ) : u.mustChangePassword ? (
+                    <Badge tone="amber" dot>
+                      Invited
+                    </Badge>
+                  ) : (
+                    <Badge tone="green" dot>
+                      Active
+                    </Badge>
+                  )}
+                </td>
+                <td className={`${table.td} text-right`}>
+                  {canEdit(u) && (
+                    <IconButton label={`Edit ${u.name}`} onClick={() => onEdit(u)}>
+                      <Pencil size={15} />
+                    </IconButton>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// "Left 20 Oct 2026" for someone who has left, or "Inactive" if no last day was recorded
+const leftLabel = (u: User) => (u.leftOn ? `Left ${fmtDate(u.leftOn)}` : "Inactive");

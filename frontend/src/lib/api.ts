@@ -65,6 +65,7 @@ export type User = {
   timings: string | null;
   birthday: string | null; // ISO date string, e.g. "2004-09-15T00:00:00.000Z"
   joinedOn: string | null;
+  leftOn: string | null; // last working day, once they've left
   mustChangePassword: boolean;
   active: boolean;
   wfhAllowance: number; // WFH days per month before extra ones count as half days
@@ -98,7 +99,7 @@ export type Attendance = {
 export type DayRow = {
   date: string;
   weekday: string;
-  status: "PRESENT" | "WORKING" | "ABSENT" | "LEAVE" | "LEAVE_PENDING" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED";
+  status: "PRESENT" | "WORKING" | "ABSENT" | "LEAVE" | "LEAVE_PENDING" | "WEEKEND" | "HOLIDAY" | "UPCOMING" | "NOT_JOINED" | "LEFT";
   holiday?: string;
   place?: Place;
   checkIn?: string;
@@ -133,7 +134,8 @@ export type MonthSummary = {
 export type MonthReport = { month: string; days: DayRow[]; summary: MonthSummary };
 
 // A short version of a user, as the admin endpoints send it
-export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team" | "photoUpdatedAt">;
+export type UserBrief = Pick<User, "id" | "name" | "designation" | "employmentType" | "team" | "photoUpdatedAt"> &
+  Partial<Pick<User, "active" | "leftOn">>; // sent by the attendance summary, which also lists people who left
 
 // The bits of a person an avatar needs
 export type Person = { id?: string; name: string; photoUpdatedAt?: string | null };

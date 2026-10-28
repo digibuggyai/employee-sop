@@ -1,6 +1,7 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { todayString } from "../lib/dates.js";
 import { hashPassword, requireAdmin, requireAuth } from "../lib/auth.js";
 import { sendMail } from "../lib/mailer.js";
 import { passwordResetEmail, welcomeEmail } from "../lib/emails.js";
@@ -39,6 +40,7 @@ const profileFields = {
   timings: optionalText,
   birthday: optionalDate,
   joinedOn: optionalDate,
+  leftOn: optionalDate, // last working day, for someone who has left
   // z.coerce turns the form's "4" (text) into the number 4
   wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
 };
@@ -113,6 +115,11 @@ router.patch("/:id", async (req, res) => {
     const other = await prisma.user.findUnique({ where: { email: changes.email } });
     if (other && other.id !== id) return res.status(409).json({ error: "Someone already uses this email" });
   }
+
+  // Leaving: deactivating without a last working day means they left today.
+  // Coming back: reactivating clears it.
+  if (changes.active === false && changes.leftOn === undefined && !target.leftOn) changes.leftOn = new Date(todayString());
+  if (changes.active === true) changes.leftOn = null;
 
   const user = await prisma.user.update({
     where: { id },

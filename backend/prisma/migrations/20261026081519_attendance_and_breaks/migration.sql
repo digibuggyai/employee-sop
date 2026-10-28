@@ -1,7 +1,7 @@
 -- CreateEnum
 CREATE TYPE "Place" AS ENUM ('IN_OFFICE', 'WFH');
 
--- CreateTable
+
 CREATE TABLE "Attendance" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -16,7 +16,6 @@ CREATE TABLE "Attendance" (
     CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Break" (
     "id" TEXT NOT NULL,
     "attendanceId" TEXT NOT NULL,

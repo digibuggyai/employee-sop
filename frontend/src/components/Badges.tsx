@@ -14,6 +14,7 @@ const dayStyles: Record<DayRow["status"], [string, Tone]> = {
   HOLIDAY: ["Holiday", "amber"],
   UPCOMING: ["", "zinc"],
   NOT_JOINED: ["Not joined", "zinc"],
+  LEFT: ["Left", "zinc"],
 };
 
 export function DayStatusBadge({ status }: { status: DayRow["status"] }) {
