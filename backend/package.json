@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "create-admin": "tsx src/scripts/create-admin.ts",
     "import-attendance": "tsx src/scripts/import-attendance.ts",
+    "import-logins": "tsx src/scripts/import-logins.ts",
     "postdb:migrate": "prisma generate",
     "bulk-create": "tsx src/scripts/bulk-create-users.ts"
   },

@@ -11,6 +11,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { prisma } from "../lib/prisma.js";
 import { toDbDate } from "../lib/dates.js";
+import { parseCsv } from "../lib/csv.js";
 
 const [file, rawEmail, flag] = process.argv.slice(2);
 if (!file || !rawEmail) {
@@ -19,29 +20,7 @@ if (!file || !rawEmail) {
 }
 const save = flag === "--save";
 
-// ---------- 1. Read the CSV ----------
-// A tiny CSV reader: handles "quoted, values" and "" (escaped quote) inside quotes.
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = "";
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (quoted) {
-      if (ch === '"' && text[i + 1] === '"') (cell += '"'), i++;
-      else if (ch === '"') quoted = false;
-      else cell += ch;
-    } else if (ch === '"') quoted = true;
-    else if (ch === ",") row.push(cell), (cell = "");
-    else if (ch === "\n" || ch === "\r") {
-      if (ch === "\r" && text[i + 1] === "\n") i++;
-      row.push(cell), rows.push(row), (row = []), (cell = "");
-    } else cell += ch;
-  }
-  if (cell || row.length) row.push(cell), rows.push(row);
-  return rows.map((r) => r.map((c) => c.trim()));
-}
+// ---------- 1. Read the CSV (the reader lives in lib/csv.ts) ----------
 
 // ---------- 2. Understand the sheet's formats ----------
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
