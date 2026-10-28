@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Copy, Pencil, Plus, Search, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
@@ -24,6 +24,13 @@ export default function EmployeesAdminPage() {
   const [query, setQuery] = useState("");
   // What the form panel is showing: nothing, the "add" form, or editing one person.
   const [editing, setEditing] = useState<User | "new" | null>(null);
+  // The form opens at the top of the page. Clicking a pencil far down the list would open it
+  // off-screen, so bring it into view whenever a different person (or "new") is opened.
+  const formRef = useRef<HTMLDivElement>(null);
+  const editingKey = editing === "new" ? "new" : editing?.id;
+  useEffect(() => {
+    if (editingKey) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [editingKey]);
 
   useEffect(() => {
     api<User[]>("/api/users")
@@ -60,7 +67,7 @@ export default function EmployeesAdminPage() {
   async function copyShare() {
     if (!share) return;
     await navigator.clipboard.writeText(
-      `Digibuggy Hub login\n${window.location.origin}/login\nEmail: ${share.email}\nTemporary password: ${share.password}`,
+      `Digibuggy login\n${window.location.origin}/login\nEmail: ${share.email}\nTemporary password: ${share.password}`,
     );
     toast.success("Login details copied");
   }
@@ -86,31 +93,34 @@ export default function EmployeesAdminPage() {
       />
 
       {editing && (
-        <Card
-          title={editing === "new" ? "New employee" : `Edit ${editing.name}`}
-          description={editing === "new" ? "They'll be asked to choose their own password at first login." : undefined}
-          className="mb-6"
-        >
-          {/* Editing someone: their photo can be set or removed here (saves immediately) */}
-          {editing !== "new" && (
-            <div className="mb-5 border-b border-zinc-100 pb-5">
-              <PhotoUploader
-                user={editing}
-                onChange={(u) => {
-                  setUsers((list) => (list ?? []).map((x) => (x.id === u.id ? u : x)));
-                  setEditing(u);
-                }}
-              />
-            </div>
-          )}
-          {/* key forces a fresh form when switching between people */}
-          <EmployeeForm
-            key={editing === "new" ? "new" : editing.id}
-            existing={editing === "new" ? undefined : editing}
-            onSaved={handleSaved}
-            onCancel={() => setEditing(null)}
-          />
-        </Card>
+        // scroll-mt keeps the form clear of the sticky top bar on phones
+        <div ref={formRef} className="scroll-mt-20">
+          <Card
+            title={editing === "new" ? "New employee" : `Edit ${editing.name}`}
+            description={editing === "new" ? "They'll be asked to choose their own password at first login." : undefined}
+            className="mb-6"
+          >
+            {/* Editing someone: their photo can be set or removed here (saves immediately) */}
+            {editing !== "new" && (
+              <div className="mb-5 border-b border-zinc-100 pb-5">
+                <PhotoUploader
+                  user={editing}
+                  onChange={(u) => {
+                    setUsers((list) => (list ?? []).map((x) => (x.id === u.id ? u : x)));
+                    setEditing(u);
+                  }}
+                />
+              </div>
+            )}
+            {/* key forces a fresh form when switching between people */}
+            <EmployeeForm
+              key={editing === "new" ? "new" : editing.id}
+              existing={editing === "new" ? undefined : editing}
+              onSaved={handleSaved}
+              onCancel={() => setEditing(null)}
+            />
+          </Card>
+        </div>
       )}
 
       {/* Shown when the login details still need to reach the person */}
