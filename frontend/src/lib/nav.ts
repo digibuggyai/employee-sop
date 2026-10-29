@@ -5,6 +5,7 @@ import {
   CalendarRange,
   ClipboardList,
   FileText,
+  House,
   Gauge,
   Inbox,
   KeyRound,
@@ -52,8 +53,10 @@ export const adminNav: NavItem[] = [
   { href: "/admin/tasks", label: "Tasks", icon: ClipboardList, group: "Monitor", mobile: true },
   { href: "/admin/requests", label: "Requests", icon: Inbox, group: "Manage", mobile: true, badge: "corrections" },
   { href: "/admin/leaves", label: "Leaves", icon: CalendarOff, group: "Manage", mobile: true, badge: "leaves" },
-  { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage", mobile: true },
-  { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage", mobile: true },
+  // phones: these sit under "More"
+  { href: "/admin/wfh-plans", label: "WFH plans", icon: House, group: "Manage" },
+  { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage" },
+  { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage" },
 ];
 
 // Pages that work without logging in (they render without the sidebar).

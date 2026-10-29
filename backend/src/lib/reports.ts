@@ -239,6 +239,8 @@ export async function monthReports(userIds: string[], month: string) {
     //   up to 2 h          → a short leave: the first 2 of the month are free, then every 3 = 1 day of absence
     //   more than 2 h      → a half day
     // Time beyond the shift's length is extra, shown per day and totalled for the month.
+    // WFH days have no fixed timings: start any time, just complete the shift's hours (breaks included),
+    // so there's no "late" or "left early" for them, only short or extra.
     // A day already marked as a half day isn't counted twice.
     const shift = parseTimings(person?.timings);
     if (shift) {
@@ -247,11 +249,12 @@ export async function monthReports(userIds: string[], month: string) {
         if (!d.checkIn || isOffDay(d.date)) continue;
         const dayStart = Date.parse(`${d.date}T00:00:00+05:30`); // midnight in India
         const minuteOf = (t: Date) => Math.round((t.getTime() - dayStart) / 60000);
+        const flexible = d.place === "WFH";
         const late = minuteOf(d.checkIn) - shift.start;
-        if (late > GRACE_MIN) d.lateMin = late;
+        if (!flexible && late > GRACE_MIN) d.lateMin = late;
         if (!d.checkOut) continue; // still working: the day isn't settled yet
         const early = shift.end - minuteOf(d.checkOut);
-        if (early > GRACE_MIN) d.earlyMin = early;
+        if (!flexible && early > GRACE_MIN) d.earlyMin = early;
         if (d.halfDay) continue; // marked as a half day: already counted
 
         const short = shiftLength - (minuteOf(d.checkOut) - minuteOf(d.checkIn)); // negative = extra time

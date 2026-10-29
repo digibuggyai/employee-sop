@@ -12,6 +12,7 @@ export const categoryStyle: Record<Notice["category"], { icon: LucideIcon; chip:
 export const audienceLabel: Record<NoticeAudience, string> = {
   ALL: "Everyone",
   FULL_TIME: "Full-time",
+  PART_TIME: "Part-time",
   INTERN: "Interns",
   REMOTE_INTERN: "Remote interns",
 };

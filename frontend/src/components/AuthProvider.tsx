@@ -1,3 +1,7 @@
+cd ..
+git add -A
+git commit -m "WFH plans page, flexible WFH timings, part time"
+git push
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";

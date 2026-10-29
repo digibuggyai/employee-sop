@@ -17,17 +17,17 @@ const halfDayLabel = { MARKED: "Half day", EXTRA_WFH: "Half day, extra WFH", OVE
 const mins = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`); // 25m, 1h 5m
 
 // Against their timings: "Late 30m · made up" (stayed longer), "Late 1h 10m · 40m short · free",
-// "Left early 20m · counts". The first 2 short days of a month are free.
+// "Left early 20m · counts". WFH days have no fixed time, so only "40m short · free".
+// The first 2 short days of a month are free.
 function lateTag(d: DayRow): { text: string; tone: "zinc" | "amber" | "green" } | null {
-  if (!d.lateMin && !d.earlyMin) return null;
-  const base = [d.lateMin && `Late ${mins(d.lateMin)}`, d.earlyMin && `Left early ${mins(d.earlyMin)}`].filter(Boolean).join(", ");
-  if (d.madeUp) return { text: `${base} · made up`, tone: "green" };
-  if (d.shortLeave) {
-    // say how short the day was only when making up changed it
-    const short = d.shortMin && d.shortMin !== (d.lateMin ?? 0) + (d.earlyMin ?? 0) ? ` · ${mins(d.shortMin)} short` : "";
-    return { text: `${base}${short} · ${d.shortLeave === "FREE" ? "free" : "counts"}`, tone: d.shortLeave === "FREE" ? "zinc" : "amber" };
-  }
-  return { text: base, tone: d.halfDay ? "amber" : "zinc" }; // over 2 h (half day), or still at work today
+  if (!d.lateMin && !d.earlyMin && !d.shortMin) return null;
+  const parts = [d.lateMin && `Late ${mins(d.lateMin)}`, d.earlyMin && `Left early ${mins(d.earlyMin)}`].filter(Boolean).join(", ");
+  if (d.madeUp) return { text: `${parts} · made up`, tone: "green" };
+  // say how short the day was when there's no late/early to explain it, or when making up changed it
+  const short = d.shortMin && (!parts || d.shortMin !== (d.lateMin ?? 0) + (d.earlyMin ?? 0)) ? `${mins(d.shortMin)} short` : "";
+  const text = [parts, short].filter(Boolean).join(" · ");
+  if (d.shortLeave) return { text: `${text} · ${d.shortLeave === "FREE" ? "free" : "counts"}`, tone: d.shortLeave === "FREE" ? "zinc" : "amber" };
+  return { text, tone: d.halfDay ? "amber" : "zinc" }; // over 2 h (half day), or still at work today
 }
 
 // Extra notes for a day: holiday name, half day, make-up links, leave reason

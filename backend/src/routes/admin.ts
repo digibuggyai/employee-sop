@@ -100,6 +100,29 @@ router.get("/weekly-reports", async (req, res) => {
   });
 });
 
+// GET /api/admin/wfh-plans?date=2026-10-29 → everyone who worked from home that day, with their
+// to-do plan (written at check-in) and work report (at check-out). Interns must write both;
+// for others they're optional, so only an intern's missing plan / report is flagged.
+router.get("/wfh-plans", async (req, res) => {
+  const date = dateParam.parse(req.query.date);
+  const days = await prisma.attendance.findMany({
+    where: { date: toDbDate(date), place: "WFH", user: { active: true } },
+    select: {
+      id: true, checkIn: true, checkOut: true, plan: true, report: true,
+      user: { select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true } },
+    },
+    orderBy: { checkIn: "asc" },
+  });
+  res.json({
+    date,
+    rows: days.map((d) => ({
+      ...d,
+      required: d.user.employmentType === "INTERN" || d.user.employmentType === "REMOTE_INTERN",
+      spanMs: (d.checkOut?.getTime() ?? Date.now()) - d.checkIn.getTime(), // in → out (or now), breaks included
+    })),
+  });
+});
+
 // GET /api/admin/tasks?userId=&status=&from=&to= → everyone's tasks, filtered
 router.get("/tasks", async (req, res) => {
   const q = z

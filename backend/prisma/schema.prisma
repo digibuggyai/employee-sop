@@ -19,6 +19,7 @@ enum Role {
 
 enum EmploymentType {
   FULL_TIME
+  PART_TIME // standard rules on their own (shorter) timings; no monthly leave balance
   INTERN
   REMOTE_INTERN
 }

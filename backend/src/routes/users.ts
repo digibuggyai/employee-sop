@@ -33,7 +33,7 @@ const profileFields = {
   role: z.enum(["EMPLOYEE", "ADMIN", "SUPER_ADMIN"]),
   // false = not tracked (no attendance, leave or WFH). Optional: the database defaults it to true.
   isEmployee: z.boolean().optional(),
-  employmentType: z.enum(["FULL_TIME", "INTERN", "REMOTE_INTERN"]),
+  employmentType: z.enum(["FULL_TIME", "PART_TIME", "INTERN", "REMOTE_INTERN"]),
   phone: optionalText,
   designation: optionalText,
   team: optionalText,

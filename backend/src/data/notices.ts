@@ -1,17 +1,17 @@
 // The Notice Board: company policies. The wording matches what the app actually enforces
 // (backend/src/lib/policy.ts), so if a rule changes there, update its notice here too.
 
-export type Audience = "ALL" | "FULL_TIME" | "INTERN" | "REMOTE_INTERN";
+export type Audience = "ALL" | "FULL_TIME" | "PART_TIME" | "INTERN" | "REMOTE_INTERN";
 
 export type Notice = {
   id: string;
   title: string;
   body: string;
   category: "Pay" | "Leave" | "Attendance" | "Work";
-  audience: Audience[]; // who it applies to ("ALL" = everyone)
-  deduction?: boolean; // breaking it costs salary or counts as absence
-  highlight?: { value: string; label: string }; // the key number, shown "at a glance"
-  link?: { href: string; label: string }; // where in the app to act on it
+  audience: Audience[];
+  deduction?: boolean;
+  highlight?: { value: string; label: string };
+  link?: { href: string; label: string };
 };
 
 export const notices: Notice[] = [
@@ -21,7 +21,7 @@ export const notices: Notice[] = [
     title: "Salary disbursement",
     body: "Salary is credited by the 8th of every month.",
     audience: ["ALL"],
-    highlight: { value: "8th", label: "Salary credited by" },
+    highlight: { value: "8th", label: "Salary credited by" }, 
   },
   {
     id: "reimbursements",
@@ -61,7 +61,7 @@ export const notices: Notice[] = [
     id: "grace",
     category: "Attendance",
     title: "Timings and grace period",
-    body: "Check in by your assigned start time. Up to 15 minutes late is fine. Coming in late and staying longer to cover your full shift counts as made up.",
+    body: "In the office, check in by your assigned start time; up to 15 minutes late is fine, and coming in late but staying longer to cover your full shift counts as made up. On WFH days there are no fixed timings: start any time, but complete your shift's hours (breaks included).",
     audience: ["ALL"],
     highlight: { value: "15 min", label: "Grace on your start time" },
     link: { href: "/attendance", label: "Your attendance" },

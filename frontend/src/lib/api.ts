@@ -36,10 +36,11 @@ export const roleLabels: Record<Role, string> = { EMPLOYEE: "Employee", ADMIN: "
 
 // Admins and Super admins both get the Admin Panel; only Super admins manage admin accounts.
 export const isAdmin = (user: { role: Role } | null | undefined) => user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
-export type EmploymentType = "FULL_TIME" | "INTERN" | "REMOTE_INTERN";
+export type EmploymentType = "FULL_TIME" | "PART_TIME" | "INTERN" | "REMOTE_INTERN";
 
 export const employmentLabels: Record<EmploymentType, string> = {
   FULL_TIME: "Full time",
+  PART_TIME: "Part time",
   INTERN: "Intern",
   REMOTE_INTERN: "Remote intern",
 };
@@ -226,7 +227,7 @@ export type Holiday = {
 };
 
 // backend/src/data/notices.ts
-export type NoticeAudience = "ALL" | "FULL_TIME" | "INTERN" | "REMOTE_INTERN";
+export type NoticeAudience = "ALL" | "FULL_TIME" | "PART_TIME" | "INTERN" | "REMOTE_INTERN";
 
 export type Notice = {
   id: string;

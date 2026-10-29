@@ -50,7 +50,7 @@ function joined(s: string): { date: string | null; note?: string } {
 }
 
 const employment = (s: string) =>
-  /full/i.test(s) ? "FULL_TIME" : /remote/i.test(s) ? "REMOTE_INTERN" : "INTERN";
+  /part/i.test(s) ? "PART_TIME" : /full/i.test(s) ? "FULL_TIME" : /remote/i.test(s) ? "REMOTE_INTERN" : "INTERN";
 
 // Readable temporary password: no 0/O, 1/l/I look-alikes
 function tempPassword() {
