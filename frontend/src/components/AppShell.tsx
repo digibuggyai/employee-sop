@@ -13,6 +13,7 @@ import Avatar from "./Avatar";
 import BackendStatus from "./BackendStatus";
 import BrandLogo from "./BrandLogo";
 import Modal from "./Modal";
+import { NotificationBell } from "./Notifications";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -59,8 +60,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-zinc-200 bg-white md:flex">
-        <div className="flex h-14 items-center px-4">
+        <div className="flex h-14 items-center justify-between pr-3 pl-4">
           <Logo />
+          <NotificationBell />
         </div>
 
         {isAdmin && (
@@ -119,6 +121,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <Logo />
         <div className="flex items-center gap-2">
           {isAdmin && <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact />}
+          <NotificationBell />
           <Link href="/profile" aria-label="Profile">
             <Avatar person={user} size="sm" />
           </Link>

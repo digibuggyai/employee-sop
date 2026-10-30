@@ -5,6 +5,7 @@ import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { monthReports, thisMonth } from "../lib/reports.js";
 import { checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
+import { notifyAdmins } from "../lib/notify.js";
 import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern } from "../lib/policy.js";
 
 const router = Router();
@@ -131,6 +132,9 @@ router.post("/corrections", async (req, res) => {
         data: { ...data, userId: me, date: toDbDate(input.date) },
         include: correctionInclude,
       });
+  if (!pending) {
+    await notifyAdmins({ title: `${req.user!.name} asked to fix attendance`, body: input.date, link: "/admin/requests" }, me);
+  }
   res.status(pending ? 200 : 201).json(saved);
 });
 

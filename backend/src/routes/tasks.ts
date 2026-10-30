@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { isAdmin, requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
+import { firstName, notify } from "../lib/notify.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -69,6 +70,7 @@ router.post("/", async (req, res) => {
     },
     include: taskInclude,
   });
+  if (ownerId !== me.id) await notify(ownerId, { title: `New task from ${firstName(me.name)}`, body: task.title, link: "/tasks" });
   res.status(201).json(task);
 });
 

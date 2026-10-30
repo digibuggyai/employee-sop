@@ -271,6 +271,15 @@ export type VaultItem = {
 
 export type VaultData = { columns: VaultColumn[]; items: VaultItem[] };
 
+export type AppNotification = {
+  id: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
 export type DayNote = {
   id: string;
   text: string;

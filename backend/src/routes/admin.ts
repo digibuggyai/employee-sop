@@ -7,6 +7,7 @@ import { dayStatus, dayTotals, isOffDay, mondayOf, monthReports, thisMonth } fro
 import { dueDate, reportSelect } from "./weeklyReports.js";
 import { taskInclude } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
+import { firstName, notify } from "../lib/notify.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 
 const router = Router();
@@ -19,6 +20,8 @@ export const noteSelect = {
   author: { select: { id: true, name: true, photoUpdatedAt: true } },
 } as const;
 router.use(requireAuth, requireAdmin);
+
+const dayLabel = (d: Date) => d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 
 const dateParam = z.iso.date().catch(() => todayString());
 const monthParam = z.string().regex(/^\d{4}-\d{2}$/).catch(() => thisMonth());
@@ -140,6 +143,11 @@ router.post("/days/:attendanceId/notes", requireSuperAdmin, async (req, res) => 
   const note = await prisma.dayNote.create({
     data: { attendanceId: day.id, authorId: req.user!.id, text, taskId: task?.id ?? null },
     select: noteSelect,
+  });
+  await notify(day.userId, {
+    title: `New note from ${firstName(req.user!.name)}${task ? " (added to your tasks)" : ""}`,
+    body: text,
+    link: task ? "/tasks" : "/",
   });
   res.status(201).json(note);
 });
@@ -276,6 +284,13 @@ router.patch("/leaves/:id", async (req, res) => {
     },
     include: adminLeaveInclude,
   });
+  if (status && status !== leave.status) {
+    await notify(leave.userId, {
+      title: status === "APPROVED" ? "Leave approved" : "Leave not approved",
+      body: `${dayLabel(leave.date)} · by ${firstName(req.user!.name)}`,
+      link: "/leave",
+    });
+  }
   res.json(updated);
 });
 
@@ -359,6 +374,11 @@ router.patch("/corrections/:id", async (req, res) => {
     where: { id: c.id },
     data: { status: parsed.data.status, reviewedById: req.user!.id, reviewedAt: new Date() },
     include: correctionAdminInclude,
+  });
+  await notify(c.userId, {
+    title: parsed.data.status === "APPROVED" ? "Attendance change approved" : "Attendance change not approved",
+    body: `${dayLabel(c.date)} · by ${firstName(req.user!.name)}`,
+    link: "/attendance",
   });
   res.json(updated);
 });

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
+import { notifyAdmins } from "../lib/notify.js";
 import { EMERGENCY_LEAVES_PER_MONTH } from "../lib/policy.js";
 import { daysOfMonth, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 
@@ -70,6 +71,14 @@ router.post("/", async (req, res) => {
     skipDuplicates: true,
   });
   if (count === 0) return res.status(409).json({ error: "You've already requested leave for those days" });
+  await notifyAdmins(
+    {
+      title: `${req.user!.name} asked for ${emergency ? "emergency " : ""}leave`,
+      body: `${from === to ? from : `${from} to ${to}`} · ${count} day${count === 1 ? "" : "s"}${reason ? ` · ${reason}` : ""}`,
+      link: "/admin/leaves",
+    },
+    req.user!.id,
+  );
   res.status(201).json({ created: count, skipped: dates.length - count });
 });
 

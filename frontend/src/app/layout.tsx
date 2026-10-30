@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/components/AuthProvider";
 import { FeedbackProvider } from "@/components/Feedback";
 import { PendingProvider } from "@/components/Pending";
+import { NotificationsProvider } from "@/components/Notifications";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +40,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AuthProvider>
           <PendingProvider>
             <FeedbackProvider>
-              <AppShell>{children}</AppShell>
+              <NotificationsProvider>
+                <AppShell>{children}</AppShell>
+              </NotificationsProvider>
             </FeedbackProvider>
           </PendingProvider>
         </AuthProvider>
