@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Columns3, Copy, ExternalLink, Eye, EyeOff, KeyRound, Pencil, Plus, Search, Trash2, UserCheck, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Columns3, Copy, ExternalLink, Eye, EyeOff, KeyRound, Pencil, Plus, Search, Trash2, UserCheck, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
@@ -193,7 +193,7 @@ export default function LoginsPage() {
         )}
       </Modal>
 
-      <Modal open={panel === "people"} onClose={() => setPanel(null)} title="Access by person" description="Pick someone, then tick every login they should see.">
+      <Modal open={panel === "people"} onClose={() => setPanel(null)} title="Access by person" description="Tap a person, then tick the logins they should see.">
         {panel === "people" && data && (
           <PersonAccess
             items={data.items}
@@ -538,25 +538,50 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
   }
 
   if (!people) return <Skeleton className="h-48" />;
+  const person = people.find((p) => p.id === personId);
+  const pick = (id: string) => {
+    setChosen(null);
+    setError("");
+    setPersonId(id);
+  };
   return (
     <div className="space-y-4">
-      <Field label="Person">
-        <select
-          value={personId}
-          onChange={(e) => {
-            setChosen(null);
-            setPersonId(e.target.value);
-          }}
-          className={inputClass}
-        >
-          <option value="">Choose someone</option>
-          {people.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {!person ? (
+        <>
+          <p className="text-[13px] font-medium text-zinc-800">Who are you giving access to?</p>
+          <ul className="grid max-h-[55dvh] grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
+            {people.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => pick(p.id)}
+                  className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-zinc-200 px-1.5 py-3 text-center transition hover:border-brand-500 hover:bg-brand-50"
+                >
+                  <Avatar person={p} size="lg" />
+                  <span className="w-full truncate text-[13px] font-medium text-zinc-900">{p.name.split(" ")[0]}</span>
+                  <span className="-mt-1 w-full truncate text-[11px] text-zinc-500">{p.designation ?? p.team ?? ""}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <div className="flex items-center gap-3 rounded-xl border border-brand-500 bg-brand-50 p-3">
+          <span className="relative">
+            <Avatar person={person} />
+            <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-full bg-brand-700 text-white ring-2 ring-white">
+              <Check size={12} strokeWidth={3} />
+            </span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-zinc-900">{person.name}</span>
+            <span className="block truncate text-xs text-zinc-500">{person.designation ?? person.team ?? "Employee"}</span>
+          </span>
+          <button type="button" onClick={() => pick("")} className="h-9 shrink-0 rounded-lg px-3 text-sm font-medium text-brand-700 hover:bg-white">
+            Change
+          </button>
+        </div>
+      )}
       {personId && !chosen && <Skeleton className="h-48" />}
       {chosen && (
         <>
