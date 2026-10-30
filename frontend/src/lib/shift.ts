@@ -1,5 +1,3 @@
-// Reads timings like "11:30 to 6:00" the same way the backend does (backend/src/lib/policy.ts),
-// so the employee form can show how they'll be understood. Returns minutes after midnight.
 export function parseTimings(text: string | null | undefined): { start: number; end: number } | null {
   if (!text) return null;
   const m = text
@@ -11,8 +9,8 @@ export function parseTimings(text: string | null | undefined): { start: number; 
   let start = toMinutes(Number(sh), Number(sm), sap);
   let end = toMinutes(Number(eh), Number(em), eap);
   if (start === null || end === null) return null;
-  if (!sap && start < 9 * 60) start += 12 * 60; // no am/pm: a start before 9 is afternoon
-  if (!eap && (end < 12 * 60 || end <= start)) end += 12 * 60; // an end before noon is evening
+  if (!sap && start < 9 * 60) start += 12 * 60;
+  if (!eap && (end < 12 * 60 || end <= start)) end += 12 * 60;
   if (end <= start || end > 24 * 60) return null;
   return { start, end };
 }
@@ -24,7 +22,6 @@ function toMinutes(h: number, m: number, ampm?: string): number | null {
   return h * 60 + m;
 }
 
-// 690 → "11:30 am"
 export function fmtMinutes(mins: number) {
   const h = Math.floor(mins / 60) % 24;
   const m = mins % 60;

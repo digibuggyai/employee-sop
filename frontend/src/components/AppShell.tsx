@@ -14,23 +14,15 @@ import BackendStatus from "./BackendStatus";
 import BrandLogo from "./BrandLogo";
 import Modal from "./Modal";
 
-// The frame around every page, and the "gatekeeper":
-//  - not logged in            → send to /login
-//  - must change password     → send to /change-password
-//  - employee opens /admin    → send home
-//  - logged in                → sidebar (desktop) / top bar + tab bar (phone)
-// Two areas share this frame: the personal Workspace and the Admin Panel (/admin/...).
-// This only decides what to SHOW. Real protection is the backend refusing data.
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, logout } = useAuth();
-  const { counts, refresh } = usePending(); // admin notifications (pending requests)
-  const [moreOpen, setMoreOpen] = useState(false); // phones: the "More" sheet
+  const { counts, refresh } = usePending();
+  const [moreOpen, setMoreOpen] = useState(false);
   const isPublic = publicPaths.includes(pathname);
   const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
 
-  // Where should this person be? null = they're on the right page.
   let redirectTo: string | null = null;
   if (!loading) {
     if (!user && !isPublic) redirectTo = "/login";
@@ -40,30 +32,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    if (redirectTo) router.replace(redirectTo); // replace = don't add to browser history
+    if (redirectTo) router.replace(redirectTo);
   }, [redirectTo, router]);
 
-  // Moving between pages also refreshes the notification counts
   useEffect(() => {
     refresh();
   }, [pathname, refresh]);
 
   if (loading || redirectTo) return <FullScreenSpinner />;
 
-  // Login page: no frame, just the page
   if (!user) return <>{children}</>;
 
   const isAdmin = hasAdminAccess(user);
-  // Not tracked as an employee (e.g. the Hive Leader): no attendance or leave pages
   const items = (inAdmin ? adminNav : workspaceNav).filter(
     (i) => (user.isEmployee || !i.employeeOnly) && (user.employmentType === "REMOTE_INTERN" || !i.remoteOnly),
   );
   const groups = [...new Set(items.map((i) => i.group))];
-  // "/" and "/admin" only match exactly; others also match their sub-pages
   const isActive = (href: string) =>
     href === "/" || href === "/admin" ? pathname === href : pathname.startsWith(href);
   const badgeOf = (item: NavItem) => (item.badge ? counts[item.badge] : 0);
-  // Phones: the tab bar holds the `mobile` items; everything else goes under a "More" tab
   const tabItems = items.filter((i) => i.mobile);
   const moreItems = items.filter((i) => !i.mobile);
   const moreActive = moreItems.some((i) => isActive(i.href));
@@ -71,7 +58,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      {/* ---------- Desktop sidebar ---------- */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-zinc-200 bg-white md:flex">
         <div className="flex h-14 items-center px-4">
           <Logo />
@@ -100,7 +86,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Who's logged in */}
         <div className="border-t border-zinc-200 p-3">
           <div className="flex items-center gap-1">
             <Link
@@ -130,7 +115,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* ---------- Phone top bar ---------- */}
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-zinc-200 bg-white/90 px-4 backdrop-blur md:hidden">
         <Logo />
         <div className="flex items-center gap-2">
@@ -141,12 +125,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* ---------- Page content ---------- */}
       <main className="pb-24 md:pb-0 md:pl-60">
         <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>
 
-      {/* ---------- Phone tab bar ---------- */}
       <nav
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-20 grid border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
@@ -192,7 +174,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         )}
       </nav>
 
-      {/* Phones: the pages that don't fit in the tab bar */}
       <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
         <ul className="-mx-2 space-y-0.5">
           {moreItems.map(({ href, label, icon: Icon }) => (
@@ -243,14 +224,11 @@ function SideLink({ item, active, count }: { item: NavItem; active: boolean; cou
 function Logo() {
   return (
     <Link href="/" aria-label="Digibuggy, go to dashboard" className="flex items-center">
-      {/* wide logo: 18px tall on phones (room for the switch + avatar), 20px in the sidebar */}
       <BrandLogo className="h-[18px] w-auto md:h-5" priority />
     </Link>
   );
 }
 
-// Workspace / Admin switcher (admins only). Two links styled as a segmented control.
-// A red dot on "Admin" when something is waiting there, so admins notice from their workspace.
 function AreaSwitch({ inAdmin, pending, compact = false }: { inAdmin: boolean; pending: number; compact?: boolean }) {
   const seg = (active: boolean) =>
     `flex-1 rounded-md text-center font-medium transition ${compact ? "px-2.5 py-1 text-xs" : "py-1 text-[13px]"} ${

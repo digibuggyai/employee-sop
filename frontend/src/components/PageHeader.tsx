@@ -1,4 +1,3 @@
-// Top of every page: title, one line of context, and the page's main actions on the right.
 export default function PageHeader({
   title,
   subtitle,

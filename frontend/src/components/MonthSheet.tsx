@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { Download, PencilLine } from "lucide-react";
 import type { DayRow, MonthReport, WeekRow } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
+import { fmtMinutes } from "@/lib/shift";
 import { currentWeek, weekProgress } from "@/lib/weeks";
 import { DayStatusBadge, Tag } from "./Badges";
 import Card from "./Card";
@@ -14,23 +15,23 @@ const placeLabel = { IN_OFFICE: "In-office", WFH: "WFH" } as const;
 
 const halfDayLabel = { MARKED: "Half day", EXTRA_WFH: "Half day, extra WFH", OVER_2H: "Half day, over 2h" } as const;
 
-const mins = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`); // 25m, 1h 5m
+const mins = (m: number) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`);
 
-// Against their timings: "Late 30m · made up" (stayed longer), "Late 1h 10m · 40m short · free",
-// "Left early 20m · counts". WFH days have no fixed time, so only "40m short · free".
-// The first 2 short days of a month are free.
 function lateTag(d: DayRow): { text: string; tone: "zinc" | "amber" | "green" } | null {
   if (!d.lateMin && !d.earlyMin && !d.shortMin) return null;
-  const parts = [d.lateMin && `Late ${mins(d.lateMin)}`, d.earlyMin && `Left early ${mins(d.earlyMin)}`].filter(Boolean).join(", ");
+  const parts = [
+    d.lateMin && `Late ${mins(d.lateMin)}${d.lateAfter !== undefined ? ` after ${fmtMinutes(d.lateAfter)}` : ""}`,
+    d.earlyMin && `Left ${mins(d.earlyMin)} before ${d.earlyBefore !== undefined ? fmtMinutes(d.earlyBefore) : "the end"}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
   if (d.madeUp) return { text: `${parts} · made up`, tone: "green" };
-  // say how short the day was when there's no late/early to explain it, or when making up changed it
   const short = d.shortMin && (!parts || d.shortMin !== (d.lateMin ?? 0) + (d.earlyMin ?? 0)) ? `${mins(d.shortMin)} short` : "";
   const text = [parts, short].filter(Boolean).join(" · ");
   if (d.shortLeave) return { text: `${text} · ${d.shortLeave === "FREE" ? "free" : "counts"}`, tone: d.shortLeave === "FREE" ? "zinc" : "amber" };
-  return { text, tone: d.halfDay ? "amber" : "zinc" }; // over 2 h (half day), or still at work today
+  return { text, tone: d.halfDay ? "amber" : "zinc" };
 }
 
-// Extra notes for a day: holiday name, half day, make-up links, leave reason
 function dayNotes(d: DayRow): string[] {
   const notes: string[] = [];
   if (d.note) notes.push(d.note);
@@ -49,10 +50,6 @@ function dayNotes(d: DayRow): string[] {
   return notes;
 }
 
-// The old attendance sheet, rebuilt: one row per day + totals.
-// Used on /attendance (my month) and /admin/attendance (anyone's month).
-// onEditDay: when given, past days get an edit button (admins edit; employees request a change)
-// canExport: shows "Export CSV" (admins only)
 export default function MonthSheet({
   report,
   name,
@@ -68,7 +65,6 @@ export default function MonthSheet({
 }) {
   const { days, summary, weeks } = report;
   const today = todayIST();
-  // Only past days (today is handled by the check-in card), and not before someone joined
   const canEdit = (d: DayRow) => !!onEditDay && d.date < today && d.status !== "NOT_JOINED" && d.status !== "LEFT";
 
   function exportCsv() {
@@ -104,7 +100,6 @@ export default function MonthSheet({
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
   const extraDays = days.filter((d) => d.extraMin).length;
 
-  // Weekly hours: this week while it's running, otherwise the average week of the month
   const thisWeek = currentWeek(weeks, today);
   const weekMs = thisWeek ? thisWeek.workedMs : weeks.reduce((sum, w) => sum + w.workedMs, 0) / (weeks.length || 1);
   const weekHint = summary.weeklyHours
@@ -112,14 +107,12 @@ export default function MonthSheet({
       ? `of ${summary.weeklyHours}h · ${weekProgress(thisWeek, summary.weeklyHours, today)!.text.toLowerCase()}`
       : `target ${summary.weeklyHours}h a week`
     : "No weekly target set";
-  // A week's total goes right after its Sunday (or after the month's last day, mid-week)
   const weekEndingOn = (d: DayRow): WeekRow | undefined =>
     weeks.find((w) => w.to === d.date || (d.date === days.at(-1)!.date && w.from <= d.date && d.date < w.to));
   const weekLabel = (w: WeekRow) => `${fmtDate(w.from, false)} – ${fmtDate(w.to, false)}`;
 
   return (
     <div className="space-y-6">
-      {/* 8 tiles: 2 columns on phones, 4 on larger screens */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         <Stat
           label="Hours worked"
@@ -196,7 +189,6 @@ export default function MonthSheet({
           )
         }
       >
-        {/* Phones: one compact row per day */}
         <ul className="divide-y divide-zinc-100 md:hidden">
           {days.map((d) => {
             const quiet = d.status === "WEEKEND" || d.status === "UPCOMING" || d.status === "NOT_JOINED" || d.status === "LEFT";
@@ -253,7 +245,6 @@ export default function MonthSheet({
           })}
         </ul>
 
-        {/* Larger screens: the full table */}
         <div className={`${table.wrap} hidden md:block`}>
           <table className={table.table}>
             <thead className={table.thead}>
@@ -301,7 +292,6 @@ export default function MonthSheet({
                           {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
                           {!!d.extraMin && <Tag tone="green">+{mins(d.extraMin)} extra</Tag>}
                           {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
-                          {/* WFH plan / report: hover to read the whole text */}
                           {d.plan && (
                             <span title={d.plan} className="cursor-help">
                               <Tag>Plan</Tag>
@@ -345,7 +335,6 @@ export default function MonthSheet({
   );
 }
 
-// The weekly total shown after each Sunday: hours for Mon–Sun, against the person's target.
 function WeekTotal({
   week,
   label,
@@ -358,7 +347,7 @@ function WeekTotal({
   label: string;
   weeklyHours: number | null;
   today: string;
-  asRow?: boolean; // desktop table row (otherwise a phone list item)
+  asRow?: boolean;
   cols?: number;
 }) {
   const progress = weekProgress(week, weeklyHours, today);

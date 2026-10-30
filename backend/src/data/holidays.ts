@@ -1,5 +1,5 @@
 export type Holiday = {
-  date: string; // "YYYY-MM-DD", the format databases and JavaScript understand
+  date: string;
   name: string;
   type: "Gazetted" | "Compulsory";
 };
@@ -12,7 +12,6 @@ export const holidays: Holiday[] = [
   { date: "2026-08-15", name: "Independence Day", type: "Compulsory" },
   { date: "2026-08-28", name: "Rakhi", type: "Gazetted" },
   { date: "2026-10-02", name: "Gandhi Jayanti", type: "Compulsory" },
-  // Not in the holiday calendar sheet, but marked as a holiday in the attendance sheets
   { date: "2026-10-20", name: "Dussehra", type: "Gazetted" },
   { date: "2026-11-07", name: "Choti Diwali", type: "Gazetted" },
   { date: "2026-11-08", name: "Diwali", type: "Gazetted" },

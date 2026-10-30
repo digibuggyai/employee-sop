@@ -1,8 +1,5 @@
 "use client";
 
-// In-app feedback instead of the browser's alert() / confirm() popups:
-//   const toast = useToast();      toast.success("Saved")   toast.error("Could not save")
-//   const confirm = useConfirm();  if (await confirm({ title: "Delete task?", danger: true })) ...
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { CircleAlert, CircleCheck, X } from "lucide-react";
 import { Button } from "./form";
@@ -24,12 +21,11 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const push = useCallback((kind: Toast["kind"], message: string) => {
     const id = Date.now() + Math.random();
     setToasts((list) => [...list, { id, kind, message }]);
-    setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), 4000); // auto-hide
+    setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), 4000);
   }, []);
 
   const confirm = useCallback((options: ConfirmOptions) => {
     setDialog(options);
-    // open on the next frame, after React has rendered the dialog content
     requestAnimationFrame(() => dialogRef.current?.showModal());
     return new Promise<boolean>((resolve) => (resolver.current = resolve));
   }, []);
@@ -46,7 +42,6 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     <FeedbackContext.Provider value={{ toast, confirm }}>
       {children}
 
-      {/* Toasts: bottom-right on desktop, above the tab bar on phones. aria-live reads them aloud. */}
       <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-20 z-50 flex flex-col items-end gap-2 md:right-6 md:bottom-6 md:left-auto">
         {toasts.map((t) => (
           <div
@@ -70,7 +65,6 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         ))}
       </div>
 
-      {/* Confirm dialog: native <dialog> gives focus trapping and Esc-to-close for free */}
       <dialog
         ref={dialogRef}
         onCancel={(e) => {

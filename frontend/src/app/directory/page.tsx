@@ -9,7 +9,6 @@ import { Badge, EmptyState, Skeleton } from "@/components/ui";
 import { api, employmentLabels, type User } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
-// The backend only sends these fields for colleagues (see backend/src/routes/directory.ts)
 type Person = Pick<User, "id" | "name" | "email" | "phone" | "designation" | "employmentType" | "team" | "office" | "timings" | "birthday" | "photoUpdatedAt">;
 
 export default function DirectoryPage() {
@@ -23,7 +22,6 @@ export default function DirectoryPage() {
       .catch((err) => setError(err.message));
   }, []);
 
-  // Filtering happens in the browser: fine for ~100 people, no extra request per keystroke.
   const q = query.trim().toLowerCase();
   const shown = (people ?? []).filter((p) =>
     [p.name, p.designation, p.team, p.office].some((field) => field?.toLowerCase().includes(q)),

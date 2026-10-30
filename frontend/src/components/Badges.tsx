@@ -1,5 +1,3 @@
-// Every status label in the app, mapped to one Badge style + a colour.
-// Change a colour here and it changes everywhere.
 import type { DayRow, LeaveStatus, LiveStatus, Priority, TaskStatus } from "@/lib/api";
 import { priorityLabels, taskStatusLabels } from "@/lib/api";
 import { Badge, type Tone } from "./ui";
@@ -7,7 +5,7 @@ import { Badge, type Tone } from "./ui";
 const dayStyles: Record<DayRow["status"], [string, Tone]> = {
   PRESENT: ["Present", "green"],
   WORKING: ["Working", "blue"],
-  ABSENT: ["Unauthorized", "red"], // absent without approved leave: 1 day salary deduction
+  ABSENT: ["Unauthorized", "red"],
   LEAVE: ["Leave", "violet"],
   LEAVE_PENDING: ["Leave pending", "violet"],
   WEEKEND: ["Weekend", "zinc"],
@@ -46,7 +44,6 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
   return <Badge tone={priorityTones[priority]}>{priorityLabels[priority]}</Badge>;
 }
 
-// Used by the status dropdown in task lists (it needs plain classes, not a component)
 export const taskStatusStyles: Record<TaskStatus, string> = {
   NOT_STARTED: "bg-zinc-50 text-zinc-600 ring-zinc-500/15",
   IN_PROGRESS: "bg-sky-50 text-sky-700 ring-sky-600/20",
@@ -75,7 +72,6 @@ export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {
   );
 }
 
-// Extra info inside table cells ("Made up 17 Oct", "Half day")
 export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" | "green" }) {
   return <Badge tone={tone}>{children}</Badge>;
 }

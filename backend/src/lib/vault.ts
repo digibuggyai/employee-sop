@@ -1,13 +1,5 @@
 import crypto from "node:crypto";
 
-// Encrypts the shared-login passwords before they reach the database (AES-256-GCM).
-// The key is VAULT_KEY: 32 random bytes, base64. It lives ONLY in the server's environment
-// (Railway Variables + backend/.env), so a copy of the database alone reveals nothing.
-// GCM also detects tampering: a changed ciphertext fails to decrypt instead of giving garbage.
-//
-// Make a key once:  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-// Use the SAME key everywhere: anything encrypted with one key can't be read with another.
-
 function key(): Buffer | null {
   const raw = process.env.VAULT_KEY;
   if (!raw) return null;
@@ -17,8 +9,6 @@ function key(): Buffer | null {
 
 export const vaultReady = () => key() !== null;
 
-// "secret" → "v1:<iv>:<tag>:<data>" (all base64). A fresh random iv every time,
-// so the same password stored twice never looks the same.
 export function encrypt(plain: string): string {
   const k = key();
   if (!k) throw new Error("VAULT_KEY is not set");

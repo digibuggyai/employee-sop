@@ -14,8 +14,6 @@ import { Skeleton } from "@/components/ui";
 import { api, taskStatusLabels, type OverviewRow, type Task, type UserBrief } from "@/lib/api";
 import { monthRange, thisMonthIST } from "@/lib/format";
 
-// /admin/tasks: everyone's tasks with filters, and assigning new ones.
-// useSearchParams (reading ?userId=...) must sit inside <Suspense> in Next.js.
 export default function AdminTasksPage() {
   return (
     <Suspense fallback={<Skeleton className="h-64" />}>
@@ -26,7 +24,7 @@ export default function AdminTasksPage() {
 
 function AdminTasks() {
   const toast = useToast();
-  const params = useSearchParams(); // the Overview links here with ?userId=...
+  const params = useSearchParams();
   const [month, setMonth] = useState(thisMonthIST());
   const [userId, setUserId] = useState(params.get("userId") ?? "");
   const [status, setStatus] = useState("");
@@ -35,24 +33,20 @@ function AdminTasks() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Task | "new" | null>(null);
 
-  // Employee list for the filter + "Assign to" (the overview already returns active users)
   useEffect(() => {
     api<{ rows: OverviewRow[] }>("/api/admin/overview")
       .then((r) => setEmployees(r.rows.map((row) => row.user)))
       .catch(() => {});
   }, []);
 
-  // Reload whenever a filter changes
   useEffect(() => {
     const { from, to } = monthRange(month);
-    // builds "from=...&to=...&userId=..."; only filters that are set get added
     const q = new URLSearchParams({ from, to, ...(userId && { userId }), ...(status && { status }) });
     api<{ tasks: Task[] }>(`/api/admin/tasks?${q}`)
       .then((r) => setTasks(r.tasks))
       .catch((err) => setError(err.message));
   }, [month, userId, status]);
 
-  // Any filter change: show loading until the new list arrives
   const filter = <T,>(set: (v: T) => void) => (v: T) => {
     setTasks(null);
     set(v);
@@ -81,7 +75,6 @@ function AdminTasks() {
             existing={editing === "new" ? undefined : editing}
             employees={employees}
             onSaved={(t) => {
-              // only add it to the list if it matches the current employee filter
               if (!userId || t.user.id === userId) setTasks((list) => applyTaskChange(list ?? [], t));
               toast.success(editing === "new" ? `Task assigned to ${t.user.name}` : "Task updated");
               setEditing(null);

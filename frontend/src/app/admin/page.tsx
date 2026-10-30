@@ -22,7 +22,6 @@ const filters: { value: Filter; label: string; dot?: string }[] = [
   { value: "NOT_IN", label: "Not checked in", dot: "bg-zinc-400" },
 ];
 
-// /admin: the Admin Panel home. Everyone's attendance + tasks for one day.
 export default function AdminOverviewPage() {
   const [date, setDate] = useState(todayIST());
   const [rows, setRows] = useState<OverviewRow[] | null>(null);
@@ -41,7 +40,6 @@ export default function AdminOverviewPage() {
   const totalWorked = rows?.reduce((sum, r) => sum + r.workedMs, 0) ?? 0;
   const isToday = date === todayIST();
 
-  // Who's in first, then the rest
   const order: Record<LiveStatus, number> = { WORKING: 0, ON_BREAK: 1, DONE: 2, ON_LEAVE: 3, NOT_IN: 4 };
   const shown = [...(rows ?? [])]
     .filter((r) => filter === "ALL" || r.status === filter)
@@ -67,7 +65,6 @@ export default function AdminOverviewPage() {
         }
       />
 
-      {/* Headline numbers */}
       <div className="mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         <Kpi label="Present" value={rows ? `${present} / ${rows.length}` : null} hint={rows ? `${wfh} working from home` : undefined} />
         <Kpi label={isToday ? "Working now" : "Worked"} value={rows ? count("WORKING") + count("ON_BREAK") : null} hint={rows ? `${count("ON_BREAK")} on break` : undefined} />
@@ -78,7 +75,6 @@ export default function AdminOverviewPage() {
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       <Card flush>
-        {/* Status filter: click to see only that group */}
         <div className="flex gap-1 overflow-x-auto border-b border-zinc-100 p-2">
           {filters.map((f) => (
             <button
@@ -104,7 +100,6 @@ export default function AdminOverviewPage() {
           <EmptyState compact icon={Users} title="Nobody in this group" />
         ) : (
           <>
-          {/* Phones: one compact row per person */}
           <ul className="divide-y divide-zinc-100 md:hidden">
             {shown.map((r) => (
               <li key={r.user.id} className="flex items-center gap-3 px-4 py-3">
@@ -124,7 +119,6 @@ export default function AdminOverviewPage() {
               </li>
             ))}
           </ul>
-          {/* Larger screens: the full table */}
           <div className={`${table.wrap} hidden md:block`}>
             <table className={table.table}>
               <thead className={table.thead}>
@@ -162,7 +156,6 @@ export default function AdminOverviewPage() {
                           href={`/admin/tasks?userId=${r.user.id}`}
                           className="inline-flex items-center gap-2 text-zinc-700 hover:text-brand-700"
                         >
-                          {/* mini progress bar */}
                           <span className="h-1.5 w-12 overflow-hidden rounded-full bg-zinc-100">
                             <span
                               className="block h-full rounded-full bg-emerald-500"

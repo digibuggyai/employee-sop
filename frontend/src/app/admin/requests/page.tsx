@@ -16,7 +16,6 @@ const fullDay = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 const placeText = (p: string | null | undefined) => (p ? (p === "WFH" ? "WFH" : "In-office") : "—");
 
-// /admin/requests: employees' attendance change requests. Approve applies the change.
 export default function AdminRequestsPage() {
   const { refresh: refreshBadges } = usePending();
   const [pending, setPending] = useState<Correction[] | null>(null);
@@ -35,7 +34,7 @@ export default function AdminRequestsPage() {
 
   const reload = () => {
     setVersion((v) => v + 1);
-    refreshBadges(); // update the red badge in the menu right away
+    refreshBadges();
   };
 
   return (
@@ -82,7 +81,6 @@ export default function AdminRequestsPage() {
   );
 }
 
-// One request: who, which day, why, and a before → after comparison of only what changes.
 function RequestCard({ c, onDone }: { c: Correction; onDone: () => void }) {
   const toast = useToast();
   const confirm = useConfirm();
@@ -130,7 +128,6 @@ function RequestCard({ c, onDone }: { c: Correction; onDone: () => void }) {
         <span className="text-xs text-zinc-400">{fmtDate(c.createdAt, false)}</span>
       </div>
 
-      {/* Before → after */}
       <div className="mx-5 mt-3 overflow-hidden rounded-lg border border-zinc-200">
         {!c.current && (
           <p className="border-b border-zinc-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

@@ -14,9 +14,6 @@ import { Badge, EmptyState, Skeleton, table } from "@/components/ui";
 import { api, isAdmin, type User, type VaultColumn, type VaultData, type VaultItem } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
-// /logins: shared logins, laid out like the sheet they came from (columns × rows).
-// Employees see only the rows an admin gave them; admins see all, and edit rows, columns and access.
-// A secret cell (password, PIN...) is fetched only when someone presses its eye, and that's logged.
 export default function LoginsPage() {
   const { user } = useAuth();
   const toast = useToast();
@@ -49,7 +46,6 @@ export default function LoginsPage() {
     }
   }
 
-  // A "Section" column (from the sheet's section titles) groups the rows; it isn't repeated in each row
   const sectionCol = data?.columns.find((c) => c.name.toLowerCase() === "section" && !c.secret);
   const columns = data?.columns.filter((c) => c !== sectionCol) ?? [];
   const q = query.trim().toLowerCase();
@@ -117,7 +113,6 @@ export default function LoginsPage() {
               />
             ) : (
               <>
-                {/* Phones: one card per login, label: value lines */}
                 <div className="md:hidden">
                   {groups.map(([section, items]) => (
                     <Fragment key={section}>
@@ -131,7 +126,6 @@ export default function LoginsPage() {
                   ))}
                 </div>
 
-                {/* Larger screens: the sheet, cleaned up */}
                 <div className={`${table.wrap} hidden md:block`}>
                   <table className={table.table}>
                     <thead className={table.thead}>
@@ -218,14 +212,12 @@ export default function LoginsPage() {
   );
 }
 
-// ---------- One cell ----------
-
 const looksLikeLink = (v: string) => /^https?:\/\//i.test(v) || /^www\./i.test(v);
 const hrefOf = (v: string) => (/^https?:\/\//i.test(v) ? v : `https://${v}`);
 
 function Cell({ item, column, compact = false }: { item: VaultItem; column: VaultColumn; compact?: boolean }) {
   const toast = useToast();
-  const [secret, setSecret] = useState<string | null>(null); // revealed value (null = hidden)
+  const [secret, setSecret] = useState<string | null>(null);
   const value = item.cells[column.id];
   if (!value) return <span className="text-zinc-300">—</span>;
 
@@ -265,7 +257,6 @@ function Cell({ item, column, compact = false }: { item: VaultItem; column: Vaul
           {secret === null ? <Eye size={14} /> : <EyeOff size={14} />}
         </IconButton>
       )}
-      {/* phones: always visible; larger screens: on hover */}
       <span className="md:opacity-0 md:transition md:group-hover:opacity-100 md:focus-within:opacity-100">
         <IconButton label={`Copy ${column.name}`} onClick={copy}>
           <Copy size={14} />
@@ -315,7 +306,6 @@ function LoginTableRow({ serial, ...p }: RowProps & { serial: number }) {
 }
 
 function LoginCard(p: RowProps) {
-  // the label column is the card's title; the other filled columns are listed under it
   const rest = p.columns.filter((c) => p.item.cells[c.id] && !(p.item.cells[c.id] === p.item.title && !c.secret));
   return (
     <li className="px-4 py-3.5">
@@ -344,14 +334,11 @@ function LoginCard(p: RowProps) {
   );
 }
 
-// ---------- Admin: add / edit a row ----------
-
 function RowForm({ columns, existing, onCancel, onSaved }: { columns: VaultColumn[]; existing?: VaultItem; onCancel: () => void; onSaved: () => void }) {
-  // secrets are never pre-filled: empty = keep what's stored
   const [cells, setCells] = useState<Record<string, string>>(() =>
     Object.fromEntries(columns.map((c) => [c.id, !c.secret && typeof existing?.cells[c.id] === "string" ? (existing.cells[c.id] as string) : ""])),
   );
-  const [cleared, setCleared] = useState<Set<string>>(new Set()); // secret cells to empty
+  const [cleared, setCleared] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -420,9 +407,6 @@ function RowForm({ columns, existing, onCancel, onSaved }: { columns: VaultColum
   );
 }
 
-// ---------- Admin: access ----------
-
-// Everyone who can be given access: active employees (admins already see everything)
 const useEmployees = () => {
   const [people, setPeople] = useState<User[] | null>(null);
   useEffect(() => {
@@ -599,8 +583,6 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
     </div>
   );
 }
-
-// ---------- Admin: columns ----------
 
 function ColumnsEditor({ columns, onChange }: { columns: VaultColumn[]; onChange: () => void }) {
   const toast = useToast();

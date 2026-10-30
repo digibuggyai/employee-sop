@@ -3,12 +3,6 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin, requireAuth } from "../lib/auth.js";
 
-// The SOP library. Everyone logged in can read; admins add, edit and delete.
-//   GET    /api/sops          → all SOPs (A–Z), each with who last updated it
-//   POST   /api/sops          → admin: new SOP { title, team, body }
-//   PATCH  /api/sops/:id      → admin: edit
-//   DELETE /api/sops/:id      → admin: remove
-// Search and the team filter run in the browser: the whole library is small.
 const router = Router();
 router.use(requireAuth);
 

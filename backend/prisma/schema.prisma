@@ -1,56 +1,49 @@
-// The database design. Each `model` becomes a table, each line a column.
-// After changing this file run:  npm run db:migrate  (updates the database + regenerates the client)
-
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma" // generated code lives in src/ so it gets built with the app
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// Only two roles for now: employees see their own data, admins see and manage everything.
 enum Role {
   EMPLOYEE
-  ADMIN // uses the Admin Panel and manages employees
-  SUPER_ADMIN // everything an admin can do, plus creating and managing admin accounts (Hive Leader / Director)
+  ADMIN
+  SUPER_ADMIN
 }
 
 enum EmploymentType {
   FULL_TIME
-  PART_TIME // standard rules on their own (shorter) timings; no monthly leave balance
+  PART_TIME
   INTERN
   REMOTE_INTERN
 }
 
 model User {
-  id           String @id @default(cuid()) // unique random id, e.g. "cm3x9..."
+  id           String @id @default(cuid())
   name         String
-  email        String @unique // two people can't share an email; used to log in
-  passwordHash String // NEVER the real password, only its bcrypt hash
+  email        String @unique
+  passwordHash String
   role         Role   @default(EMPLOYEE)
 
-  // Profile (from the old Employee Directory sheet). "?" = optional.
   phone          String?
   designation    String?
   employmentType EmploymentType @default(INTERN)
-  team           String? // Sales, Ops, Content, Marketing...
-  office         String? // AVS / Digibuggy
-  timings        String? // "11:00 to 18:00": the shift that late / early-leaving is measured against
+  team           String?
+  office         String?
+  timings        String?
   birthday       DateTime?      @db.Date
   joinedOn       DateTime?      @db.Date
 
-  mustChangePassword Boolean   @default(true) // true until they replace the temporary password
-  active             Boolean   @default(true) // false = left the company; can't log in, data kept
-  leftOn             DateTime? @db.Date // last working day (set when they leave); later days aren't absences
-  wfhAllowance       Int       @default(4) // WFH days per month; each WFH day beyond this counts as a half day
-  weeklyHours        Int? // hours they should work each week (Mon–Sun); empty = no target set
-  leaveOpening       Float     @default(0) // full-time: leave balance carried in from before the app (Oct 2026)
-  isEmployee         Boolean   @default(true) // false = not tracked: no attendance, leave or WFH, never "absent" (e.g. the Hive Leader)
+  mustChangePassword Boolean   @default(true)
+  active             Boolean   @default(true)
+  leftOn             DateTime? @db.Date
+  wfhAllowance       Int       @default(4)
+  weeklyHours        Int?
+  leaveOpening       Float     @default(0)
+  isEmployee         Boolean   @default(true)
 
-  // Profile photo. The image itself lives in UserPhoto (kept out of User so lists stay light);
-  // this timestamp tells the app a photo exists and makes the photo's URL change when it's replaced.
   photoUpdatedAt DateTime?
   photo          UserPhoto?
   weeklyReports  WeeklyReport[]
@@ -59,9 +52,8 @@ model User {
   vaultGrants    VaultAccess[]  @relation("VaultAccessGrantor")
   vaultViews     VaultView[]
 
-  attendance Attendance[] // one user → many attendance days (a "relation")
+  attendance Attendance[]
 
-  // Two relations to Task, so each needs a name: tasks I own vs tasks I assigned to others.
   tasks         Task[] @relation("TaskOwner")
   assignedTasks Task[] @relation("TaskAssigner")
 
@@ -80,28 +72,26 @@ enum Place {
   WFH
 }
 
-// One row per person per day: replaces a row of the attendance sheet.
 model Attendance {
   id       String    @id @default(cuid())
   userId   String
-  user     User      @relation(fields: [userId], references: [id]) // links to the User table
-  date     DateTime  @db.Date // the day (India time), e.g. 2026-10-26
+  user     User      @relation(fields: [userId], references: [id])
+  date     DateTime  @db.Date
   place    Place
-  checkIn  DateTime // exact moment, set by the server
+  checkIn  DateTime
   checkOut DateTime?
   note     String?
-  halfDay  Boolean   @default(false) // came late / left early: present, but counts as half a working day
-  plan     String? // WFH (interns): the to-do plan written at check-in
-  report   String? // WFH (interns): the work report written at check-out
+  halfDay  Boolean   @default(false)
+  plan     String?
+  report   String?
   breaks   Break[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, date]) // a person can't have two attendance rows for the same day
+  @@unique([userId, date])
 }
 
-// Each break inside a day. end = null means "on break right now".
 model Break {
   id           String     @id @default(cuid())
   attendanceId String
@@ -123,28 +113,27 @@ enum TaskStatus {
   POSTPONED
 }
 
-// One task: replaces a row in someone's tab of the Task List sheet.
 model Task {
   id     String @id @default(cuid())
-  userId String // who does the task
+  userId String
   user   User   @relation("TaskOwner", fields: [userId], references: [id])
 
-  assignedById String? // set when an admin assigned it; null = the employee added it
+  assignedById String?
   assignedBy   User?   @relation("TaskAssigner", fields: [assignedById], references: [id])
 
-  date        DateTime   @db.Date // the day it's logged for
+  date        DateTime   @db.Date
   title       String
   details     String?
   priority    Priority   @default(MEDIUM)
   status      TaskStatus @default(NOT_STARTED)
   deadline    DateTime?  @db.Date
-  link        String? // drive / canva / doc link
-  completedAt DateTime? // filled automatically when status becomes COMPLETED
+  link        String?
+  completedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId, date]) // makes "this person's tasks for this month" fast
+  @@index([userId, date])
 }
 
 enum LeaveStatus {
@@ -153,7 +142,6 @@ enum LeaveStatus {
   REJECTED
 }
 
-// One leave DAY (a 3-day request creates 3 rows, so each day can be approved or made up on its own).
 model Leave {
   id     String @id @default(cuid())
   userId String
@@ -163,22 +151,19 @@ model Leave {
   reason String?
   status LeaveStatus @default(PENDING)
 
-  reviewedById String? // the admin who approved / rejected it
+  reviewedById String?
   reviewedBy   User?     @relation("LeaveReviewer", fields: [reviewedById], references: [id])
   reviewedAt   DateTime?
 
-  // The weekend/holiday day the person worked to make up for this leave.
-  // 1 worked day covers 1 leave: the unique rule below stops one day being used twice.
   compensatedOn DateTime? @db.Date
 
-  // Taken on the same day it was asked for (only 1 a month); all other leave is asked for in advance
   emergency Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, date]) // one leave row per person per day
-  @@unique([userId, compensatedOn]) // (Postgres allows many NULLs here, so un-compensated leaves are fine)
+  @@unique([userId, date])
+  @@unique([userId, compensatedOn])
 }
 
 enum RequestStatus {
@@ -187,9 +172,6 @@ enum RequestStatus {
   REJECTED
 }
 
-// An employee asking to change one day's attendance (they can't edit it themselves).
-// Holds only the NEW values; the current values are read from Attendance when an admin reviews it.
-// Approving copies these values into the Attendance row (creating it if the day had none).
 model AttendanceCorrection {
   id     String @id @default(cuid())
   userId String
@@ -200,8 +182,8 @@ model AttendanceCorrection {
   checkIn  DateTime?
   checkOut DateTime?
   note     String?
-  halfDay  Boolean? // null = no change requested
-  reason   String // why the change is needed (shown to the admin)
+  halfDay  Boolean?
+  reason   String
 
   status       RequestStatus @default(PENDING)
   reviewedById String?
@@ -211,11 +193,10 @@ model AttendanceCorrection {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([status]) // "all pending requests" is the admin's most common question
+  @@index([status])
   @@index([userId, date])
 }
 
-// A profile photo: a small square JPEG (resized to 256x256 in the browser before upload, ~20 KB).
 model UserPhoto {
   userId    String   @id
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -224,16 +205,14 @@ model UserPhoto {
   updatedAt DateTime @updatedAt
 }
 
-// Remote interns send a written update of their week every Saturday.
-// One per person per week; weekStart is that week's Monday.
 model WeeklyReport {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   weekStart DateTime @db.Date
-  text      String // required: what they did this week
-  link      String? // optional: a Google Doc / Drive link
-  fileName  String? // optional PDF
+  text      String
+  link      String?
+  fileName  String?
   fileData  Bytes?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -242,12 +221,11 @@ model WeeklyReport {
   @@index([weekStart])
 }
 
-// The SOP library: step-by-step "how we do things". Admins write them; everyone reads them.
 model Sop {
   id          String   @id @default(cuid())
   title       String
-  team        String? // Sales, Content, RMA... (filters the library)
-  body        String // the steps, as plain text (one step per line)
+  team        String?
+  body        String
   updatedById String
   updatedBy   User     @relation("SopAuthor", fields: [updatedById], references: [id])
   createdAt   DateTime @default(now())
@@ -256,30 +234,24 @@ model Sop {
   @@index([team])
 }
 
-// Shared logins, laid out like the sheet they came from: an admin-defined list of columns
-// (VaultColumn) and one row per login (VaultItem). A row's values live in `cells`,
-// keyed by column id. Values in SECRET columns (passwords, PINs...) are each ENCRYPTED with
-// VAULT_KEY (backend/src/lib/vault.ts), never sent in lists, and revealed one at a time.
-// Admins see every row; an employee sees only the rows they've been given access to.
 model VaultColumn {
   id        String   @id @default(cuid())
   name      String
   secret    Boolean  @default(false)
-  position  Int // left to right
+  position  Int
   createdAt DateTime @default(now())
 }
 
 model VaultItem {
   id        String        @id @default(cuid())
-  title     String // the row's label (its first filled column), used in lists and logs
-  cells     Json          @default("{}") // { [columnId]: "value" }; secret ones are "v1:..." ciphertext
+  title     String
+  cells     Json          @default("{}")
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   access    VaultAccess[]
   views     VaultView[]
 }
 
-// Who may use which login (given by an admin)
 model VaultAccess {
   itemId      String
   item        VaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
@@ -292,7 +264,6 @@ model VaultAccess {
   @@id([itemId, userId])
 }
 
-// Every time a password is revealed: who, which, when
 model VaultView {
   id     String    @id @default(cuid())
   itemId String

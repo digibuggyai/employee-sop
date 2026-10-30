@@ -13,19 +13,18 @@ import { fmtDate, todayIST } from "@/lib/format";
 
 type LeaveData = {
   leaves: Leave[];
-  wfh: { used: number; allowance: number; halfDays: number; remote: boolean }; // remote: no allowance
-  balance: number | null; // full-time: leave left (1.5 a month, rolls over)
-  emergency: { used: number; allowed: number }; // same-day leave this month
+  wfh: { used: number; allowance: number; halfDays: number; remote: boolean };
+  balance: number | null;
+  emergency: { used: number; allowed: number };
 };
 
-// /leave: request leave, see my requests, see my WFH usage this month
 export default function LeavePage() {
   const toast = useToast();
   const confirm = useConfirm();
   const [data, setData] = useState<LeaveData | null>(null);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [version, setVersion] = useState(0); // bump → reload
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     api<LeaveData>("/api/leaves")
@@ -83,7 +82,6 @@ export default function LeavePage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-3">
         <div className="space-y-6">
-          {/* Leave balance (full-time) and this month's emergency leave */}
           {data && (
             <Card title="Leave">
               {data.balance !== null && (
@@ -101,10 +99,8 @@ export default function LeavePage() {
             </Card>
           )}
 
-          {/* WFH usage this month */}
           <Card title="WFH this month">
             {wfh?.remote ? (
-              // Remote interns work from home by design: nothing to ration
               <>
                 <span className="text-3xl font-semibold tracking-tight text-zinc-900 tabular-nums">{wfh.used}</span>
                 <p className="mt-3 text-[13px] text-zinc-600">Remote intern: every WFH day counts as a full day.</p>
@@ -117,7 +113,6 @@ export default function LeavePage() {
                   </span>
                   <span className="text-sm text-zinc-500">of {wfh.allowance} days</span>
                 </div>
-                {/* one segment per allowed day: easier to read than a percentage */}
                 <div className="mt-3 flex gap-1">
                   {Array.from({ length: Math.max(wfh.allowance, wfh.used) }, (_, i) => (
                     <span
@@ -142,7 +137,6 @@ export default function LeavePage() {
           </Card>
         </div>
 
-        {/* My leave days */}
         <Card title="My leave" className="lg:col-span-2" flush>
           {error && <p className="p-5 text-sm text-red-600">{error}</p>}
           {!data && !error && (

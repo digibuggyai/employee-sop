@@ -10,34 +10,29 @@ import { useConfirm, useToast } from "./Feedback";
 import Modal from "./Modal";
 import { Button } from "./form";
 
-// Change / remove a profile photo. Used on My Profile (yourself) and in the admin's edit form.
-// Choosing a photo opens a crop window (drag + zoom inside a circle); Save uploads only that part.
-// onChange receives the updated user (with the new photoUpdatedAt) so the page can refresh.
 export default function PhotoUploader({ user, onChange }: { user: User; onChange: (u: User) => void }) {
   const toast = useToast();
   const confirm = useConfirm();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  // the photo being cropped: the file + a temporary local URL to preview it
   const [picked, setPicked] = useState<{ file: File; url: string } | null>(null);
 
   function pick(file: File) {
     if (!file.type.startsWith("image/")) return toast.error("Choose an image file (JPEG or PNG)");
-    setPicked({ file, url: URL.createObjectURL(file) }); // opens the crop window
+    setPicked({ file, url: URL.createObjectURL(file) });
   }
 
   function closeCrop() {
-    if (picked) URL.revokeObjectURL(picked.url); // free the memory used by the preview
+    if (picked) URL.revokeObjectURL(picked.url);
     setPicked(null);
-    if (input.current) input.current.value = ""; // so choosing the same file again still works
+    if (input.current) input.current.value = "";
   }
 
   async function save(area: Area) {
     if (!picked) return;
     setBusy(true);
     try {
-      const jpeg = await cropToJpeg(picked.file, area); // 256x256 JPEG of just the chosen area
-      // raw image bytes, not JSON, so plain fetch instead of api()
+      const jpeg = await cropToJpeg(picked.file, area);
       const res = await fetch(`/api/photos/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "image/jpeg" },
@@ -71,7 +66,6 @@ export default function PhotoUploader({ user, onChange }: { user: User; onChange
 
   return (
     <div className="flex items-center gap-4">
-      {/* The photo itself is a button: tap it to choose a new one */}
       <button
         type="button"
         onClick={() => input.current?.click()}
@@ -88,7 +82,6 @@ export default function PhotoUploader({ user, onChange }: { user: User; onChange
             <LoaderCircle className="animate-spin text-zinc-600" size={22} />
           </span>
         )}
-        {/* small camera badge, always visible: tells phone users it's tappable */}
         <span className="absolute right-0 bottom-0 grid size-7 place-items-center rounded-full border-2 border-white bg-brand-700 text-white">
           <Camera size={13} />
         </span>
@@ -106,7 +99,6 @@ export default function PhotoUploader({ user, onChange }: { user: User; onChange
         <p className="text-xs text-zinc-500">JPEG or PNG. You can crop it next.</p>
       </div>
 
-      {/* accept="image/*": on phones this offers the camera or the gallery */}
       <input
         ref={input}
         type="file"
@@ -125,7 +117,6 @@ export default function PhotoUploader({ user, onChange }: { user: User; onChange
   );
 }
 
-// The crop window's contents: the photo under a round frame, a zoom slider, and the buttons.
 function CropArea({
   url,
   busy,
@@ -139,7 +130,6 @@ function CropArea({
 }) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  // the chosen square in the ORIGINAL photo's pixels (react-easy-crop works it out for us)
   const [area, setArea] = useState<Area | null>(null);
   const MIN = 1;
   const MAX = 4;
@@ -147,7 +137,6 @@ function CropArea({
 
   return (
     <div>
-      {/* the cropper fills this box; it needs a fixed height and position: relative */}
       <div className="relative h-72 overflow-hidden rounded-lg bg-zinc-900 sm:h-80">
         <Cropper
           image={url}
@@ -164,7 +153,6 @@ function CropArea({
         />
       </div>
 
-      {/* zoom: buttons are easier to hit on phones than a thin slider alone */}
       <div className="mt-4 flex items-center gap-3">
         <button type="button" onClick={() => step(-0.2)} aria-label="Zoom out" className="grid size-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100">
           <Minus size={16} />

@@ -17,7 +17,6 @@ import { fmtDate, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
 const dayName = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" });
 const fullDay = (iso: string) => `${dayName(iso)} ${fmtDate(iso, false)}`;
 
-// /admin/leaves: approve requests, record leave, link make-up days (1 worked day = 1 leave)
 export default function AdminLeavesPage() {
   const toast = useToast();
   const confirm = useConfirm();
@@ -27,7 +26,7 @@ export default function AdminLeavesPage() {
   const [employees, setEmployees] = useState<UserBrief[]>([]);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [version, setVersion] = useState(0); // bump → reload both lists
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     api<{ rows: OverviewRow[] }>("/api/admin/overview")
@@ -50,7 +49,7 @@ export default function AdminLeavesPage() {
   const { refresh: refreshBadges } = usePending();
   const reload = () => {
     setVersion((v) => v + 1);
-    refreshBadges(); // the red badge in the menu updates right away
+    refreshBadges();
   };
 
   async function review(leave: Leave, status: "APPROVED" | "REJECTED") {
@@ -102,7 +101,6 @@ export default function AdminLeavesPage() {
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-      {/* Pending requests: the reason this page exists, so it comes first */}
       <Card
         title="Waiting for review"
         actions={pending && pending.length > 0 && <Badge tone="amber">{pending.length}</Badge>}
@@ -143,7 +141,6 @@ export default function AdminLeavesPage() {
         )}
       </Card>
 
-      {/* Reviewed leaves of the month */}
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-zinc-900">Reviewed leave</h2>
@@ -176,10 +173,8 @@ export default function AdminLeavesPage() {
   );
 }
 
-// One reviewed leave, with the "made up on" picker for approved ones.
 function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void }) {
   const toast = useToast();
-  // weekend/holiday days this person worked that aren't used yet (loaded when the picker opens)
   const [options, setOptions] = useState<{ date: string; place: string }[] | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -229,7 +224,6 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
             className={`${inputBase} min-w-36`}
           >
             <option value="">Not made up</option>
-            {/* the current link first, then the free options */}
             {current && <option value={current}>{fullDay(current)}</option>}
             {options?.map((o) => (
               <option key={o.date} value={o.date}>

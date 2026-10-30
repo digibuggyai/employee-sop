@@ -24,13 +24,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); // stop the browser's default "reload the page" on submit
+    e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      // The backend checks the password and replies with a Set-Cookie header + the user.
       const user = await api<User>("/api/auth/login", { method: "POST", body: { email, password } });
-      setUser(user); // now every component knows who's logged in
+      setUser(user);
       router.replace(user.mustChangePassword ? "/change-password" : "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -40,9 +39,7 @@ export default function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Brand panel (large screens only) */}
       <aside className="relative hidden overflow-hidden bg-brand-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        {/* faint grid texture */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.07]"
@@ -52,7 +49,6 @@ export default function LoginPage() {
           }}
         />
         <div className="relative">
-          {/* white version: this panel is navy */}
           <BrandLogo tone="light" className="h-7 w-auto" priority />
         </div>
 
@@ -76,10 +72,8 @@ export default function LoginPage() {
         <p className="relative text-xs text-white/50">Digibuggy Global Technologies LLP</p>
       </aside>
 
-      {/* Form */}
       <main className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          {/* phones / small screens: the brand panel is hidden, so show the logo here */}
           <div className="mb-8 lg:hidden">
             <BrandLogo className="h-6 w-auto" priority />
           </div>

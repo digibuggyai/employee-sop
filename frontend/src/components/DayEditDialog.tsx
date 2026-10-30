@@ -8,9 +8,6 @@ import { useConfirm, useToast } from "./Feedback";
 import Modal from "./Modal";
 import { Button, ErrorBox, Field, Segmented, inputClass } from "./form";
 
-// One dialog, two behaviours:
-//   mode "admin"   → saves straight away  (PUT /api/admin/attendance/:userId/day)
-//   mode "request" → asks an admin        (POST /api/attendance/corrections), nothing changes yet
 export default function DayEditDialog({
   day,
   mode,
@@ -18,9 +15,9 @@ export default function DayEditDialog({
   onClose,
   onSaved,
 }: {
-  day: DayRow | null; // null = closed
+  day: DayRow | null;
   mode: "admin" | "request";
-  userId?: string; // admin mode: whose day
+  userId?: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -38,7 +35,6 @@ export default function DayEditDialog({
           : "Changes apply immediately."
       }
     >
-      {/* key: a fresh form for every day that's opened */}
       {day && <DayForm key={day.date} day={day} mode={mode} userId={userId} onClose={onClose} onSaved={onSaved} />}
     </Modal>
   );
@@ -69,7 +65,7 @@ function DayForm({
   const [form, setForm] = useState({ ...original, reason: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const hasRecord = !!day.checkIn; // the day already has attendance
+  const hasRecord = !!day.checkIn;
 
   const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [field]: e.target.value });
@@ -78,7 +74,6 @@ function DayForm({
     e.preventDefault();
     setError("");
 
-    // Only send what actually changed (a new day sends everything)
     const changed = (k: "place" | "checkIn" | "checkOut" | "note" | "halfDay") => !hasRecord || form[k] !== original[k];
     const body: Record<string, string | boolean | null> = { date: day.date };
     if (changed("place")) body.place = form.place;
@@ -125,7 +120,6 @@ function DayForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* not <Field>: a <label> around buttons would "click" the first one when the text is tapped */}
       <div>
         <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Place</p>
         <div>

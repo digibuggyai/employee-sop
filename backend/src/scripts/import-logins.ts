@@ -1,20 +1,3 @@
-// Imports shared logins from a Google Sheet into the Logins page, keeping the sheet's own columns.
-//
-// 1. In Google Sheets: open the tab with the logins → File → Download → Comma-separated values (.csv)
-// 2. Move the file to  imports/  (git-ignores it, so it never reaches GitHub)
-// 3. Preview (saves nothing; prints column names and row labels, never a secret):
-//      npm run import-logins -- "../imports/logins.csv"
-// 4. Save:
-//      npm run import-logins -- "../imports/logins.csv" --save
-//    --replace        first deletes EVERY login on the Logins page (and who could see them),
-//                     so the page becomes exactly this sheet. Use it to redo an import.
-//    --header-row N   if the column names aren't on the first filled row (N = the sheet's row number)
-// 5. Delete the CSV. Then, in the app, choose who can see what (Logins → Access).
-//
-// Every column becomes a Logins column with the same name and order (except a serial-number column). Columns whose name looks
-// secret (password, PIN, OTP, key, token, CVV) are encrypted and hidden behind the eye button.
-// A row with only one filled cell (e.g. "Social Media") is a section title: the rows under it get
-// it in a "Section" column. A row whose label already exists on the page is skipped (not replaced).
 import "dotenv/config";
 import { existsSync, readFileSync } from "node:fs";
 import { prisma } from "../lib/prisma.js";
@@ -26,7 +9,7 @@ const save = args.includes("--save");
 const replace = args.includes("--replace");
 const headerArg = args.indexOf("--header-row");
 const headerRowNumber = headerArg !== -1 ? Number(args[headerArg + 1]) : null;
-const file = args.find((a, i) => !a.startsWith("--") && (headerArg === -1 || i !== headerArg + 1)); // not the N after --header-row
+const file = args.find((a, i) => !a.startsWith("--") && (headerArg === -1 || i !== headerArg + 1));
 
 if (!file) {
   console.error('Usage: npm run import-logins -- "../imports/logins.csv" [--save] [--replace] [--header-row N]');
@@ -43,8 +26,6 @@ if (!vaultReady()) {
 
 const isSecretName = (name: string) => /pass|\bpin\b|mpin|otp|secret|token|api.?key|cvv/i.test(name);
 
-// ---------- 1. Read the sheet; find the header row ----------
-// Rows keep the sheet's numbers (1 = first row), so --header-row matches what you see in Sheets
 const all = parseCsv(readFileSync(file, "utf8")).map((cells, i) => ({ n: i + 1, cells: cells.map((c) => c.trim()) }));
 const filledIn = (cells: string[]) => cells.filter(Boolean).length;
 const headerRow = headerRowNumber ? all.find((r) => r.n === headerRowNumber) : all.find((r) => filledIn(r.cells) >= 2);
@@ -52,21 +33,17 @@ if (!headerRow) {
   console.error("Couldn't find the row with the column names. Add --header-row N (the sheet's row number).");
   process.exit(1);
 }
-// The named header cells are the columns. Left out: unnamed columns, and the sheet's own serial
-// number column (S.No, Sr. No., #): the Logins table numbers its rows itself.
 const isSerial = (name: string) => /^(s\.?\s*no\.?|sr\.?\s*no\.?|serial( no\.?)?|#|no\.?)$/i.test(name.trim());
 const sheetColumns = headerRow.cells
   .map((name, index) => ({ index, name: name.replace(/\s+/g, " "), secret: isSecretName(name) }))
   .filter((c) => c.name && !isSerial(c.name));
 
-// ---------- 2. Rows → values by column name ----------
 type Row = { label: string; values: Record<string, string>; section: string | null };
 const rows: Row[] = [];
 let section: string | null = null;
 
 for (const { n, cells } of all) {
   if (n <= headerRow.n || filledIn(cells) === 0) continue;
-  // One filled cell, not in a secret column = a section title ("Social Media") for the rows below
   if (filledIn(cells) === 1) {
     const at = cells.findIndex(Boolean);
     if (!sheetColumns.find((c) => c.index === at)?.secret) {
@@ -76,13 +53,11 @@ for (const { n, cells } of all) {
   }
   const values: Record<string, string> = {};
   for (const c of sheetColumns) if (cells[c.index]) values[c.name] = cells[c.index];
-  // A row's label: its first filled non-secret column (what lists and the access screen show)
   const label = sheetColumns.find((c) => !c.secret && values[c.name]);
   rows.push({ label: (label ? values[label.name] : "Untitled").slice(0, 150), values, section });
 }
 const hasSections = rows.some((r) => r.section);
 
-// ---------- 3. Preview (never prints a value from a secret column) ----------
 console.log(`\nColumns (from sheet row ${headerRow.n}):`);
 sheetColumns.forEach((c) => console.log(`  ${c.name}${c.secret ? "   (secret: encrypted, hidden behind the eye)" : ""}`));
 if (hasSections) console.log("  Section   (added: the section titles between rows)");
@@ -113,12 +88,10 @@ if (!save) {
   process.exit(0);
 }
 
-// ---------- 4. Save ----------
 if (replace) {
   await prisma.$transaction([prisma.vaultItem.deleteMany(), prisma.vaultColumn.deleteMany()]);
   console.log("\nCleared the Logins page.");
 }
-// Reuse a column with the same name (any case); add the others at the end, in the sheet's order
 const columns = await prisma.vaultColumn.findMany({ orderBy: { position: "asc" } });
 let position = (columns.at(-1)?.position ?? -1) + 1;
 const byName = new Map(columns.map((c) => [c.name.toLowerCase(), { id: c.id, secret: c.secret }]));

@@ -4,8 +4,6 @@ import { useState } from "react";
 import type { Person } from "@/lib/api";
 import { photoUrl } from "@/lib/image";
 
-// A person's profile photo, or their initials in a soft colour circle when there's no photo
-// ("Adya Agrawal" → "AA"). The colour comes from the name, so each person always gets the same one.
 const palettes = [
   "bg-rose-100 text-rose-800",
   "bg-amber-100 text-amber-800",
@@ -20,13 +18,11 @@ const palettes = [
 const sizes = { xs: "size-6 text-[10px]", sm: "size-8 text-xs", md: "size-9 text-[13px]", lg: "size-14 text-lg", xl: "size-24 text-3xl" };
 
 export default function Avatar({ person, size = "md" }: { person: Person; size?: keyof typeof sizes }) {
-  // if the photo fails to load (deleted, offline), fall back to initials
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const src = person.id && person.photoUpdatedAt ? photoUrl(person.id, person.photoUpdatedAt) : null;
 
   if (src && failedSrc !== src) {
     return (
-      // Plain <img>, not next/image: the photo comes from our logged-in API (needs the login cookie)
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
@@ -45,7 +41,7 @@ export default function Avatar({ person, size = "md" }: { person: Person; size?:
     .slice(0, 2)
     .map((part) => part[0].toUpperCase())
     .join("");
-  const hash = [...person.name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 0); // name → palette
+  const hash = [...person.name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 0);
 
   return (
     <span

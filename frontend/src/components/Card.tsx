@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-// The white surface used everywhere.
-//  title / description  → header row
-//  actions              → buttons on the right of the header
-//  action               → a "See all" style link on the right
-//  flush                → no body padding (for tables and edge-to-edge lists)
 export default function Card({
   title,
   description,

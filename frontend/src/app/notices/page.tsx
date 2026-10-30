@@ -12,8 +12,6 @@ import { apiGet, noticeAppliesTo, type Notice } from "@/lib/api";
 
 type Filter = "ALL" | "MINE" | Notice["category"];
 
-// /notices: the Notice Board. Key numbers at a glance, then every policy as a card,
-// filterable by category or "for you" (the ones that apply to the person viewing).
 export default function NoticesPage() {
   const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[] | null>(null);
@@ -50,7 +48,6 @@ export default function NoticesPage() {
 
       {notices && (
         <div className="space-y-6">
-          {/* The numbers people look up most */}
           <section aria-label="At a glance" className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
             {notices
               .filter((n) => n.highlight)
@@ -60,14 +57,12 @@ export default function NoticesPage() {
                   <div key={n.id} className="rounded-xl border border-zinc-200 bg-white p-3 shadow-xs sm:p-4">
                     <p className="text-xl font-semibold tracking-tight text-zinc-900 tabular-nums sm:text-2xl">{n.highlight!.value}</p>
                     <p className="mt-1 text-xs leading-snug text-zinc-500 sm:text-[13px]">{n.highlight!.label}</p>
-                    {/* the category tag only where there's room */}
                     <span className={`mt-3 hidden rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset sm:inline-block ${chip}`}>{n.category}</span>
                   </div>
                 );
               })}
           </section>
 
-          {/* Filters + search */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0" role="tablist" aria-label="Filter notices">
               {filters.map((f) => (
@@ -91,7 +86,6 @@ export default function NoticesPage() {
             </div>
           </div>
 
-          {/* The notices */}
           {shown.length === 0 ? (
             <div className="rounded-xl border border-zinc-200 bg-white">
               <EmptyState compact icon={Megaphone} title={q ? `Nothing matches "${query}"` : "No notices here"} />

@@ -9,26 +9,23 @@ import { fmtMinutes, parseTimings } from "@/lib/shift";
 import PasswordInput from "./PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "./form";
 
-// A strong temporary password that's easy to read out or type: no 0/O, 1/l/I look-alikes.
 function generatePassword(length = 10) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const random = crypto.getRandomValues(new Uint32Array(length)); // cryptographically random, unlike Math.random
+  const random = crypto.getRandomValues(new Uint32Array(length));
   return Array.from(random, (n) => chars[n % chars.length]).join("");
 }
 
-// One form for both "Add employee" (no `existing`) and "Edit employee" (with `existing`).
 export default function EmployeeForm({
   existing,
   onSaved,
   onCancel,
 }: {
   existing?: User;
-  onSaved: (user: SavedUser, password: string) => void; // password = the temporary one, if set
+  onSaved: (user: SavedUser, password: string) => void;
   onCancel: () => void;
 }) {
   const isEdit = !!existing;
   const { user: me } = useAuth();
-  // Only a Super admin hands out (or takes away) admin roles. Plain admins create employees.
   const canSetRole = me?.role === "SUPER_ADMIN" && existing?.id !== me.id;
   const [form, setForm] = useState({
     name: existing?.name ?? "",
@@ -48,13 +45,12 @@ export default function EmployeeForm({
     weeklyHours: existing?.weeklyHours ? String(existing.weeklyHours) : "",
     leaveOpening: String(existing?.leaveOpening ?? 0),
     active: existing?.active ?? true,
-    password: "", // create: temporary password · edit: leave empty unless resetting
-    notify: true, // email the login details
+    password: "",
+    notify: true,
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Works for inputs, selects and checkboxes, using each element's `name`.
   const update = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const v = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
@@ -65,7 +61,6 @@ export default function EmployeeForm({
     e.preventDefault();
     setError("");
     setLoading(true);
-    // When editing, don't send an empty password (that would mean "no reset").
     const { password, notify, ...rest } = form;
     const body = isEdit && !password ? rest : { ...rest, password, notify };
     try {
@@ -145,7 +140,6 @@ export default function EmployeeForm({
           hint={isEdit ? "Leave empty to keep their password. They'll change it at next login." : "They'll be asked to change it at first login. Min 8 characters."}
         >
           <div className="flex gap-2">
-            {/* shown by default so the admin can read the generated password; the eye hides it */}
             <div className="flex-1">
               <PasswordInput name="password" defaultVisible autoComplete="new-password" required={!isEdit} minLength={8} value={form.password} onChange={update} className="font-mono" />
             </div>
@@ -156,7 +150,6 @@ export default function EmployeeForm({
         </Field>
       </div>
 
-      {/* Email the login details: for new accounts, and for password resets */}
       {(!isEdit || form.password) && (
         <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
           <input name="notify" type="checkbox" checked={form.notify} onChange={update} className="mt-0.5 size-4 accent-brand-700" />
@@ -187,7 +180,6 @@ export default function EmployeeForm({
             name="active"
             type="checkbox"
             checked={form.active}
-            // leaving: suggest today as the last working day · coming back: clear it
             onChange={(e) => setForm({ ...form, active: e.target.checked, leftOn: e.target.checked ? "" : form.leftOn || todayIST() })}
             className="mt-0.5 size-4 accent-brand-700"
           />
@@ -219,7 +211,6 @@ export default function EmployeeForm({
   );
 }
 
-// Shows how the timings will be read, so a typo is caught before late marks are counted against it
 function timingsHint(text: string) {
   if (!text.trim()) return "Used for late and early-leaving marks. Leave empty for none.";
   const t = parseTimings(text);

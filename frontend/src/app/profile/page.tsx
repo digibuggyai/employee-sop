@@ -13,7 +13,7 @@ import { fmtDate } from "@/lib/format";
 
 export default function ProfilePage() {
   const { user, setUser, logout } = useAuth();
-  if (!user) return null; // AppShell already redirects to /login
+  if (!user) return null;
 
   const sections: { title: string; rows: [string, string][] }[] = [
     {
@@ -60,7 +60,6 @@ export default function ProfilePage() {
       </div>
 
       <Card title="Photo">
-        {/* setUser: the new photo shows in the sidebar and header straight away */}
         <PhotoUploader user={user} onChange={setUser} />
       </Card>
 

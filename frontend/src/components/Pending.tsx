@@ -1,8 +1,5 @@
 "use client";
 
-// In-app notifications for admins: how many leave requests and attendance change requests
-// are waiting. Shown as red badges in the menu. Refreshed every minute, when the tab comes
-// back into view, and right after an admin approves/rejects something (refresh()).
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, isAdmin as hasAdminAccess, type PendingCounts } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
@@ -19,7 +16,7 @@ export function PendingProvider({ children }: { children: React.ReactNode }) {
     if (!isAdmin) return;
     api<PendingCounts>("/api/admin/pending")
       .then(setCounts)
-      .catch(() => {}); // a missed refresh just waits for the next one
+      .catch(() => {});
   }, [isAdmin]);
 
   useEffect(() => {

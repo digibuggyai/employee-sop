@@ -13,7 +13,6 @@ import {
 import { toDateInput, todayIST } from "@/lib/format";
 import { Button, ErrorBox, Field, inputClass } from "./form";
 
-// Add or edit a task. Pass `employees` (admin) to show "Assign to".
 export default function TaskForm({
   existing,
   employees,
@@ -51,7 +50,6 @@ export default function TaskForm({
         ? await api<Task>(`/api/tasks/${existing.id}`, { method: "PATCH", body: fields })
         : await api<Task>("/api/tasks", {
             method: "POST",
-            // only send userId when an admin picked someone
             body: { ...fields, date, ...(userId && { userId }) },
           });
       onSaved(saved);

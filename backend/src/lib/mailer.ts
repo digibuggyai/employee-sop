@@ -1,12 +1,3 @@
-// Sends email through Resend's HTTPS API.
-// Why not SMTP (Gmail, Hostinger mail)? Railway blocks outgoing SMTP ports on Free/Hobby plans,
-// so SMTP would work on a laptop and silently fail in production. An HTTPS API always works.
-//
-// Settings (backend/.env locally, Railway → Variables in production):
-//   RESEND_API_KEY  re_...                              (resend.com → API Keys)
-//   MAIL_FROM       Digibuggy <hub@dgbindia.com>    (an address on a domain verified in Resend)
-// Without RESEND_API_KEY, emails are printed to the terminal instead of sent (handy while developing).
-
 export type Mail = { to: string; subject: string; html: string; text: string };
 export type MailResult = { sent: true } | { sent: false; reason: string };
 
@@ -26,7 +17,7 @@ export async function sendMail(mail: Mail): Promise<MailResult> {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text }),
-      signal: AbortSignal.timeout(10_000), // never let a slow email service hang a request
+      signal: AbortSignal.timeout(10_000),
     });
     if (res.ok) return { sent: true };
     const body = (await res.json().catch(() => ({}))) as { message?: string };

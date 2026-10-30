@@ -13,7 +13,6 @@ import { Badge, Skeleton, type Tone } from "./ui";
 
 const placeLabel: Record<Place, string> = { IN_OFFICE: "In-office", WFH: "WFH" };
 
-// The day's numbers. A running break or an open day counts up to `now`.
 function totals(day: Attendance, now: number) {
   const breakMs = day.breaks.reduce(
     (sum, b) => sum + ((b.end ? Date.parse(b.end) : now) - Date.parse(b.start)),
@@ -31,22 +30,18 @@ const stateBadge: Record<State, [string, Tone]> = {
   done: ["Checked out", "blue"],
 };
 
-// Today's attendance: check in, breaks, check out. Every action is saved by the backend,
-// which also decides the time (the browser's clock is never trusted).
-// onChange: lets the page react after an action (e.g. refresh the month table)
 export default function CheckInCard({ onChange }: { onChange?: () => void }) {
   const now = useNow();
-  const [day, setDay] = useState<Attendance | null>(null); // today's record from the database
+  const [day, setDay] = useState<Attendance | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [place, setPlace] = useState<Place>("IN_OFFICE"); // choice before checking in
+  const [place, setPlace] = useState<Place>("IN_OFFICE");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const confirm = useConfirm();
   const { user } = useAuth();
-  const [plan, setPlan] = useState(""); // WFH to-do plan, written before checking in
-  const [reportFor, setReportFor] = useState<{ halfDay: boolean } | null>(null); // the check-out report window
+  const [plan, setPlan] = useState("");
+  const [reportFor, setReportFor] = useState<{ halfDay: boolean } | null>(null);
 
-  // Load today's record once, so a refresh shows where you left off.
   useEffect(() => {
     api<Attendance | null>("/api/attendance/today")
       .then(setDay)
@@ -54,14 +49,12 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
       .finally(() => setLoaded(true));
   }, []);
 
-  // Every button calls one backend action; the backend replies with the updated day.
-  // Returns whether it worked (the report window stays open on an error).
   async function act(path: string, body?: unknown) {
     setBusy(true);
     setError("");
     try {
       setDay(await api<Attendance>(`/api/attendance/${path}`, { method: "POST", body }));
-      onChange?.(); // ?. = call it only if the page passed one
+      onChange?.();
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -71,13 +64,11 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
     }
   }
 
-  // WFH policy (interns): a to-do plan before starting, a work report when logging out
   const intern = user?.employmentType === "INTERN" || user?.employmentType === "REMOTE_INTERN";
   const needsNotes = intern && (day ? day.place : place) === "WFH";
 
-  // Check out (halfDay = "Half day exit": leaving early, the day counts as half a working day)
   async function checkOut(halfDay: boolean) {
-    if (needsNotes) return setReportFor({ halfDay }); // the report window does the rest
+    if (needsNotes) return setReportFor({ halfDay });
     if (halfDay) {
       const ok = await confirm({
         title: "Leave as a half day?",
@@ -110,7 +101,6 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           <Skeleton className="h-24" />
         ) : (
           <div className="flex flex-wrap items-end justify-between gap-6">
-            {/* The one number that matters most, big */}
             <div>
               <p className="text-[13px] font-medium text-zinc-500">{state === "break" ? "On break for" : "Worked today"}</p>
               <p className="mt-1 text-4xl font-semibold tracking-tight text-zinc-900 tabular-nums">
@@ -120,7 +110,6 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
               </p>
             </div>
 
-            {/* Supporting facts */}
             {day ? (
               <dl className="grid grid-cols-3 gap-x-6 gap-y-1 text-sm">
                 <dt className="text-[13px] text-zinc-500">In</dt>
@@ -139,7 +128,6 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           </div>
         )}
 
-        {/* WFH policy (interns): today's to-do plan comes first */}
         {loaded && state === "out" && needsNotes && (
           <Field label="Today's plan" hint="Required for WFH: your to-do list before you start.">
             <textarea
@@ -152,7 +140,6 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           </Field>
         )}
 
-        {/* Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-4">
           {state === "out" ? (
             <Segmented
@@ -224,7 +211,6 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
   );
 }
 
-// The work report asked for when an intern checks out from a WFH day
 function WorkReportDialog({
   open,
   halfDay,

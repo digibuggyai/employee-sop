@@ -8,36 +8,28 @@ import { checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceE
 import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern } from "../lib/policy.js";
 
 const router = Router();
-router.use(requireAuth); // every attendance route needs a logged-in user
+router.use(requireAuth);
 
-// Always include the breaks (oldest first) when we send a day back.
 const withBreaks = { breaks: { orderBy: { start: "asc" as const } } };
 
-// Today's row for the logged-in user, or null if they haven't checked in.
 const findToday = (userId: string) =>
   prisma.attendance.findUnique({
-    where: { userId_date: { userId, date: toDbDate(todayString()) } }, // the @@unique([userId, date])
+    where: { userId_date: { userId, date: toDbDate(todayString()) } },
     include: withBreaks,
   });
 
-// GET /api/attendance/today
 router.get("/today", async (req, res) => {
   res.json(await findToday(req.user!.id));
 });
 
-// GET /api/attendance/month?month=2026-10 → MY day-by-day sheet + totals for a month
 router.get("/month", async (req, res) => {
   const month = z.string().regex(/^\d{4}-\d{2}$/).catch(thisMonth()).parse(req.query.month);
   const report = (await monthReports([req.user!.id], month)).get(req.user!.id)!;
   res.json({ month, ...report });
 });
 
-// WFH policy (interns): a to-do plan before starting, a work report when logging out.
-// Without them the day would count as absent, so the app simply doesn't let them skip it.
 const needsWfhNotes = (user: { employmentType: string }, place: string) => place === "WFH" && isIntern(user.employmentType);
 
-// POST /api/attendance/check-in   body: { place: "IN_OFFICE" | "WFH", plan?: "today's to-do" }
-// Note: the TIME comes from the server clock, never from the browser, so nobody can fake it.
 router.post("/check-in", async (req, res) => {
   const parsed = z
     .object({ place: z.enum(["IN_OFFICE", "WFH"]), plan: z.string().trim().max(3000).optional() })
@@ -57,7 +49,6 @@ router.post("/check-in", async (req, res) => {
   res.status(201).json(day);
 });
 
-// POST /api/attendance/break/start
 router.post("/break/start", async (req, res) => {
   const day = await findToday(req.user!.id);
   if (!day) return res.status(400).json({ error: "Check in first" });
@@ -68,7 +59,6 @@ router.post("/break/start", async (req, res) => {
   res.json(await findToday(req.user!.id));
 });
 
-// POST /api/attendance/break/end
 router.post("/break/end", async (req, res) => {
   const open = (await findToday(req.user!.id))?.breaks.find((b) => !b.end);
   if (!open) return res.status(400).json({ error: "You're not on a break" });
@@ -77,9 +67,6 @@ router.post("/break/end", async (req, res) => {
   res.json(await findToday(req.user!.id));
 });
 
-// POST /api/attendance/check-out   (also ends a running break)
-// Body { halfDay: true } = "Half day exit": leaving early, the day counts as half a working day.
-// Body { report: "..." } = the WFH work report (required for interns working from home).
 router.post("/check-out", async (req, res) => {
   const halfDay = req.body?.halfDay === true;
   const report = typeof req.body?.report === "string" ? req.body.report.trim().slice(0, 5000) : "";
@@ -91,7 +78,6 @@ router.post("/check-out", async (req, res) => {
   }
 
   const now = new Date();
-  // $transaction = both changes happen together, or neither does.
   await prisma.$transaction([
     prisma.break.updateMany({ where: { attendanceId: day.id, end: null }, data: { end: now } }),
     prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now, halfDay, ...(report && { report }) } }),
@@ -99,12 +85,8 @@ router.post("/check-out", async (req, res) => {
   res.json(await findToday(req.user!.id));
 });
 
-
-// ---------- Change requests (employees can't edit attendance; they ask an admin) ----------
-
 const correctionInclude = { reviewedBy: { select: { id: true, name: true } } };
 
-// GET /api/attendance/corrections?month=2026-10 → my requests for that month
 router.get("/corrections", async (req, res) => {
   const month = z.string().regex(/^\d{4}-\d{2}$/).catch(thisMonth()).parse(req.query.month);
   const [y, m] = month.split("-").map(Number);
@@ -117,8 +99,6 @@ router.get("/corrections", async (req, res) => {
   res.json(corrections);
 });
 
-// POST /api/attendance/corrections { date, place?, checkIn?, checkOut?, note?, reason }
-// One open request per day: asking again replaces the pending one.
 router.post("/corrections", async (req, res) => {
   const parsed = dayChangeSchema
     .extend({
@@ -151,7 +131,6 @@ router.post("/corrections", async (req, res) => {
   res.status(pending ? 200 : 201).json(saved);
 });
 
-// DELETE /api/attendance/corrections/:id → withdraw my pending request
 router.delete("/corrections/:id", async (req, res) => {
   const c = await prisma.attendanceCorrection.findUnique({ where: { id: req.params.id } });
   if (!c || c.userId !== req.user!.id) return res.status(404).json({ error: "Request not found" });

@@ -15,24 +15,21 @@ import { downloadCsv, fmtDate, fmtDuration, monthLabel, thisMonthIST } from "@/l
 
 type SummaryRow = MonthSummary & { user: UserBrief };
 
-// /admin/attendance: everyone's month at a glance → click a person for their day-by-day sheet.
 export default function AdminAttendancePage() {
   const [month, setMonth] = useState(thisMonthIST());
   const [rows, setRows] = useState<SummaryRow[] | null>(null);
-  const [selected, setSelected] = useState<UserBrief | null>(null); // whose sheet is open
+  const [selected, setSelected] = useState<UserBrief | null>(null);
   const [report, setReport] = useState<MonthReport | null>(null);
   const [error, setError] = useState("");
-  const [editing, setEditing] = useState<DayRow | null>(null); // day open in the edit dialog
-  const [version, setVersion] = useState(0); // bump → reload the open sheet
+  const [editing, setEditing] = useState<DayRow | null>(null);
+  const [version, setVersion] = useState(0);
 
-  // Everyone's totals for the month
   useEffect(() => {
     api<{ rows: SummaryRow[] }>(`/api/admin/attendance/summary?month=${month}`)
       .then((r) => setRows(r.rows))
       .catch((err) => setError(err.message));
   }, [month]);
 
-  // One person's sheet (only when someone is selected)
   useEffect(() => {
     if (!selected) return;
     api<MonthReport>(`/api/admin/attendance/month?userId=${selected.id}&month=${month}`)
@@ -64,7 +61,6 @@ export default function AdminAttendancePage() {
 
   return (
     <>
-      {/* Breadcrumb back to everyone, when a person is open */}
       {selected && (
         <button
           onClick={() => open(null)}
@@ -109,7 +105,6 @@ export default function AdminAttendancePage() {
         !error && <Skeleton className="h-64" />
       ) : (
         <Card flush>
-          {/* Phones: a tappable row per person */}
           <ul className="divide-y divide-zinc-100 md:hidden">
             {rows.map((r) => (
               <li key={r.user.id}>
@@ -145,7 +140,6 @@ export default function AdminAttendancePage() {
               </thead>
               <tbody className={table.tbody}>
                 {rows.map((r) => (
-                  // the whole row opens the person's sheet; a real button inside keeps it keyboard-friendly
                   <tr key={r.user.id} onClick={() => open(r.user)} className={`${table.tr} cursor-pointer`}>
                     <td className={table.td}>
                       <div className="flex items-center gap-3">
@@ -200,7 +194,6 @@ export default function AdminAttendancePage() {
         </Card>
       )}
 
-      {/* Admin edits apply immediately; then reload the sheet so totals update */}
       <DayEditDialog
         day={editing}
         mode="admin"

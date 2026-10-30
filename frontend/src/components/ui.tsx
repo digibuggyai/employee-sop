@@ -1,8 +1,5 @@
-// Small display building blocks shared by every page.
 import type { LucideIcon } from "lucide-react";
 
-// ---------- Badge ----------
-// One badge style for every status in the app; only the colour ("tone") changes.
 export type Tone = "zinc" | "green" | "amber" | "red" | "blue" | "violet" | "brand";
 
 const tones: Record<Tone, string> = {
@@ -26,8 +23,6 @@ export function Badge({ tone = "zinc", dot = false, children }: { tone?: Tone; d
   );
 }
 
-// ---------- Stat ----------
-// A number with a label: "Worked  99h 55m  avg 7h 8m / day"
 export function Stat({
   label,
   value,
@@ -65,7 +60,6 @@ export function Stat({
   );
 }
 
-// ---------- Empty state ----------
 export function EmptyState({
   icon: Icon,
   title,
@@ -91,16 +85,12 @@ export function EmptyState({
   );
 }
 
-// ---------- Skeleton ----------
-// Grey placeholder while data loads; give it a height: <Skeleton className="h-40" />
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-zinc-100 ${className}`} />;
 }
 
-// ---------- Table ----------
-// Shared table classes, so every table in the app has the same rhythm.
 export const table = {
-  wrap: "overflow-x-auto", // phones: scroll sideways instead of squashing
+  wrap: "overflow-x-auto",
   table: "w-full text-sm",
   thead: "border-b border-zinc-200 bg-zinc-50/80 text-left",
   th: "px-4 py-2.5 text-xs font-medium whitespace-nowrap text-zinc-500",

@@ -13,11 +13,10 @@ import { addDays, mondayOf, weekRange } from "@/lib/weekly";
 type Data = {
   weekStart: string;
   due: string;
-  overdue: boolean; // the week's Saturday has passed
+  overdue: boolean;
   rows: { user: UserBrief; report: WeeklyReport | null }[];
 };
 
-// /admin/reports: every remote intern's weekly report for one week: sent, late or missing.
 export default function AdminReportsPage() {
   const thisWeek = mondayOf(todayIST());
   const [week, setWeek] = useState(thisWeek);

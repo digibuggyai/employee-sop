@@ -9,14 +9,12 @@ import { taskInclude } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 
-// Everything in the Admin Panel. Every route: logged in AND admin.
 const router = Router();
 router.use(requireAuth, requireAdmin);
 
-const dateParam = z.iso.date().catch(() => todayString()); // bad/missing → today
+const dateParam = z.iso.date().catch(() => todayString());
 const monthParam = z.string().regex(/^\d{4}-\d{2}$/).catch(() => thisMonth());
 
-// Everyone the reports track: active accounts that count as employees (not e.g. the Hive Leader).
 const activeUsers = () =>
   prisma.user.findMany({
     where: { active: true, isEmployee: true },
@@ -24,13 +22,11 @@ const activeUsers = () =>
     select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true },
   });
 
-// GET /api/admin/overview?date=2026-10-26 → everyone's status, hours and tasks for one day
 router.get("/overview", async (req, res) => {
   const date = dateParam.parse(req.query.date);
   const [users, attendance, tasks, leaves] = await Promise.all([
     activeUsers(),
     prisma.attendance.findMany({ where: { date: toDbDate(date) }, include: { breaks: true } }),
-    // groupBy = counts per person and status, done by the database
     prisma.task.groupBy({ by: ["userId", "status"], where: { date: toDbDate(date) }, _count: true }),
     prisma.leave.findMany({ where: { date: toDbDate(date), status: "APPROVED" }, select: { userId: true } }),
   ]);
@@ -53,8 +49,6 @@ router.get("/overview", async (req, res) => {
   res.json({ date, rows });
 });
 
-// GET /api/admin/attendance/summary?month=2026-10 → one line per employee for the month.
-// Includes people who have left, for the months they still worked in (their records are kept).
 router.get("/attendance/summary", async (req, res) => {
   const month = monthParam.parse(req.query.month);
   const users = await prisma.user.findMany({
@@ -69,7 +63,6 @@ router.get("/attendance/summary", async (req, res) => {
   res.json({ month, rows: users.map((u) => ({ user: u, ...reports.get(u.id)!.summary })) });
 });
 
-// GET /api/admin/attendance/month?userId=...&month=2026-10 → one person's day-by-day sheet
 router.get("/attendance/month", async (req, res) => {
   const month = monthParam.parse(req.query.month);
   const userId = String(req.query.userId ?? "");
@@ -79,8 +72,6 @@ router.get("/attendance/month", async (req, res) => {
   res.json({ month, user, ...report });
 });
 
-// GET /api/admin/weekly-reports?week=2026-10-26 → every remote intern and their report for that week
-// (week = its Monday; missing → this week). A report is "missing" once its Saturday has passed.
 router.get("/weekly-reports", async (req, res) => {
   const week = mondayOf(z.iso.date().catch(() => todayString()).parse(req.query.week));
   const [people, reports] = await Promise.all([
@@ -100,9 +91,6 @@ router.get("/weekly-reports", async (req, res) => {
   });
 });
 
-// GET /api/admin/wfh-plans?date=2026-10-29 → everyone who worked from home that day, with their
-// to-do plan (written at check-in) and work report (at check-out). Interns must write both;
-// for others they're optional, so only an intern's missing plan / report is flagged.
 router.get("/wfh-plans", async (req, res) => {
   const date = dateParam.parse(req.query.date);
   const days = await prisma.attendance.findMany({
@@ -118,12 +106,11 @@ router.get("/wfh-plans", async (req, res) => {
     rows: days.map((d) => ({
       ...d,
       required: d.user.employmentType === "INTERN" || d.user.employmentType === "REMOTE_INTERN",
-      spanMs: (d.checkOut?.getTime() ?? Date.now()) - d.checkIn.getTime(), // in → out (or now), breaks included
+      spanMs: (d.checkOut?.getTime() ?? Date.now()) - d.checkIn.getTime(),
     })),
   });
 });
 
-// GET /api/admin/tasks?userId=&status=&from=&to= → everyone's tasks, filtered
 router.get("/tasks", async (req, res) => {
   const q = z
     .object({
@@ -139,7 +126,6 @@ router.get("/tasks", async (req, res) => {
   const to = q.to ?? todayString();
   const tasks = await prisma.task.findMany({
     where: {
-      // spreading `undefined` adds nothing, so empty filters are simply skipped
       ...(q.userId && { userId: q.userId }),
       ...(q.status && { status: q.status }),
       date: { gte: toDbDate(from), lte: toDbDate(to) },
@@ -150,13 +136,8 @@ router.get("/tasks", async (req, res) => {
   res.json({ from, to, tasks });
 });
 
-
-// ---------- Leaves ----------
-
 const adminLeaveInclude = { ...leaveInclude, user: { select: { id: true, name: true, photoUpdatedAt: true } } };
 
-// GET /api/admin/leaves?status=PENDING            → every pending request (any month)
-// GET /api/admin/leaves?month=2026-10             → all leaves in a month
 router.get("/leaves", async (req, res) => {
   const status = z.enum(["PENDING", "APPROVED", "REJECTED"]).optional().catch(undefined).parse(req.query.status);
   const month = monthParam.parse(req.query.month);
@@ -171,14 +152,11 @@ router.get("/leaves", async (req, res) => {
   res.json({ leaves });
 });
 
-// "2026-02" → "-28"
 function lastDay(month: string) {
   const [y, m] = month.split("-").map(Number);
   return `-${new Date(Date.UTC(y, m, 0)).getUTCDate()}`;
 }
 
-// POST /api/admin/leaves { userId, from, to, reason } → admin records approved leave directly
-// (e.g. leave taken before the app existed, or informed by phone)
 router.post("/leaves", async (req, res) => {
   const parsed = z
     .object({ userId: z.string(), from: z.iso.date(), to: z.iso.date(), reason: z.string().trim().max(500).optional() })
@@ -203,8 +181,6 @@ router.post("/leaves", async (req, res) => {
   res.status(201).json({ created: count, skipped: dates.length - count });
 });
 
-// GET /api/admin/leaves/make-up-options?userId= → weekend/holiday days this person worked
-// (last 120 days) that aren't already linked to a leave. 1 worked day = 1 leave.
 router.get("/leaves/make-up-options", async (req, res) => {
   const userId = String(req.query.userId ?? "");
   const since = new Date(Date.now() - 120 * 86400000);
@@ -223,12 +199,11 @@ router.get("/leaves/make-up-options", async (req, res) => {
   res.json({ options });
 });
 
-// PATCH /api/admin/leaves/:id { status?, compensatedOn? } → approve / reject / link a make-up day
 router.patch("/leaves/:id", async (req, res) => {
   const parsed = z
     .object({
       status: z.enum(["APPROVED", "REJECTED"]).optional(),
-      compensatedOn: z.union([z.iso.date(), z.null()]).optional(), // null = unlink
+      compensatedOn: z.union([z.iso.date(), z.null()]).optional(),
     })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -255,7 +230,6 @@ router.patch("/leaves/:id", async (req, res) => {
     where: { id: leave.id },
     data: {
       ...(status && { status, reviewedById: req.user!.id, reviewedAt: new Date() }),
-      // a rejected leave can't keep a make-up day
       ...(status === "REJECTED" && { compensatedOn: null }),
       ...(compensatedOn !== undefined && finalStatus === "APPROVED" && {
         compensatedOn: compensatedOn ? toDbDate(compensatedOn) : null,
@@ -266,10 +240,6 @@ router.patch("/leaves/:id", async (req, res) => {
   res.json(updated);
 });
 
-
-// ---------- Editing attendance + reviewing change requests ----------
-
-// GET /api/admin/pending → counts for the red badges in the admin menu
 router.get("/pending", async (_req, res) => {
   const [leaves, corrections] = await Promise.all([
     prisma.leave.count({ where: { status: "PENDING" } }),
@@ -278,8 +248,6 @@ router.get("/pending", async (_req, res) => {
   res.json({ leaves, corrections });
 });
 
-// PUT /api/admin/attendance/:userId/day { date, place?, checkIn?, checkOut?, note? }
-// Admins change a day directly (or add a missing one). No approval needed.
 router.put("/attendance/:userId/day", async (req, res) => {
   const parsed = dayChangeSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -292,7 +260,6 @@ router.put("/attendance/:userId/day", async (req, res) => {
   res.json(await applyDayChange(userId, parsed.data.date, change));
 });
 
-// DELETE /api/admin/attendance/:userId/:date → remove a wrong day (its breaks go with it)
 router.delete("/attendance/:userId/:date", async (req, res) => {
   const date = z.iso.date().safeParse(req.params.date);
   if (!date.success) return res.status(400).json({ error: "Invalid date" });
@@ -306,14 +273,12 @@ const correctionAdminInclude = {
   reviewedBy: { select: { id: true, name: true } },
 };
 
-// GET /api/admin/corrections?status=PENDING (default) | REVIEWED
-// Each request comes with the day's CURRENT values, so the admin can compare before → after.
 router.get("/corrections", async (req, res) => {
   const reviewed = req.query.status === "REVIEWED";
   const corrections = await prisma.attendanceCorrection.findMany({
     where: reviewed ? { status: { not: "PENDING" } } : { status: "PENDING" },
     include: correctionAdminInclude,
-    orderBy: reviewed ? { reviewedAt: "desc" } : { createdAt: "asc" }, // oldest pending first
+    orderBy: reviewed ? { reviewedAt: "desc" } : { createdAt: "asc" },
     take: reviewed ? 50 : undefined,
   });
   const current = await prisma.attendance.findMany({
@@ -329,8 +294,6 @@ router.get("/corrections", async (req, res) => {
   );
 });
 
-// PATCH /api/admin/corrections/:id { status: "APPROVED" | "REJECTED" }
-// Approving applies the requested values to the attendance day.
 router.patch("/corrections/:id", async (req, res) => {
   const parsed = z.object({ status: z.enum(["APPROVED", "REJECTED"]) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Choose approve or reject" });
@@ -341,7 +304,6 @@ router.patch("/corrections/:id", async (req, res) => {
 
   if (parsed.data.status === "APPROVED") {
     const date = c.date.toISOString().slice(0, 10);
-    // null in a request means "no change" (employees can't remove an out time)
     const change = {
       place: c.place ?? undefined,
       checkIn: c.checkIn ?? undefined,
@@ -349,7 +311,6 @@ router.patch("/corrections/:id", async (req, res) => {
       note: c.note ?? undefined,
       halfDay: c.halfDay ?? undefined,
     };
-    // Re-check: the day may have changed since the employee asked
     const problem = await checkDayChange(c.userId, date, change);
     if (problem) return res.status(400).json({ error: `Can't apply this request: ${problem}` });
     await applyDayChange(c.userId, date, change);

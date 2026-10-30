@@ -3,9 +3,6 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
-// A dialog window. Uses the browser's native <dialog>, which gives us for free:
-// focus stays inside while open, Esc closes it, and the page behind can't be clicked.
-// On phones it slides up from the bottom (a "sheet"); on larger screens it's centred.
 export default function Modal({
   open,
   onClose,
@@ -20,11 +17,8 @@ export default function Modal({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  // Where the press started. A drag that begins inside (e.g. moving a photo in the cropper)
-  // and ends outside must NOT count as "clicked outside", or the window would close mid-drag.
   const pressStartedOutside = useRef(false);
 
-  // Keep the real dialog in sync with the `open` prop
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
@@ -36,10 +30,9 @@ export default function Modal({
     <dialog
       ref={ref}
       onCancel={(e) => {
-        e.preventDefault(); // Esc: let React state decide
+        e.preventDefault();
         onClose();
       }}
-      // a click on the dark backdrop (outside the panel) closes it, only if the press began there too
       onPointerDown={(e) => (pressStartedOutside.current = e.target === ref.current)}
       onClick={(e) => {
         if (e.target === ref.current && pressStartedOutside.current) onClose();

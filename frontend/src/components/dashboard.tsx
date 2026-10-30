@@ -1,6 +1,5 @@
 "use client";
 
-// The dashboard's widgets. Each one loads its own data, so they appear independently.
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ListTodo, Plus } from "lucide-react";
@@ -15,11 +14,10 @@ import PageHeader from "./PageHeader";
 import { buttonClass } from "./form";
 import { EmptyState, Skeleton } from "./ui";
 
-// "Good afternoon, Shreyanshu" + the date, from the viewer's own clock
 export function DashboardHeader() {
   const now = useNow();
   const { user } = useAuth();
-  if (!now) return <div className="mb-6 h-[60px]" />; // same height, so nothing jumps
+  if (!now) return <div className="mb-6 h-[60px]" />;
 
   const d = new Date(now);
   const h = d.getHours();
@@ -32,7 +30,6 @@ export function DashboardHeader() {
   );
 }
 
-// This month in four numbers
 export function MonthAtGlance() {
   const [report, setReport] = useState<MonthReport | null>(null);
   const month = thisMonthIST();
@@ -87,7 +84,6 @@ export function MonthAtGlance() {
   );
 }
 
-// Today's tasks, open ones first
 export function TodayTasks() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
 

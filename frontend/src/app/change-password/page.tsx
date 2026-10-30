@@ -16,13 +16,11 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // One handler for all inputs: uses the input's name to update the right field.
   const update = (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [e.target.name]: e.target.value });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    // Checked here for a quick message; the backend checks the length again.
     if (form.newPassword !== form.confirm) return setError("New passwords don't match");
 
     setLoading(true);
@@ -31,7 +29,7 @@ export default function ChangePasswordPage() {
         method: "POST",
         body: { currentPassword: form.currentPassword, newPassword: form.newPassword },
       });
-      setUser(updated); // mustChangePassword is now false, so AppShell stops redirecting here
+      setUser(updated);
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not change password");

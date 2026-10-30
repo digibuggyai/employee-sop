@@ -9,10 +9,8 @@ import { daysOfMonth, isOffDay, monthReports, thisMonth } from "../lib/reports.j
 const router = Router();
 router.use(requireAuth);
 
-// What we send back for a leave: the leave + who reviewed it
 export const leaveInclude = { reviewedBy: { select: { id: true, name: true } } };
 
-// Every working day from `from` to `to` (weekends and holidays don't need leave)
 export function workingDaysBetween(from: string, to: string): string[] {
   const out: string[] = [];
   for (let d = new Date(`${from}T00:00:00Z`); d <= new Date(`${to}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
@@ -22,7 +20,6 @@ export function workingDaysBetween(from: string, to: string): string[] {
   return out;
 }
 
-// GET /api/leaves → my leave days (newest first) + my WFH usage this month
 router.get("/", async (req, res) => {
   const me = req.user!;
   const [leaves, report] = await Promise.all([
@@ -30,13 +27,12 @@ router.get("/", async (req, res) => {
     monthReports([me.id], thisMonth()),
   ]);
   const { summary: s, days } = report.get(me.id)!;
-  // only the WFH days over the limit (not half days marked for leaving early)
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
   const emergencyUsed = await emergencyLeavesIn(me.id, todayString().slice(0, 7));
   res.json({
     leaves,
     wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh, remote: s.remote },
-    balance: s.leaveBalance, // null unless full-time
+    balance: s.leaveBalance,
     emergency: { used: emergencyUsed, allowed: EMERGENCY_LEAVES_PER_MONTH },
   });
 });
@@ -49,15 +45,11 @@ const requestSchema = z
   })
   .refine((v) => v.to >= v.from, "End date can't be before the start date");
 
-// Emergency leaves (asked for on the day itself) in a month, not counting rejected ones
 const emergencyLeavesIn = (userId: string, month: string) =>
   prisma.leave.count({
     where: { userId, emergency: true, status: { not: "REJECTED" }, date: { gte: toDbDate(`${month}-01`), lte: toDbDate(daysOfMonth(month).at(-1)!) } },
   });
 
-// POST /api/leaves  { from, to, reason } → one PENDING row per working day in the range
-// Leave policy: ask in advance. Asking for today is an emergency leave (1 a month).
-// Past days can't be asked for here: that's unauthorized leave, which only an admin can record.
 router.post("/", async (req, res) => {
   const parsed = requestSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -73,7 +65,6 @@ router.post("/", async (req, res) => {
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
   if (dates.length > 31) return res.status(400).json({ error: "Request at most a month at a time" });
 
-  // skipDuplicates: days that already have a leave row (any status) are left alone
   const { count } = await prisma.leave.createMany({
     data: dates.map((d) => ({ userId: req.user!.id, date: toDbDate(d), reason, emergency: d === today })),
     skipDuplicates: true,
@@ -82,7 +73,6 @@ router.post("/", async (req, res) => {
   res.status(201).json({ created: count, skipped: dates.length - count });
 });
 
-// DELETE /api/leaves/:id → cancel my own request while it's still pending
 router.delete("/:id", async (req, res) => {
   const leave = await prisma.leave.findUnique({ where: { id: req.params.id } });
   if (!leave || leave.userId !== req.user!.id) return res.status(404).json({ error: "Leave not found" });

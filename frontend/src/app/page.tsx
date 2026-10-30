@@ -5,9 +5,6 @@ import NoticeList from "@/components/NoticeList";
 import UpcomingHolidays from "@/components/UpcomingHolidays";
 import { DashboardHeader, MonthAtGlance, TodayTasks } from "@/components/dashboard";
 
-// Dashboard ("/"). This file is a server component (no "use client"): it only arranges
-// the pieces. The interactive parts (clock, buttons, fetching) are client components inside it.
-// Layout: what you act on (left, wide) · what you glance at (right, narrow).
 export default function Dashboard() {
   return (
     <>

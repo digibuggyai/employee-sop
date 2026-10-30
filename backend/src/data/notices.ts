@@ -1,6 +1,3 @@
-// The Notice Board: company policies. The wording matches what the app actually enforces
-// (backend/src/lib/policy.ts), so if a rule changes there, update its notice here too.
-
 export type Audience = "ALL" | "FULL_TIME" | "PART_TIME" | "INTERN" | "REMOTE_INTERN";
 
 export type Notice = {
@@ -61,7 +58,7 @@ export const notices: Notice[] = [
     id: "grace",
     category: "Attendance",
     title: "Timings and grace period",
-    body: "In the office, check in by your assigned start time; up to 15 minutes late is fine, and coming in late but staying longer to cover your full shift counts as made up. On WFH days there are no fixed timings: start any time, but complete your shift's hours (breaks included).",
+    body: "In the office, check in by your assigned start time; up to 15 minutes late is fine, and lateness is counted from the end of that grace (after 11:15 for an 11:00 start). Coming in late but staying longer to cover your full shift counts as made up. On WFH days there are no fixed timings: start any time, but complete your shift's hours (breaks included).",
     audience: ["ALL"],
     highlight: { value: "15 min", label: "Grace on your start time" },
     link: { href: "/attendance", label: "Your attendance" },

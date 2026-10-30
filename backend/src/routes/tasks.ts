@@ -7,7 +7,6 @@ import { toDbDate, todayString } from "../lib/dates.js";
 const router = Router();
 router.use(requireAuth);
 
-// What we send back for every task: the task + who it belongs to + who assigned it.
 export const taskInclude = {
   user: { select: { id: true, name: true, photoUpdatedAt: true } },
   assignedBy: { select: { id: true, name: true } },
@@ -28,11 +27,9 @@ const taskFields = {
   deadline: optionalDate,
 };
 
-// completedAt follows the status automatically
 const completedAtFor = (status?: string) =>
   status === undefined ? {} : { completedAt: status === "COMPLETED" ? new Date() : null };
 
-// GET /api/tasks?from=2026-10-01&to=2026-10-31 → MY tasks (default: this month)
 router.get("/", async (req, res) => {
   const month = todayString().slice(0, 7);
   const from = typeof req.query.from === "string" ? req.query.from : `${month}-01`;
@@ -47,11 +44,10 @@ router.get("/", async (req, res) => {
 
 const createSchema = z.object({
   ...taskFields,
-  date: z.iso.date().optional(), // default: today
-  userId: z.string().optional(), // admins only: assign to someone else
+  date: z.iso.date().optional(),
+  userId: z.string().optional(),
 });
 
-// POST /api/tasks → add a task for myself, or (admin) assign one to an employee
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -76,7 +72,6 @@ router.post("/", async (req, res) => {
   res.status(201).json(task);
 });
 
-// Load a task and check the logged-in user may change it: their own task, or they're an admin.
 async function findEditable(id: string, user: { id: string; role: string }) {
   const task = await prisma.task.findUnique({ where: { id } });
   if (!task) return { ok: false, status: 404, message: "Task not found" } as const;
@@ -84,7 +79,6 @@ async function findEditable(id: string, user: { id: string; role: string }) {
   return { ok: true, task } as const;
 }
 
-// PATCH /api/tasks/:id → change any field (e.g. just { status: "COMPLETED" })
 router.patch("/:id", async (req, res) => {
   const parsed = z.object(taskFields).partial().safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -100,7 +94,6 @@ router.patch("/:id", async (req, res) => {
   res.json(task);
 });
 
-// DELETE /api/tasks/:id → employees can delete tasks they added themselves; admins any
 router.delete("/:id", async (req, res) => {
   const found = await findEditable(req.params.id, req.user!);
   if (!found.ok) return res.status(found.status).json({ error: found.message });

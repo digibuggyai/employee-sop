@@ -12,7 +12,6 @@ import { Badge, EmptyState, Skeleton } from "@/components/ui";
 import { api, isAdmin, type Sop } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
-// /sops: the SOP library. Everyone reads; admins add, edit and delete.
 export default function SopsPage() {
   const { user } = useAuth();
   const toast = useToast();
@@ -21,7 +20,7 @@ export default function SopsPage() {
   const [sops, setSops] = useState<Sop[] | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [team, setTeam] = useState<string | null>(null); // team filter (null = all)
+  const [team, setTeam] = useState<string | null>(null);
   const [reading, setReading] = useState<Sop | null>(null);
   const [editing, setEditing] = useState<Sop | "new" | null>(null);
   const [version, setVersion] = useState(0);
@@ -127,7 +126,6 @@ export default function SopsPage() {
         </>
       )}
 
-      {/* Reading one SOP */}
       <Modal
         open={!!reading}
         onClose={() => setReading(null)}
@@ -157,7 +155,6 @@ export default function SopsPage() {
         )}
       </Modal>
 
-      {/* Adding / editing (admins) */}
       <Modal open={!!editing} onClose={() => setEditing(null)} title={editing === "new" ? "New SOP" : "Edit SOP"}>
         {editing && (
           <SopForm

@@ -14,19 +14,14 @@ import { useAuth } from "@/components/AuthProvider";
 import { api, employmentLabels, roleLabels, type SavedUser, type User } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 
-// /admin/employees: list everyone, add new accounts, edit or deactivate existing ones.
 export default function EmployeesAdminPage() {
   const toast = useToast();
   const { user: me } = useAuth();
-  // Admin accounts are managed by Super admins only (the backend enforces this too)
   const canEdit = (u: User) => me?.role === "SUPER_ADMIN" || u.id === me?.id || u.role === "EMPLOYEE";
   const [users, setUsers] = useState<User[] | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  // What the form panel is showing: nothing, the "add" form, or editing one person.
   const [editing, setEditing] = useState<User | "new" | null>(null);
-  // The form opens at the top of the page. Clicking a pencil far down the list would open it
-  // off-screen, so bring it into view whenever a different person (or "new") is opened.
   const formRef = useRef<HTMLDivElement>(null);
   const editingKey = editing === "new" ? "new" : editing?.id;
   useEffect(() => {
@@ -39,11 +34,8 @@ export default function EmployeesAdminPage() {
       .catch((err) => setError(err.message));
   }, []);
 
-  // Login details to show on screen when the email couldn't be sent (or wasn't wanted)
   const [share, setShare] = useState<{ name: string; email: string; password: string; reason: string } | null>(null);
 
-  // After saving: put the new/updated person into the list without reloading everything,
-  // then tell the admin exactly what happened with the email.
   function handleSaved(saved: SavedUser, password: string) {
     const { mail, ...user } = saved;
     setUsers((list) => {
@@ -56,7 +48,6 @@ export default function EmployeesAdminPage() {
       toast.success(`${created ? "Account created" : "Password reset"}. Login details emailed to ${user.email}`);
       setShare(null);
     } else if (password) {
-      // Account saved, but the person doesn't have their password yet: keep it on screen to share.
       toast.success(created ? `Account created for ${user.name}` : `Password reset for ${user.name}`);
       setShare({ name: user.name, email: user.email, password, reason: mail ? mail.reason : "Email was turned off" });
     } else {
@@ -74,7 +65,6 @@ export default function EmployeesAdminPage() {
   }
 
   const q = query.trim().toLowerCase();
-  // People who left are kept as ex-employees: a separate list, with all their records intact
   const formerCount = users?.filter((u) => !u.active).length ?? 0;
   const activeCount = (users?.length ?? 0) - formerCount;
   const shown = (users ?? []).filter((u) =>
@@ -103,14 +93,12 @@ export default function EmployeesAdminPage() {
       />
 
       {editing && (
-        // scroll-mt keeps the form clear of the sticky top bar on phones
         <div ref={formRef} className="scroll-mt-20">
           <Card
             title={editing === "new" ? "New employee" : `Edit ${editing.name}`}
             description={editing === "new" ? "They'll be asked to choose their own password at first login." : undefined}
             className="mb-6"
           >
-            {/* Editing someone: their photo can be set or removed here (saves immediately) */}
             {editing !== "new" && (
               <div className="mb-5 border-b border-zinc-100 pb-5">
                 <PhotoUploader
@@ -122,7 +110,6 @@ export default function EmployeesAdminPage() {
                 />
               </div>
             )}
-            {/* key forces a fresh form when switching between people */}
             <EmployeeForm
               key={editing === "new" ? "new" : editing.id}
               existing={editing === "new" ? undefined : editing}
@@ -133,7 +120,6 @@ export default function EmployeesAdminPage() {
         </div>
       )}
 
-      {/* Shown when the login details still need to reach the person */}
       {share && (
         <div role="status" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -184,7 +170,6 @@ export default function EmployeesAdminPage() {
             />
           </Card>
 
-          {/* People who left: kept as ex-employees, with all their attendance, tasks and leaves */}
           {former.length > 0 && (
             <Card
               title={`Ex-employees (${former.length})`}
@@ -201,7 +186,6 @@ export default function EmployeesAdminPage() {
   );
 }
 
-// One table of people: a compact list on phones, a full table on larger screens.
 function PeopleList({
   people,
   empty,
@@ -216,7 +200,6 @@ function PeopleList({
   if (people.length === 0) return <EmptyState compact icon={Users} title={empty} />;
   return (
     <>
-      {/* Phones: compact list; tap the pencil to edit */}
       <ul className="divide-y divide-zinc-100 md:hidden">
         {people.map((u, i) => (
           <li key={u.id} className="flex items-center gap-3 px-4 py-3">
@@ -302,5 +285,4 @@ function PeopleList({
   );
 }
 
-// "Left 20 Oct 2026" for someone who has left, or "Inactive" if no last day was recorded
 const leftLabel = (u: User) => (u.leftOn ? `Left ${fmtDate(u.leftOn)}` : "Inactive");

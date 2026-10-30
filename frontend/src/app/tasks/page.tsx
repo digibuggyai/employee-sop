@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui";
 import { api, type Task } from "@/lib/api";
 import { monthRange, thisMonthIST } from "@/lib/format";
 
-// /tasks: my daily task log (replaces my tab in the Task List sheet)
 export default function TasksPage() {
   const toast = useToast();
   const [month, setMonth] = useState(thisMonthIST());
@@ -21,7 +20,6 @@ export default function TasksPage() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Task | "new" | null>(null);
 
-  // Runs again whenever `month` changes (it's in the [ ] list)
   useEffect(() => {
     const { from, to } = monthRange(month);
     api<Task[]>(`/api/tasks?from=${from}&to=${to}`)
@@ -46,7 +44,7 @@ export default function TasksPage() {
             <MonthSwitcher
               month={month}
               onChange={(m) => {
-                setTasks(null); // show the loading state while the new month loads
+                setTasks(null);
                 setMonth(m);
               }}
             />

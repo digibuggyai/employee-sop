@@ -6,12 +6,10 @@ import { apiGet, type Holiday } from "@/lib/api";
 import { useNow } from "@/lib/useNow";
 import { Badge, EmptyState, Skeleton } from "./ui";
 
-// Next company holidays, as small calendar tiles. limit = how many to show.
 export default function UpcomingHolidays({ limit }: { limit?: number }) {
-  // null = still loading; [] = loaded but nothing upcoming.
   const [holidays, setHolidays] = useState<Holiday[] | null>(null);
   const [error, setError] = useState("");
-  const now = useNow(); // the clock lives outside render, so React stays predictable
+  const now = useNow();
 
   useEffect(() => {
     apiGet<Holiday[]>("/api/holidays?upcoming=1")
@@ -30,7 +28,6 @@ export default function UpcomingHolidays({ limit }: { limit?: number }) {
         const days = now ? Math.ceil((d.getTime() - now) / 86400000) : 0;
         return (
           <li key={h.date} className="flex items-center gap-3">
-            {/* Calendar-style date tile */}
             <div className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-lg border border-zinc-200 text-center">
               <span className="w-full bg-zinc-50 py-0.5 text-[10px] font-semibold tracking-wide text-brand-700 uppercase">
                 {d.toLocaleDateString("en-IN", { month: "short" })}

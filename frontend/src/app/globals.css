@@ -1,22 +1,15 @@
 @import "tailwindcss";
 
-/* Design tokens. Each --color-* becomes Tailwind classes (bg-brand-700, text-ink, ...).
-   Rule of thumb: neutrals (zinc) for structure, brand red ONLY for primary actions,
-   the active page, and numbers that need attention. */
 @theme inline {
-  /* From the official Digibuggy logo: navy #12254b */
   --color-brand-50: #f1f4fa;
   --color-brand-100: #e1e8f4;
   --color-brand-200: #c3d0e8;
   --color-brand-500: #2d4c8c;
   --color-brand-600: #1e3a73;
-  --color-brand-700: #12254b; /* the logo's navy */
-  --color-brand-800: #0d1c3a;
+  --color-brand-700: #12254b;  --color-brand-800: #0d1c3a;
   --color-brand-900: #08122a;
 
-  --color-canvas: #fafafa; /* page background */
-  --color-ink: #09090b; /* main text */
-
+  --color-canvas: #fafafa;  --color-ink: #09090b;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -27,8 +20,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* One visible focus style for keyboard users, everywhere (mouse clicks don't show it).
-   In the base layer, so components with their own focus style (inputs use a soft ring) win. */
 @layer base {
   :focus-visible {
     outline: 2px solid var(--color-brand-600);
@@ -36,7 +27,6 @@ body {
   }
 }
 
-/* Native <dialog> backdrop for the confirm dialog */
 dialog::backdrop {
   background: rgb(9 9 11 / 0.4);
 }

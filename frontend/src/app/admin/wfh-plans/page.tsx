@@ -17,12 +17,10 @@ type Row = {
   checkOut: string | null;
   plan: string | null;
   report: string | null;
-  required: boolean; // interns must write both
-  spanMs: number; // in → out (or now), breaks included
+  required: boolean;
+  spanMs: number;
 };
 
-// /admin/wfh-plans: everyone who worked from home on a day, with the to-do plan they wrote at
-// check-in and the work report they wrote at check-out. Only interns are required to write them.
 export default function WfhPlansPage() {
   const today = todayIST();
   const [date, setDate] = useState(today);
@@ -109,7 +107,6 @@ export default function WfhPlansPage() {
   );
 }
 
-// "Plan ✓" / "Plan missing" (interns) / "Report later" (still working)
 function Status({ label, done, required, pending = false }: { label: string; done: boolean; required: boolean; pending?: boolean }) {
   if (done) return <Badge tone="green" dot>{label}</Badge>;
   if (pending) return <Badge dot>{label} later</Badge>;

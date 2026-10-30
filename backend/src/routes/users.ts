@@ -9,12 +9,10 @@ import { passwordResetEmail, welcomeEmail } from "../lib/emails.js";
 
 const router = Router();
 
-// Every route in this file: must be logged in AND an admin.
 router.use(requireAuth, requireAdmin);
 
 const isSuperAdmin = (req: Request) => req.user!.role === "SUPER_ADMIN";
 
-// "YYYY-MM-DD" from a form → Date for the database. Empty → null.
 const optionalDate = z
   .union([z.iso.date(), z.literal(""), z.null()])
   .optional()
@@ -26,33 +24,27 @@ const optionalText = z
   .optional()
   .transform((v) => (v === "" ? null : v));
 
-// The profile fields an admin can fill in (shared by create and edit).
 const profileFields = {
   name: z.string().trim().min(1, "Name is required"),
   email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email")),
   role: z.enum(["EMPLOYEE", "ADMIN", "SUPER_ADMIN"]),
-  // false = not tracked (no attendance, leave or WFH). Optional: the database defaults it to true.
   isEmployee: z.boolean().optional(),
   employmentType: z.enum(["FULL_TIME", "PART_TIME", "INTERN", "REMOTE_INTERN"]),
   phone: optionalText,
   designation: optionalText,
   team: optionalText,
   office: optionalText,
-  // the shift used for late / early-leaving, e.g. "11:30 to 6:00"; must be readable
   timings: optionalText.refine((v) => !v || parseTimings(v), "Write timings like 11:30 to 6:00"),
   birthday: optionalDate,
   joinedOn: optionalDate,
-  leftOn: optionalDate, // last working day, for someone who has left
-  // z.coerce turns the form's "4" (text) into the number 4
+  leftOn: optionalDate,
   wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
-  // empty in the form = no weekly target
-  leaveOpening: z.coerce.number().min(0, "Leave balance can't be negative").max(60).optional(), // full-time: carried in
+  leaveOpening: z.coerce.number().min(0, "Leave balance can't be negative").max(60).optional(),
   weeklyHours: z
     .preprocess((v) => (v === "" ? null : v), z.coerce.number().int().min(1, "Weekly hours must be at least 1").max(100).nullable())
     .optional(),
 };
 
-// GET /api/users → everyone, active first, then A–Z
 router.get("/", async (_req, res) => {
   const users = await prisma.user.findMany({ orderBy: [{ active: "desc" }, { name: "asc" }] });
   res.json(users);
@@ -61,10 +53,9 @@ router.get("/", async (_req, res) => {
 const createSchema = z.object({
   ...profileFields,
   password: z.string().min(8, "Temporary password must be at least 8 characters"),
-  notify: z.boolean().default(true), // email the login details to the new employee
+  notify: z.boolean().default(true),
 });
 
-// POST /api/users → admin creates an account with a temporary password
 router.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -81,23 +72,19 @@ router.post("/", async (req, res) => {
     data: { ...profile, passwordHash: await hashPassword(password), mustChangePassword: true },
   });
 
-  // The account exists now. Emailing is a bonus: if it fails, the admin is told and can share the
-  // password themselves, so a mail problem never blocks creating an account.
   const mail = notify ? await sendMail({ to: user.email, ...welcomeEmail(user.name, user.email, password) }) : null;
   res.status(201).json({ ...user, mail });
 });
 
-// For edits every field is optional (.partial()), plus active and an optional password reset.
 const updateSchema = z
   .object({
     ...profileFields,
     active: z.boolean(),
     password: z.string().min(8, "New password must be at least 8 characters"),
-    notify: z.boolean(), // email the new password (only used together with password)
+    notify: z.boolean(),
   })
   .partial();
 
-// PATCH /api/users/:id → edit profile, change role, deactivate, or reset password
 router.patch("/:id", async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -109,12 +96,9 @@ router.patch("/:id", async (req, res) => {
   const self = id === req.user!.id;
   const roleChange = changes.role !== undefined && changes.role !== target.role;
 
-  // Stop admins from locking themselves out by accident.
   if (self && (changes.active === false || roleChange)) {
     return res.status(400).json({ error: "You can't deactivate yourself or change your own role" });
   }
-  // A plain admin manages employees only: admin accounts (other than their own profile)
-  // and every role change belong to the Super admins.
   if (!isSuperAdmin(req) && ((!self && target.role !== "EMPLOYEE") || roleChange)) {
     return res.status(403).json({ error: "Only a Super admin can change admin accounts or roles" });
   }
@@ -123,8 +107,6 @@ router.patch("/:id", async (req, res) => {
     if (other && other.id !== id) return res.status(409).json({ error: "Someone already uses this email" });
   }
 
-  // Leaving: deactivating without a last working day means they left today.
-  // Coming back: reactivating clears it.
   if (changes.active === false && changes.leftOn === undefined && !target.leftOn) changes.leftOn = new Date(todayString());
   if (changes.active === true) changes.leftOn = null;
 
@@ -132,12 +114,10 @@ router.patch("/:id", async (req, res) => {
     where: { id },
     data: {
       ...changes,
-      // A reset password is temporary again, so they must change it at next login.
       ...(password && { passwordHash: await hashPassword(password), mustChangePassword: true }),
     },
   });
 
-  // Only a password reset sends an email; normal profile edits don't.
   const mail =
     password && notify ? await sendMail({ to: user.email, ...passwordResetEmail(user.name, user.email, password) }) : null;
   res.json({ ...user, mail });

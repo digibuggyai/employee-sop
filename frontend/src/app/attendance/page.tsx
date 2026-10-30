@@ -14,15 +14,14 @@ import { Badge, Skeleton, type Tone } from "@/components/ui";
 import { api, type Correction, type DayRow, type MonthReport } from "@/lib/api";
 import { fmtDate, fmtTime, thisMonthIST } from "@/lib/format";
 
-// src/app/attendance/page.tsx → served at /attendance (the folder name is the URL)
 export default function AttendancePage() {
   const { user } = useAuth();
   const [month, setMonth] = useState(thisMonthIST());
   const [report, setReport] = useState<MonthReport | null>(null);
   const [requests, setRequests] = useState<Correction[]>([]);
   const [error, setError] = useState("");
-  const [version, setVersion] = useState(0); // bump to reload the table + requests
-  const [editing, setEditing] = useState<DayRow | null>(null); // the day being asked about
+  const [version, setVersion] = useState(0);
+  const [editing, setEditing] = useState<DayRow | null>(null);
 
   useEffect(() => {
     api<MonthReport>(`/api/attendance/month?month=${month}`)
@@ -71,7 +70,6 @@ const statusBadge: Record<Correction["status"], [string, Tone]> = {
   REJECTED: ["Rejected", "red"],
 };
 
-// What I asked to change, in plain words: "Out 7:15 pm · Note: Client call"
 function describe(c: Correction) {
   return [
     c.place && (c.place === "WFH" ? "WFH" : "In-office"),

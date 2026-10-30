@@ -1,13 +1,9 @@
-// Form controls and buttons: every form in the app uses these, so they look and behave the same.
 import { AlertCircle, LoaderCircle } from "lucide-react";
 
-// inputBase: the look. inputClass: the look + full width (forms). Use inputBase for filters.
-// Phones get 16px text (text-base): smaller text makes iOS zoom into the page on focus.
 export const inputBase =
   "rounded-lg border border-zinc-200 bg-white px-3 py-[7px] text-base text-ink sm:text-sm shadow-xs outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-600 focus:ring-3 focus:ring-brand-600/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500";
 export const inputClass = `w-full ${inputBase}`;
 
-// <Field label="Email" hint="..."><input .../></Field>
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
@@ -18,7 +14,6 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-// Inline error under a form
 export function ErrorBox({ message }: { message: string }) {
   if (!message) return null;
   return (
@@ -39,17 +34,14 @@ const variants: Record<Variant, string> = {
   danger: "bg-red-600 text-white shadow-xs hover:bg-red-700",
 };
 const sizes: Record<Size, string> = {
-  // phones get a slightly taller button (easier to tap), desktop the compact one
   sm: "h-9 gap-1.5 px-3 text-[13px] sm:h-8 sm:px-2.5",
   md: "h-10 gap-2 px-4 text-sm sm:h-9 sm:px-3.5",
   lg: "h-11 gap-2 px-4 text-sm sm:h-10",
 };
 
-// Same look for <button> and links: buttonClass("secondary", "sm")
 export const buttonClass = (variant: Variant = "primary", size: Size = "md") =>
   `inline-flex shrink-0 items-center justify-center rounded-lg font-medium whitespace-nowrap transition disabled:pointer-events-none disabled:opacity-50 ${variants[variant]} ${sizes[size]}`;
 
-// <Button variant="secondary" size="sm" loading={saving}>Save</Button>
 export function Button({
   loading,
   children,
@@ -66,7 +58,6 @@ export function Button({
   );
 }
 
-// Icon-only button (always needs a label for screen readers)
 export function IconButton({
   label,
   children,
@@ -88,7 +79,6 @@ export function IconButton({
   );
 }
 
-// Segmented control: [In-office | WFH], [Workspace | Admin], ...
 export function Segmented<T extends string>({
   value,
   options,

@@ -3,7 +3,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { monthLabel, thisMonthIST } from "@/lib/format";
 
-// "‹ October 2026 ›": move one month back or forward (never into the future).
 export default function MonthSwitcher({ month, onChange }: { month: string; onChange: (m: string) => void }) {
   const shift = (delta: number) => {
     const [y, m] = month.split("-").map(Number);

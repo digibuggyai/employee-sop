@@ -13,12 +13,10 @@ import { addDays, dueOf, uploadReportPdf, weekRange } from "@/lib/weekly";
 
 type Data = { thisWeek: { weekStart: string; due: string }; reports: WeeklyReport[] };
 
-// /weekly-report (remote interns): the week's updates, due every Saturday.
-// Written report required; a link and a PDF are optional.
 export default function WeeklyReportPage() {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
-  const [week, setWeek] = useState<string | null>(null); // the Monday being written
+  const [week, setWeek] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -33,7 +31,6 @@ export default function WeeklyReportPage() {
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!data || !week) return <Skeleton className="h-96" />;
 
-  // This week and the 3 before it can be written (or updated)
   const weeks = [0, 1, 2, 3].map((i) => addDays(data.thisWeek.weekStart, -7 * i));
   const existing = data.reports.find((r) => r.weekStart.slice(0, 10) === week);
 
@@ -56,7 +53,6 @@ export default function WeeklyReportPage() {
             </select>
           }
         >
-          {/* key: a fresh form for each week */}
           <ReportForm key={week} week={week} existing={existing} onSaved={() => setVersion((v) => v + 1)} />
         </Card>
 
@@ -102,7 +98,6 @@ function ReportForm({ week, existing, onSaved }: { week: string; existing?: Week
     if (file && file.size > 3 * 1024 * 1024) return setError("The PDF must be 3 MB or smaller");
     setLoading(true);
     try {
-      // 1. the written report, 2. the PDF (needs the report to exist)
       await api(`/api/weekly-reports/${week}`, { method: "PUT", body: { text, link } });
       if (file) await uploadReportPdf(week, file);
       toast.success(existing ? "Report updated" : "Report sent");

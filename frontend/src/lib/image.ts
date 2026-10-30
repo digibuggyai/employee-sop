@@ -1,11 +1,8 @@
-// Cut a chosen square out of the ORIGINAL photo (area in the photo's own pixels, from the cropper)
-// and save it as a size x size JPEG. Cutting from the original keeps it sharp, even when zoomed in.
 export async function cropToJpeg(
   file: File,
   area: { x: number; y: number; width: number; height: number },
   size = 256,
 ): Promise<Blob> {
-  // same orientation handling as the cropper's preview, so the cut matches what the person saw
   const img = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -21,5 +18,4 @@ export async function cropToJpeg(
   );
 }
 
-// Where an avatar photo is served. ?v= changes whenever the photo changes, so caches never go stale.
 export const photoUrl = (id: string, photoUpdatedAt: string) => `/api/photos/${id}?v=${Date.parse(photoUpdatedAt)}`;

@@ -10,8 +10,6 @@ import { useConfirm, useToast } from "./Feedback";
 import { IconButton } from "./form";
 import { EmptyState } from "./ui";
 
-// Tasks grouped by day. The status is a dropdown, so updating it is one click.
-// showOwner = show whose task it is (admin view).
 export default function TaskList({
   tasks,
   showOwner = false,
@@ -36,7 +34,6 @@ export default function TaskList({
       </div>
     );
 
-  // { "2026-10-26": [task, task], "2026-10-25": [...] } (tasks arrive newest first)
   const groups = new Map<string, Task[]>();
   for (const t of tasks) groups.set(t.date.slice(0, 10), [...(groups.get(t.date.slice(0, 10)) ?? []), t]);
 
@@ -81,11 +78,9 @@ export default function TaskList({
             </div>
             <ul className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
               {list.map((t) => {
-                // employees can't delete tasks an admin assigned (the backend checks this too)
                 const canDelete = isAdmin(user) || !t.assignedBy;
                 const completed = t.status === "COMPLETED";
                 return (
-                  // phones: controls drop to their own row under the task; larger screens: on the right
                   <li key={t.id} className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-zinc-50/60 sm:flex-row sm:items-start sm:gap-3">
                     <div className="flex min-w-0 flex-1 gap-3">
                       {showOwner && (
@@ -150,11 +145,9 @@ export default function TaskList({
   );
 }
 
-// Helper for pages: apply a change from TaskList / TaskForm to the list in state.
 export function applyTaskChange(list: Task[], change: Task | { deletedId: string }): Task[] {
   if ("deletedId" in change) return list.filter((t) => t.id !== change.deletedId);
   const exists = list.some((t) => t.id === change.id);
   const next = exists ? list.map((t) => (t.id === change.id ? change : t)) : [change, ...list];
-  // keep newest day first
   return next.sort((a, b) => b.date.localeCompare(a.date));
 }

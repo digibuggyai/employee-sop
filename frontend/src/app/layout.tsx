@@ -19,12 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: "Digibuggy Hub", template: "%s · Digibuggy Hub" },
   description: "Attendance, tasks and leave for the Digibuggy team",
-  // iPhone "Add to Home Screen": open full-screen with our name
   appleWebApp: { capable: true, title: "Digibuggy", statusBarStyle: "default" },
 };
 
-// Phone browser settings. viewportFit "cover" lets us use the space around the notch /
-// home indicator (we pad for it with env(safe-area-inset-*)). themeColor tints the browser bar.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -39,8 +36,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans">
-        {/* AuthProvider = who's logged in · FeedbackProvider = toasts + confirm dialog
-            AppShell = gatekeeper + sidebar / tab bar */}
         <AuthProvider>
           <PendingProvider>
             <FeedbackProvider>

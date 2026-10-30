@@ -1,5 +1,3 @@
-// A small CSV reader for files downloaded from Google Sheets (File → Download → .csv).
-// Handles quoted cells, commas and line breaks inside quotes, and "" for a quote character.
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];

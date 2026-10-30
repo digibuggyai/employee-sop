@@ -1,7 +1,6 @@
 import { Briefcase, CalendarOff, Clock, Wallet, type LucideIcon } from "lucide-react";
 import type { Notice, NoticeAudience } from "@/lib/api";
 
-// One look per category, shared by the Notice Board and the dashboard preview
 export const categoryStyle: Record<Notice["category"], { icon: LucideIcon; chip: string }> = {
   Pay: { icon: Wallet, chip: "bg-emerald-50 text-emerald-700 ring-emerald-600/15" },
   Leave: { icon: CalendarOff, chip: "bg-blue-50 text-blue-700 ring-blue-600/15" },

@@ -6,8 +6,6 @@ import { useAuth } from "./AuthProvider";
 import { categoryStyle } from "./noticeStyle";
 import { Badge, Skeleton } from "./ui";
 
-// The dashboard's short Notice Board preview: the notices that apply to you, first `limit` of them.
-// (The full board with filters lives on /notices.)
 export default function NoticeList({ limit = 3 }: { limit?: number }) {
   const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[] | null>(null);
