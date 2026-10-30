@@ -62,3 +62,8 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user || !isAdmin(req.user)) return res.status(403).json({ error: "Admins only" });
   next();
 }
+
+export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.user?.role !== "SUPER_ADMIN") return res.status(403).json({ error: "Super admins only" });
+  next();
+}

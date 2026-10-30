@@ -51,6 +51,7 @@ model User {
   vaultAccess    VaultAccess[]  @relation("VaultAccessUser")
   vaultGrants    VaultAccess[]  @relation("VaultAccessGrantor")
   vaultViews     VaultView[]
+  dayNotes       DayNote[]      @relation("DayNoteAuthor")
 
   attendance Attendance[]
 
@@ -85,6 +86,7 @@ model Attendance {
   plan     String?
   report   String?
   breaks   Break[]
+  notes    DayNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -273,4 +275,17 @@ model VaultView {
   at     DateTime  @default(now())
 
   @@index([itemId, at])
+}
+
+model DayNote {
+  id           String     @id @default(cuid())
+  attendanceId String
+  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation("DayNoteAuthor", fields: [authorId], references: [id])
+  text         String
+  taskId       String?
+  createdAt    DateTime   @default(now())
+
+  @@index([attendanceId])
 }

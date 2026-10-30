@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { requireAdmin, requireAuth } from "../lib/auth.js";
+import { requireAdmin, requireAuth, requireSuperAdmin } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { dayStatus, dayTotals, isOffDay, mondayOf, monthReports, thisMonth } from "../lib/reports.js";
 import { dueDate, reportSelect } from "./weeklyReports.js";
@@ -10,6 +10,14 @@ import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 
 const router = Router();
+
+export const noteSelect = {
+  id: true,
+  text: true,
+  taskId: true,
+  createdAt: true,
+  author: { select: { id: true, name: true, photoUpdatedAt: true } },
+} as const;
 router.use(requireAuth, requireAdmin);
 
 const dateParam = z.iso.date().catch(() => todayString());
@@ -98,17 +106,48 @@ router.get("/wfh-plans", async (req, res) => {
     select: {
       id: true, checkIn: true, checkOut: true, plan: true, report: true,
       user: { select: { id: true, name: true, designation: true, employmentType: true, team: true, photoUpdatedAt: true } },
+      notes: { select: noteSelect, orderBy: { createdAt: "asc" } },
     },
     orderBy: { checkIn: "asc" },
   });
   res.json({
     date,
+    canNote: req.user!.role === "SUPER_ADMIN",
     rows: days.map((d) => ({
       ...d,
       required: d.user.employmentType === "INTERN" || d.user.employmentType === "REMOTE_INTERN",
       spanMs: (d.checkOut?.getTime() ?? Date.now()) - d.checkIn.getTime(),
     })),
   });
+});
+
+router.post("/days/:attendanceId/notes", requireSuperAdmin, async (req, res) => {
+  const parsed = z
+    .object({ text: z.string().trim().min(2, "Write the note").max(2000), addTask: z.boolean().default(false) })
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const day = await prisma.attendance.findUnique({ where: { id: String(req.params.attendanceId) }, select: { id: true, userId: true, date: true } });
+  if (!day) return res.status(404).json({ error: "That day wasn't found" });
+
+  const { text, addTask } = parsed.data;
+  const [title, ...rest] = text.split("\n");
+  const task = addTask
+    ? await prisma.task.create({
+        data: { userId: day.userId, date: day.date, title: title.slice(0, 150), details: rest.join("\n").trim() || null, assignedById: req.user!.id },
+        select: { id: true },
+      })
+    : null;
+  const note = await prisma.dayNote.create({
+    data: { attendanceId: day.id, authorId: req.user!.id, text, taskId: task?.id ?? null },
+    select: noteSelect,
+  });
+  res.status(201).json(note);
+});
+
+router.delete("/notes/:id", requireSuperAdmin, async (req, res) => {
+  const { count } = await prisma.dayNote.deleteMany({ where: { id: String(req.params.id) } });
+  if (!count) return res.status(404).json({ error: "Note not found" });
+  res.json({ ok: true });
 });
 
 router.get("/tasks", async (req, res) => {

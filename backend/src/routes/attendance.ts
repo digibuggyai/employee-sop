@@ -10,7 +10,10 @@ import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern } from "../lib/policy.js";
 const router = Router();
 router.use(requireAuth);
 
-const withBreaks = { breaks: { orderBy: { start: "asc" as const } } };
+const withBreaks = {
+  breaks: { orderBy: { start: "asc" as const } },
+  notes: { orderBy: { createdAt: "asc" as const }, select: { id: true, text: true, createdAt: true, author: { select: { name: true } } } },
+};
 
 const findToday = (userId: string) =>
   prisma.attendance.findUnique({

@@ -60,6 +60,7 @@ export type DayRow = {
   compensates?: string;
   leave?: { id: string; reason: string | null; compensatedOn: string | null; emergency: boolean };
   note?: string | null;
+  dayNotes?: { text: string; author: string }[];
   pendingChange?: string;
 };
 
@@ -114,7 +115,7 @@ export async function monthReports(userIds: string[], month: string) {
   const [rows, leaves, pendingChanges, leavesUsed] = await Promise.all([
     prisma.attendance.findMany({
       where: { userId: { in: userIds }, date: { gte: toDbDate(firstMonday), lte: toDbDate(lastSunday) } },
-      include: { breaks: true },
+      include: { breaks: true, notes: { orderBy: { createdAt: "asc" }, select: { text: true, author: { select: { name: true } } } } },
     }),
     prisma.leave.findMany({
       where: { userId: { in: userIds }, status: { not: "REJECTED" }, OR: [{ date: range }, { compensatedOn: range }] },
@@ -186,6 +187,7 @@ export async function monthReports(userIds: string[], month: string) {
           workedMs,
           note: att.note,
           plan: att.plan,
+          ...(att.notes.length && { dayNotes: att.notes.map((n) => ({ text: n.text, author: n.author.name })) }),
           report: att.report,
           ...(att.halfDay && { halfDay: "MARKED" as const }),
           ...flags,

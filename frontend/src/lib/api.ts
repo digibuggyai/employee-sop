@@ -82,6 +82,7 @@ export type Attendance = {
   plan: string | null;
   report: string | null;
   breaks: Break[];
+  notes?: { id: string; text: string; createdAt: string; author: { name: string } }[];
 };
 
 export type DayRow = {
@@ -109,6 +110,7 @@ export type DayRow = {
   compensates?: string;
   leave?: { id: string; reason: string | null; compensatedOn: string | null; emergency: boolean };
   note?: string | null;
+  dayNotes?: { text: string; author: string }[];
   pendingChange?: string;
 };
 
@@ -268,3 +270,11 @@ export type VaultItem = {
 };
 
 export type VaultData = { columns: VaultColumn[]; items: VaultItem[] };
+
+export type DayNote = {
+  id: string;
+  text: string;
+  taskId: string | null;
+  createdAt: string;
+  author: { id: string; name: string; photoUpdatedAt?: string | null };
+};

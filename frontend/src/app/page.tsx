@@ -10,8 +10,8 @@ export default function Dashboard() {
     <>
       <DashboardHeader />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <EmployeeOnly>
             <CheckInCard />
           </EmployeeOnly>
@@ -21,7 +21,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <EmployeeOnly>
             <MonthAtGlance />
           </EmployeeOnly>

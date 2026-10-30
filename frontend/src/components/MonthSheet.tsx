@@ -42,6 +42,7 @@ function dayNotes(d: DayRow): string[] {
   if (d.extraMin) notes.push(`+${mins(d.extraMin)} extra`);
   if (d.plan) notes.push(`Plan: ${d.plan}`);
   if (d.report) notes.push(`Report: ${d.report}`);
+  d.dayNotes?.forEach((n) => notes.push(`Note from ${n.author}: ${n.text}`));
   if (d.compensates) notes.push(`Makes up leave of ${fmtDate(d.compensates, false)}`);
   if (d.leave) {
     if (d.leave.reason) notes.push(d.leave.reason);
@@ -216,6 +217,11 @@ export default function MonthSheet({
                     {d.note && <p className="mt-1 text-xs text-zinc-600">{d.note}</p>}
                     {d.plan && <p className="mt-1 line-clamp-2 text-xs text-zinc-600">Plan: {d.plan}</p>}
                     {d.report && <p className="mt-1 line-clamp-3 text-xs text-zinc-600">Report: {d.report}</p>}
+                    {d.dayNotes?.map((n, i) => (
+                      <p key={i} className="mt-1 rounded-md bg-brand-50/60 px-2 py-1 text-xs text-zinc-800">
+                        <span className="font-medium">{n.author}:</span> {n.text}
+                      </p>
+                    ))}
                     {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || d.extraMin) && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
@@ -302,6 +308,11 @@ export default function MonthSheet({
                               <Tag>Report</Tag>
                             </span>
                           )}
+                          {d.dayNotes?.map((n, i) => (
+                            <span key={i} title={`${n.author}: ${n.text}`} className="cursor-help">
+                              <Tag tone="violet">Note from {n.author.split(" ")[0]}</Tag>
+                            </span>
+                          ))}
                           {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                           {d.leave && (
                             <Tag tone={d.leave.compensatedOn ? "violet" : "zinc"}>

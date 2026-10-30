@@ -128,6 +128,19 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           </div>
         )}
 
+        {!!day?.notes?.length && (
+          <div className="rounded-lg border border-brand-700/15 bg-brand-50/40 p-3">
+            <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-brand-700 uppercase">Notes from admin</p>
+            <ul className="space-y-1.5">
+              {day.notes.map((n) => (
+                <li key={n.id} className="text-sm whitespace-pre-line text-zinc-800">
+                  <span className="font-medium">{n.author.name}:</span> {n.text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {loaded && state === "out" && needsNotes && (
           <Field label="Today's plan" hint="Required for WFH: your to-do list before you start.">
             <textarea
