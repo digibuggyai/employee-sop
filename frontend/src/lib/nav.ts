@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Megaphone,
+  ShieldCheck,
   Plane,
   UserCog,
   Users,
@@ -51,6 +52,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/wfh-plans", label: "WFH plans", icon: House, group: "Manage" },
   { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage" },
   { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage" },
+  { href: "/admin/access", label: "Roles & access", icon: ShieldCheck, group: "Manage" },
 ];
 
 export const publicPaths = ["/login"];
