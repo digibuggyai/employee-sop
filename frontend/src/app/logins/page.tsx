@@ -513,9 +513,16 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
   const toast = useToast();
   const people = useEmployees();
   const [personId, setPersonId] = useState("");
+  const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [chosen, setChosen] = useState<Set<string> | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api<{ counts: Record<string, number> }>("/api/vault/people")
+      .then((r) => setCounts(r.counts))
+      .catch((err) => setError(err.message));
+  }, []);
 
   useEffect(() => {
     if (!personId) return;
@@ -537,8 +544,38 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
     }
   }
 
-  if (!people) return <Skeleton className="h-48" />;
+  if (!people || !counts) return error ? <ErrorBox message={error} /> : <Skeleton className="h-48" />;
   const person = people.find((p) => p.id === personId);
+  const withAccess = people.filter((p) => counts[p.id]);
+  const without = people.filter((p) => !counts[p.id]);
+  const card = (p: User) => {
+    const n = counts[p.id] ?? 0;
+    return (
+      <li key={p.id}>
+        <button
+          type="button"
+          onClick={() => pick(p.id)}
+          className={`flex h-full w-full flex-col items-center gap-1.5 rounded-xl border px-1.5 py-3 text-center transition hover:border-brand-500 hover:bg-brand-50 ${
+            n ? "border-emerald-300 bg-emerald-50/50" : "border-zinc-200"
+          }`}
+        >
+          <span className="relative">
+            <Avatar person={p} size="lg" />
+            {n > 0 && (
+              <span className="absolute -right-0.5 -bottom-0.5 grid size-5 place-items-center rounded-full bg-emerald-600 text-white ring-2 ring-white">
+                <Check size={12} strokeWidth={3} />
+              </span>
+            )}
+          </span>
+          <span className="line-clamp-2 w-full text-[13px] leading-tight font-medium text-zinc-900">{p.name}</span>
+          <span className="w-full truncate text-[11px] text-zinc-500">{p.designation ?? p.team ?? ""}</span>
+          <span className={`text-[11px] font-medium ${n ? "text-emerald-700" : "text-zinc-400"}`}>
+            {n ? `${n} login${n === 1 ? "" : "s"}` : "No access"}
+          </span>
+        </button>
+      </li>
+    );
+  };
   const pick = (id: string) => {
     setChosen(null);
     setError("");
@@ -548,22 +585,20 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
     <div className="space-y-4">
       {!person ? (
         <>
-          <p className="text-[13px] font-medium text-zinc-800">Who are you giving access to?</p>
-          <ul className="grid max-h-[55dvh] grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
-            {people.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => pick(p.id)}
-                  className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-zinc-200 px-1.5 py-3 text-center transition hover:border-brand-500 hover:bg-brand-50"
-                >
-                  <Avatar person={p} size="lg" />
-                  <span className="w-full truncate text-[13px] font-medium text-zinc-900">{p.name.split(" ")[0]}</span>
-                  <span className="-mt-1 w-full truncate text-[11px] text-zinc-500">{p.designation ?? p.team ?? ""}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="max-h-[55dvh] space-y-4 overflow-y-auto">
+            {withAccess.length > 0 && (
+              <section>
+                <p className="mb-2 text-[13px] font-medium text-zinc-800">Have access ({withAccess.length})</p>
+                <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">{withAccess.map(card)}</ul>
+              </section>
+            )}
+            {without.length > 0 && (
+              <section>
+                <p className="mb-2 text-[13px] font-medium text-zinc-800">No access yet ({without.length})</p>
+                <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">{without.map(card)}</ul>
+              </section>
+            )}
+          </div>
         </>
       ) : (
         <div className="flex items-center gap-3 rounded-xl border border-brand-500 bg-brand-50 p-3">

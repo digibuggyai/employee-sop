@@ -138,6 +138,11 @@ router.put("/:id/access", requireAdmin, async (req, res) => {
   res.json({ userIds });
 });
 
+router.get("/people", requireAdmin, async (_req, res) => {
+  const rows = await prisma.vaultAccess.groupBy({ by: ["userId"], _count: { _all: true } });
+  res.json({ counts: Object.fromEntries(rows.map((r) => [r.userId, r._count._all])) });
+});
+
 router.get("/people/:userId", requireAdmin, async (req, res) => {
   const access = await prisma.vaultAccess.findMany({ where: { userId: String(req.params.userId) }, select: { itemId: true } });
   res.json({ itemIds: access.map((a) => a.itemId) });
