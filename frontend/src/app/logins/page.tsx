@@ -130,7 +130,7 @@ export default function LoginsPage() {
                   <table className={table.table}>
                     <thead className={table.thead}>
                       <tr>
-                        <th className={`${table.th} w-10`}>#</th>
+                        <th className={`${table.th} w-14`}>S.No</th>
                         {columns.map((c) => (
                           <th key={c.id} className={table.th}>
                             {c.name}
