@@ -9,7 +9,7 @@ import { useConfirm, useToast } from "@/components/Feedback";
 import PageHeader from "@/components/PageHeader";
 import { inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton, table } from "@/components/ui";
-import { api, employmentLabels, roleLabels, type Role, type User } from "@/lib/api";
+import { api, employmentLabels, roleLabels, type EmploymentType, type Role, type User } from "@/lib/api";
 
 const ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "EMPLOYEE"];
 
@@ -66,13 +66,50 @@ export default function AccessPage() {
     }
   }
 
+  async function changeEmployment(u: User, employmentType: EmploymentType) {
+    if (employmentType === u.employmentType) return;
+    setSaving(u.id);
+    try {
+      const saved = await api<User>(`/api/users/${u.id}`, { method: "PATCH", body: { employmentType } });
+      setUsers((list) => (list ?? []).map((x) => (x.id === u.id ? { ...x, employmentType: saved.employmentType } : x)));
+      toast.success(`${u.name} is now ${employmentLabels[employmentType]}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not change the employment type");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  const canEditEmployment = (u: User) => canChange || u.id === me?.id || (!!me && me.role !== "EMPLOYEE" && u.role === "EMPLOYEE");
+
+  const employmentControl = (u: User) =>
+    canEditEmployment(u) ? (
+      <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
+        <select
+          value={u.employmentType}
+          disabled={saving === u.id}
+          onChange={(e) => changeEmployment(u, e.target.value as EmploymentType)}
+          aria-label={`Employment of ${u.name}`}
+          className={inputClass}
+        >
+          {(Object.keys(employmentLabels) as EmploymentType[]).map((t) => (
+            <option key={t} value={t}>
+              {employmentLabels[t]}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : (
+      <span className="text-sm text-zinc-600">{employmentLabels[u.employmentType]}</span>
+    );
+
   const q = query.trim().toLowerCase();
   const shown = (users ?? []).filter((u) => [u.name, u.email, u.designation, u.team].some((f) => f?.toLowerCase().includes(q)));
   const count = (r: Role) => (users ?? []).filter((u) => u.role === r).length;
 
   const roleControl = (u: User) =>
     canChange && u.id !== me?.id ? (
-      <div className="w-40 shrink-0">
+      <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
         <select
           value={u.role}
           disabled={saving === u.id}
@@ -174,7 +211,17 @@ export default function AccessPage() {
               const people = shown.filter((u) => u.role === r);
               if (!people.length) return null;
               return (
-                <Card key={r} title={`${roleLabels[r]}s (${people.length})`} flush>
+                <Card
+                  key={r}
+                  title={`${roleLabels[r]}s (${people.length})`}
+                  actions={
+                    <span className="hidden gap-2 text-xs font-medium text-zinc-400 sm:flex">
+                      <span className="w-40 pl-1">Employment</span>
+                      <span className="w-40 pl-1">Role</span>
+                    </span>
+                  }
+                  flush
+                >
                   <ul className="divide-y divide-zinc-100">
                     {people.map((u) => (
                       <li key={u.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
@@ -182,11 +229,14 @@ export default function AccessPage() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-zinc-900">{u.name}</p>
                           <p className="truncate text-xs text-zinc-500">
-                            {u.designation ?? employmentLabels[u.employmentType]}
+                            {u.designation ?? u.email}
                             {u.isEmployee ? "" : " · Not tracked"}
                           </p>
                         </div>
-                        {roleControl(u)}
+                        <div className="flex w-full items-center gap-2 sm:w-auto">
+                          {employmentControl(u)}
+                          {roleControl(u)}
+                        </div>
                       </li>
                     ))}
                   </ul>
