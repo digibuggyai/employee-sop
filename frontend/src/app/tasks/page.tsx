@@ -54,7 +54,7 @@ export default function TasksPage() {
       />
 
       {editing && (
-        <Card title={editing === "new" ? "New task" : "Edit task"} className="mb-6">
+        <Card title={editing === "new" ? "New task" : "Edit task"} className="mb-4 md:mb-6">
           <TaskForm
             key={editing === "new" ? "new" : editing.id}
             existing={editing === "new" ? undefined : editing}

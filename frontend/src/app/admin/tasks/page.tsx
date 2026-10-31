@@ -69,7 +69,7 @@ function AdminTasks() {
       />
 
       {editing && (
-        <Card title={editing === "new" ? "Assign a task" : `Edit task for ${editing.user.name}`} className="mb-6 max-w-3xl">
+        <Card title={editing === "new" ? "Assign a task" : `Edit task for ${editing.user.name}`} className="mb-4 md:mb-6 max-w-3xl">
           <TaskForm
             key={editing === "new" ? "new" : editing.id}
             existing={editing === "new" ? undefined : editing}

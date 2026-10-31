@@ -113,7 +113,7 @@ export default function MonthSheet({
   const weekLabel = (w: WeekRow) => `${fmtDate(w.from, false)} – ${fmtDate(w.to, false)}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         <Stat
           label="Hours worked"

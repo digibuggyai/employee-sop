@@ -38,7 +38,7 @@ export default function WeeklyReportPage() {
     <>
       <PageHeader title="Weekly report" subtitle="Remote interns: send your week's updates every Saturday." />
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-3">
         <Card
           title={`Week of ${weekRange(week)}`}
           description={`Due ${fmtDate(dueOf(week))}${existing ? ` · last saved ${fmtDate(existing.updatedAt)}` : ""}`}

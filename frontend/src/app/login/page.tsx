@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         <div className="relative max-w-md">
           <h2 className="text-3xl font-semibold tracking-tight">Your workday, in one place.</h2>
-          <ul className="mt-10 space-y-6">
+          <ul className="mt-10 space-y-4 md:space-y-6">
             {features.map(({ icon: Icon, title, text }) => (
               <li key={title} className="flex gap-4">
                 <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/5">

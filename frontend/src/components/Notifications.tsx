@@ -128,7 +128,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         {items.length === 0 ? (
           <div className="flex flex-col items-center py-8 text-center">
             <BellSlash size={24} className="text-zinc-300" />
-            <p className="mt-2 text-sm text-zinc-500">Nothing yet. Notes, tasks and replies to your requests show up here.</p>
+            <p className="mt-2 text-sm text-zinc-500">No notifications yet.</p>
           </div>
         ) : (
           <>

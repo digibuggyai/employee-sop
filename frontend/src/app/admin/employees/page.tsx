@@ -97,7 +97,7 @@ export default function EmployeesAdminPage() {
           <Card
             title={editing === "new" ? "New employee" : `Edit ${editing.name}`}
             description={editing === "new" ? "They'll be asked to choose their own password at first login." : undefined}
-            className="mb-6"
+            className="mb-4 md:mb-6"
           >
             {editing !== "new" && (
               <div className="mb-5 border-b border-zinc-100 pb-5">
@@ -121,7 +121,7 @@ export default function EmployeesAdminPage() {
       )}
 
       {share && (
-        <div role="status" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div role="status" className="mb-4 md:mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-amber-900">Share these login details with {share.name}</p>

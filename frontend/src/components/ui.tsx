@@ -37,13 +37,13 @@ export function Stat({
   emphasis?: "warning" | "danger" | "positive";
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
+    <div className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-xs sm:rounded-xl sm:p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-medium text-zinc-500">{label}</p>
         {Icon && <Icon size={16} className="text-zinc-400" />}
       </div>
       <p
-        className={`mt-2 text-2xl font-semibold tracking-tight tabular-nums ${
+        className={`mt-1.5 text-xl font-semibold tracking-tight tabular-nums sm:mt-2 sm:text-2xl ${
           emphasis === "danger"
             ? "text-red-600"
             : emphasis === "warning"
@@ -74,12 +74,12 @@ export function EmptyState({
   compact?: boolean;
 }) {
   return (
-    <div className={`flex flex-col items-center text-center ${compact ? "py-6" : "py-12"}`}>
+    <div className={`flex flex-col items-center px-4 text-center ${compact ? "py-6" : "py-10 sm:py-12"}`}>
       <span className="grid size-10 place-items-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-400">
         <Icon size={18} />
       </span>
       <p className="mt-3 text-sm font-medium text-zinc-900">{title}</p>
-      {description && <p className="mt-1 max-w-sm text-[13px] text-zinc-500">{description}</p>}
+      {description && <p className={`mt-1 max-w-sm text-[13px] text-zinc-500 ${compact ? "hidden sm:block" : ""}`}>{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

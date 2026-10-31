@@ -109,7 +109,7 @@ export default function AdminReimbursementsPage() {
       {!data && !error && <Skeleton className="h-96" />}
 
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <Card title="To approve" description={pending.length ? `${pending.length} waiting · ${fmtRupees(sumPaise(pending))}` : undefined} flush>
             {pending.length === 0 ? (
               <EmptyState compact icon={Check} title="Nothing waiting" description="New expenses show up here, and you get a notification." />

@@ -49,7 +49,7 @@ export default function AttendancePage() {
           />
         }
       />
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {month === thisMonthIST() && <CheckInCard onChange={reload} />}
         {error && <p className="text-sm text-red-600">{error}</p>}
         {!report && !error && <Skeleton className="h-96" />}

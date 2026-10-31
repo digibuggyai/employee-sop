@@ -80,7 +80,7 @@ export default function ReimbursementsPage() {
       {!data && !error && <Skeleton className="h-72" />}
 
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <div className="grid grid-cols-3 divide-x divide-zinc-100 rounded-xl border border-zinc-200 bg-white shadow-xs">
             {totals.map((t) => (
               <div key={t.label} className="min-w-0 px-3 py-3.5 sm:px-5">
@@ -93,7 +93,7 @@ export default function ReimbursementsPage() {
           </div>
 
           <p className="rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-[13px] text-brand-800">
-            Add each expense with a photo of the bill. Expenses added by the 30th are settled with that month&apos;s salary.
+            Attach the bill. Expenses added by the 30th are paid with that month&apos;s salary.
           </p>
 
           <Card title="Your expenses" description={claims.length ? `${claims.length} added` : undefined} flush>
@@ -260,7 +260,7 @@ function ClaimForm({ categories, onCancel, onSaved }: { categories: string[]; on
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-800 hover:file:bg-zinc-200"
         />
-        <p className="mt-1.5 text-xs text-zinc-500">A photo of the bill or a PDF. It helps get it approved faster.</p>
+        <p className="mt-1.5 text-xs text-zinc-500">Photo or PDF of the bill.</p>
       </div>
       <ErrorBox message={error} />
       <div className="flex justify-end gap-2 border-t border-zinc-100 pt-4">

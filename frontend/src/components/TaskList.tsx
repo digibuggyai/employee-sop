@@ -63,7 +63,7 @@ export default function TaskList({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {[...groups].map(([date, list]) => {
         const done = list.filter((t) => t.status === "COMPLETED").length;
         return (

@@ -86,7 +86,7 @@ export default function AdminLeavesPage() {
       />
 
       {showForm && (
-        <Card title="Record leave" description="For leave taken before the app, or informed by phone. Saved as approved." className="mb-6 max-w-3xl">
+        <Card title="Record leave" description="For leave taken before the app, or informed by phone. Saved as approved." className="mb-4 md:mb-6 max-w-3xl">
           <RecordLeaveForm
             employees={employees}
             onDone={(created) => {
@@ -144,7 +144,7 @@ export default function AdminLeavesPage() {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-zinc-900">Reviewed leave</h2>
-          <p className="text-[13px] text-zinc-500">Link a worked weekend or holiday to make up for a leave. One day covers one leave.</p>
+          <p className="hidden text-[13px] text-zinc-500 md:block">Link a worked weekend or holiday to make up for a leave. One day covers one leave.</p>
         </div>
         <MonthSwitcher
           month={month}

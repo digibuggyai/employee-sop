@@ -96,11 +96,11 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
         )}
       </div>
 
-      <div className="flex flex-col gap-6 p-5">
+      <div className="flex flex-col gap-4 md:gap-6 p-5">
         {!loaded ? (
           <Skeleton className="h-24" />
         ) : (
-          <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="flex flex-wrap items-end justify-between gap-4 md:gap-6">
             <div>
               <p className="text-[13px] font-medium text-zinc-500">{state === "break" ? "On break for" : "Worked today"}</p>
               <p className="mt-1 text-4xl font-semibold tracking-tight text-zinc-900 tabular-nums">
@@ -123,7 +123,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
                 </dd>
               </dl>
             ) : (
-              <p className="max-w-56 text-[13px] text-zinc-500">Choose where you&apos;re working today, then check in.</p>
+              <p className="text-[13px] text-zinc-500 sm:max-w-56">Pick where you&apos;re working, then check in.</p>
             )}
           </div>
         )}

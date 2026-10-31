@@ -175,7 +175,7 @@ export function ReimbursementsCard() {
           ) : (
             <p className="flex items-start gap-2.5 text-[13px] text-zinc-500">
               <ReceiptIndianRupee size={16} className="mt-0.5 shrink-0 text-zinc-400" />
-              Spent your own money on office work? Add it with the bill and get it back with your salary.
+              Paid for something for the office? Add it here and get it back.
             </p>
           )}
           <Link href="/reimbursements?new=1" className={`${buttonClass("secondary", "sm")} w-full`}>

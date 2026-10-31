@@ -66,7 +66,7 @@ export default function AdminOverviewPage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+      <div className="mb-4 md:mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         <Kpi label="Present" value={rows ? `${present} / ${rows.length}` : null} hint={rows ? `${wfh} working from home` : undefined} />
         <Kpi label={isToday ? "Working now" : "Worked"} value={rows ? count("WORKING") + count("ON_BREAK") : null} hint={rows ? `${count("ON_BREAK")} on break` : undefined} />
         <Kpi label="On leave" value={rows ? count("ON_LEAVE") : null} />
@@ -187,12 +187,12 @@ export default function AdminOverviewPage() {
 
 function Kpi({ label, value, hint }: { label: string; value: React.ReactNode | null; hint?: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
+    <div className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-xs sm:rounded-xl sm:p-4">
       <p className="text-[13px] font-medium text-zinc-500">{label}</p>
       {value === null ? (
         <Skeleton className="mt-2 h-8 w-20" />
       ) : (
-        <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 tabular-nums">{value}</p>
+        <p className="mt-1.5 text-xl font-semibold tracking-tight text-zinc-900 tabular-nums sm:mt-2 sm:text-2xl">{value}</p>
       )}
       {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
     </div>
@@ -207,7 +207,7 @@ function OnlineNow() {
     <Card
       title="On the site now"
       description={online.length ? `${online.length} with the site open on their screen` : "No one else has the site open right now"}
-      className="mb-6"
+      className="mb-4 md:mb-6"
     >
       {online.length > 0 && (
         <ul className="flex flex-wrap gap-2">

@@ -64,7 +64,7 @@ export default function LeavePage() {
         <Card
           title="Request leave"
           description="Ask in advance. Starting today counts as your emergency leave (1 a month). Weekends and holidays are skipped."
-          className="mb-6 max-w-2xl"
+          className="mb-4 md:mb-6 max-w-2xl"
         >
           <LeaveRequestForm
             onDone={(created, skipped) => {
@@ -80,8 +80,8 @@ export default function LeavePage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-3">
+        <div className="space-y-4 md:space-y-6">
           {data && (
             <Card title="Leave">
               {data.balance !== null && (
@@ -93,8 +93,11 @@ export default function LeavePage() {
                 </div>
               )}
               <p className="text-[13px] text-zinc-600">
-                Emergency leave this month: {data.emergency.used} of {data.emergency.allowed} used. Other leave must be
-                asked for in advance; leave without approval counts as unauthorized (1 day salary deduction).
+                Emergency leave: {data.emergency.used} of {data.emergency.allowed} used this month.
+                <span className="hidden md:inline">
+                  {" "}
+                  Other leave must be asked for in advance; leave without approval counts as unauthorized (1 day salary deduction).
+                </span>
               </p>
             </Card>
           )}
@@ -179,7 +182,7 @@ export default function LeavePage() {
               ))}
             </ul>
           )}
-          <p className="border-t border-zinc-100 px-5 py-3 text-xs text-zinc-500">
+          <p className="hidden border-t border-zinc-100 px-5 py-3 text-xs text-zinc-500 md:block">
             Worked a weekend or holiday to make up for a leave? Let your admin know and they will link it.
           </p>
         </Card>

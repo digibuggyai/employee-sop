@@ -138,7 +138,7 @@ export default function AccessPage() {
         subtitle={canChange ? "Choose what each person can do. Changes apply straight away." : "Who can do what. Only Super admins can change roles."}
       />
 
-      <Card title="Who can do what" className="mb-6" flush>
+      <Card title="Who can do what" className="mb-4 md:mb-6" flush>
         <ul className="divide-y divide-zinc-100 md:hidden">
           {abilities.map((a) => (
             <li key={a.label} className="px-4 py-3">
@@ -206,7 +206,7 @@ export default function AccessPage() {
             <EmptyState compact icon={ShieldCheck} title={`No one matches "${query}"`} />
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {ROLES.map((r) => {
               const people = shown.filter((u) => u.role === r);
               if (!people.length) return null;

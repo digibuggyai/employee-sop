@@ -47,7 +47,7 @@ export default function NoticesPage() {
       {!notices && !error && <Skeleton className="h-96" />}
 
       {notices && (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <section aria-label="At a glance" className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
             {notices
               .filter((n) => n.highlight)
