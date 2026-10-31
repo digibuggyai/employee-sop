@@ -47,12 +47,14 @@ model User {
   photoUpdatedAt DateTime?
   photo          UserPhoto?
   weeklyReports  WeeklyReport[]
-  sopsWritten    Sop[]          @relation("SopAuthor")
-  vaultAccess    VaultAccess[]  @relation("VaultAccessUser")
-  vaultGrants    VaultAccess[]  @relation("VaultAccessGrantor")
+  sopsWritten    Sop[]           @relation("SopAuthor")
+  vaultAccess    VaultAccess[]   @relation("VaultAccessUser")
+  vaultGrants    VaultAccess[]   @relation("VaultAccessGrantor")
   vaultViews     VaultView[]
-  dayNotes       DayNote[]      @relation("DayNoteAuthor")
+  dayNotes       DayNote[]       @relation("DayNoteAuthor")
   notifications  Notification[]
+  reimbursements Reimbursement[] @relation("ReimbursementOwner")
+  reviewedClaims Reimbursement[] @relation("ReimbursementReviewer")
 
   attendance Attendance[]
 
@@ -302,4 +304,35 @@ model Notification {
   createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model Reimbursement {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation("ReimbursementOwner", fields: [userId], references: [id])
+  date         DateTime    @db.Date
+  amountPaise  Int
+  category     String
+  description  String
+  receiptName  String?
+  receiptType  String?
+  receiptData  Bytes?
+  status       ClaimStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?       @relation("ReimbursementReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  reviewNote   String?
+  paidAt       DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId, date])
+  @@index([status])
 }

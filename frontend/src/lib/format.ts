@@ -52,3 +52,6 @@ export const toTimeInput = (iso: string | null | undefined) =>
   iso
     ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" })
     : "";
+
+export const fmtRupees = (paise: number) =>
+  `₹${(paise / 100).toLocaleString("en-IN", { minimumFractionDigits: paise % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;

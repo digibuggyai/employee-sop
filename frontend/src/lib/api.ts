@@ -238,7 +238,25 @@ export type Correction = {
   current?: { place: Place; checkIn: string; checkOut: string | null; note: string | null; halfDay: boolean } | null;
 };
 
-export type PendingCounts = { leaves: number; corrections: number };
+export type PendingCounts = { leaves: number; corrections: number; reimbursements: number };
+
+export type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
+
+export type Reimbursement = {
+  id: string;
+  date: string;
+  amountPaise: number;
+  category: string;
+  description: string;
+  receiptName: string | null;
+  status: ClaimStatus;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  reviewedBy: { id: string; name: string } | null;
+  user?: { id: string; name: string; photoUpdatedAt?: string | null; designation?: string | null };
+};
 
 export type WeeklyReport = {
   id: string;

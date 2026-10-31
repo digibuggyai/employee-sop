@@ -1,4 +1,4 @@
-import type { DayRow, LeaveStatus, LiveStatus, Priority, TaskStatus } from "@/lib/api";
+import type { ClaimStatus, DayRow, LeaveStatus, LiveStatus, Priority, TaskStatus } from "@/lib/api";
 import { priorityLabels, taskStatusLabels } from "@/lib/api";
 import { Badge, type Tone } from "./ui";
 
@@ -74,4 +74,20 @@ export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {
 
 export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" | "green" }) {
   return <Badge tone={tone}>{children}</Badge>;
+}
+
+const claimStyles: Record<ClaimStatus, [string, Tone]> = {
+  PENDING: ["Waiting", "amber"],
+  APPROVED: ["Approved", "blue"],
+  REJECTED: ["Not approved", "red"],
+  PAID: ["Paid", "green"],
+};
+
+export function ClaimStatusBadge({ status }: { status: ClaimStatus }) {
+  const [label, tone] = claimStyles[status];
+  return (
+    <Badge tone={tone} dot>
+      {label}
+    </Badge>
+  );
 }

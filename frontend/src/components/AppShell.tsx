@@ -55,7 +55,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const tabItems = items.filter((i) => i.mobile);
   const moreItems = items.filter((i) => !i.mobile);
   const moreActive = moreItems.some((i) => isActive(i.href));
-  const totalPending = counts.leaves + counts.corrections;
+  const totalPending = counts.leaves + counts.corrections + counts.reimbursements;
 
   return (
     <div className="min-h-screen">

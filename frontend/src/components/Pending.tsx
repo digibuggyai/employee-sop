@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { api, isAdmin as hasAdminAccess, type PendingCounts } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
 
-const empty: PendingCounts = { leaves: 0, corrections: 0 };
+const empty: PendingCounts = { leaves: 0, corrections: 0, reimbursements: 0 };
 const PendingContext = createContext<{ counts: PendingCounts; refresh: () => void }>({ counts: empty, refresh: () => {} });
 
 export function PendingProvider({ children }: { children: React.ReactNode }) {

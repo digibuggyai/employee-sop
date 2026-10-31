@@ -14,6 +14,7 @@ import {
   Megaphone,
   ShieldCheck,
   Plane,
+  ReceiptIndianRupee,
   UserCog,
   Users,
   type LucideIcon,
@@ -26,7 +27,7 @@ export type NavItem = {
   icon: LucideIcon;
   group: string;
   mobile?: boolean;
-  badge?: "leaves" | "corrections";
+  badge?: "leaves" | "corrections" | "reimbursements";
   employeeOnly?: boolean;
   remoteOnly?: boolean;
 };
@@ -37,6 +38,7 @@ export const workspaceNav: NavItem[] = [
   { href: "/tasks", label: "Tasks", icon: ListTodo, group: "Work", mobile: true },
   { href: "/leave", label: "Leave & WFH", short: "Leave", icon: Plane, group: "Work", mobile: true, employeeOnly: true },
   { href: "/weekly-report", label: "Weekly report", short: "Report", icon: FileText, group: "Work", mobile: true, remoteOnly: true },
+  { href: "/reimbursements", label: "Reimbursements", short: "Expenses", icon: ReceiptIndianRupee, group: "Work" },
   { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company" },
   { href: "/directory", label: "Directory", icon: Users, group: "Company" },
   { href: "/sops", label: "SOPs", icon: BookOpen, group: "Company" },
@@ -49,6 +51,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/tasks", label: "Tasks", icon: ClipboardList, group: "Monitor", mobile: true },
   { href: "/admin/requests", label: "Requests", icon: Inbox, group: "Manage", mobile: true, badge: "corrections" },
   { href: "/admin/leaves", label: "Leaves", icon: CalendarOff, group: "Manage", mobile: true, badge: "leaves" },
+  { href: "/admin/reimbursements", label: "Reimbursements", short: "Expenses", icon: ReceiptIndianRupee, group: "Manage", badge: "reimbursements" },
   { href: "/admin/wfh-plans", label: "WFH plans", icon: House, group: "Manage" },
   { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage" },
   { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage" },

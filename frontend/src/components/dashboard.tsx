@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ListTodo, Plus } from "lucide-react";
-import { api, type MonthReport, type Task } from "@/lib/api";
-import { fmtDuration, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
+import { ListTodo, Plus, ReceiptIndianRupee } from "lucide-react";
+import { api, type MonthReport, type Reimbursement, type Task } from "@/lib/api";
+import { fmtDuration, fmtRupees, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
+import { sumPaise } from "@/lib/reimbursements";
 import { useNow } from "@/lib/useNow";
 import { currentWeek, weekProgress } from "@/lib/weeks";
 import { useAuth } from "./AuthProvider";
@@ -137,6 +138,50 @@ export function TodayTasks() {
             </li>
           ))}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+export function ReimbursementsCard() {
+  const [claims, setClaims] = useState<Reimbursement[] | null>(null);
+
+  useEffect(() => {
+    api<{ claims: Reimbursement[] }>("/api/reimbursements")
+      .then((d) => setClaims(d.claims))
+      .catch(() => setClaims([]));
+  }, []);
+
+  const waiting = (claims ?? []).filter((c) => c.status === "PENDING");
+  const toPay = (claims ?? []).filter((c) => c.status === "APPROVED");
+
+  return (
+    <Card title="Reimbursements" action={{ href: "/reimbursements", label: "All" }}>
+      {!claims ? (
+        <Skeleton className="h-20" />
+      ) : (
+        <div className="space-y-4">
+          {waiting.length || toPay.length ? (
+            <dl className="grid grid-cols-2 gap-3">
+              <div>
+                <dt className="text-xs text-zinc-500">Waiting ({waiting.length})</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-amber-600 tabular-nums">{fmtRupees(sumPaise(waiting))}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-zinc-500">To be paid ({toPay.length})</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-blue-700 tabular-nums">{fmtRupees(sumPaise(toPay))}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="flex items-start gap-2.5 text-[13px] text-zinc-500">
+              <ReceiptIndianRupee size={16} className="mt-0.5 shrink-0 text-zinc-400" />
+              Spent your own money on office work? Add it with the bill and get it back with your salary.
+            </p>
+          )}
+          <Link href="/reimbursements?new=1" className={`${buttonClass("secondary", "sm")} w-full`}>
+            <Plus size={14} /> Add expense
+          </Link>
+        </div>
       )}
     </Card>
   );

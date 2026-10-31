@@ -295,11 +295,12 @@ router.patch("/leaves/:id", async (req, res) => {
 });
 
 router.get("/pending", async (_req, res) => {
-  const [leaves, corrections] = await Promise.all([
+  const [leaves, corrections, reimbursements] = await Promise.all([
     prisma.leave.count({ where: { status: "PENDING" } }),
     prisma.attendanceCorrection.count({ where: { status: "PENDING" } }),
+    prisma.reimbursement.count({ where: { status: "PENDING" } }),
   ]);
-  res.json({ leaves, corrections });
+  res.json({ leaves, corrections, reimbursements });
 });
 
 router.put("/attendance/:userId/day", async (req, res) => {

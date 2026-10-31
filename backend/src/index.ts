@@ -8,6 +8,7 @@ import weeklyReportsRouter from "./routes/weeklyReports.js";
 import sopsRouter from "./routes/sops.js";
 import vaultRouter from "./routes/vault.js";
 import notificationsRouter from "./routes/notifications.js";
+import reimbursementsRouter from "./routes/reimbursements.js";
 import authRouter from "./routes/auth.js";
 import usersRouter from "./routes/users.js";
 import directoryRouter from "./routes/directory.js";
@@ -44,6 +45,7 @@ app.use("/api/weekly-reports", weeklyReportsRouter);
 app.use("/api/sops", sopsRouter);
 app.use("/api/vault", vaultRouter);
 app.use("/api/notifications", notificationsRouter);
+app.use("/api/reimbursements", reimbursementsRouter);
 
 app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {
   if (err.type === "entity.too.large") return res.status(413).json({ error: "That file is too large" });
