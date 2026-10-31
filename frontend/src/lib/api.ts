@@ -289,6 +289,15 @@ export type VaultItem = {
 
 export type VaultData = { columns: VaultColumn[]; items: VaultItem[] };
 
+export type TaskNote = {
+  id: string;
+  date: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: { id: string; name: string; photoUpdatedAt?: string | null };
+};
+
 export type AppNotification = {
   id: string;
   title: string;

@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { isAdmin, requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { firstName, notify } from "../lib/notify.js";
+import { TASK_NOTE_MIN_WORDS, wordCount } from "../lib/policy.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -47,6 +48,33 @@ const createSchema = z.object({
   ...taskFields,
   date: z.iso.date().optional(),
   userId: z.string().optional(),
+});
+
+export const taskNoteSelect = { id: true, date: true, text: true, createdAt: true, updatedAt: true } as const;
+
+router.get("/note", async (req, res) => {
+  const date = z.iso.date().catch(() => todayString()).parse(req.query.date);
+  const note = await prisma.dailyTaskNote.findUnique({
+    where: { userId_date: { userId: req.user!.id, date: toDbDate(date) } },
+    select: taskNoteSelect,
+  });
+  res.json({ date, minWords: TASK_NOTE_MIN_WORDS, note });
+});
+
+router.put("/note", async (req, res) => {
+  const parsed = z
+    .object({ text: z.string().trim().max(10000) })
+    .refine((v) => wordCount(v.text) >= TASK_NOTE_MIN_WORDS, `Write at least ${TASK_NOTE_MIN_WORDS} words`)
+    .safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const date = toDbDate(todayString());
+  const note = await prisma.dailyTaskNote.upsert({
+    where: { userId_date: { userId: req.user!.id, date } },
+    update: { text: parsed.data.text },
+    create: { userId: req.user!.id, date, text: parsed.data.text },
+    select: taskNoteSelect,
+  });
+  res.json(note);
 });
 
 router.post("/", async (req, res) => {

@@ -35,3 +35,7 @@ function toMinutes(h: number, m: number, ampm?: string): number | null {
   if (ampm === "am" && h === 12) h = 0;
   return h * 60 + m;
 }
+
+export const TASK_NOTE_MIN_WORDS = 50;
+
+export const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;

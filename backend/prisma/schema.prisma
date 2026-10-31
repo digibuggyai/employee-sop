@@ -53,6 +53,7 @@ model User {
   vaultViews     VaultView[]
   dayNotes       DayNote[]       @relation("DayNoteAuthor")
   notifications  Notification[]
+  taskNotes      DailyTaskNote[]
   lastSeenAt     DateTime?
   onlineUntil    DateTime?
   reimbursements Reimbursement[] @relation("ReimbursementOwner")
@@ -337,4 +338,17 @@ model Reimbursement {
 
   @@index([userId, date])
   @@index([status])
+}
+
+model DailyTaskNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime @db.Date
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
 }

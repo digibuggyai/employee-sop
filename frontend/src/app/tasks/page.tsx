@@ -8,6 +8,7 @@ import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import TaskForm from "@/components/TaskForm";
 import TaskList, { applyTaskChange } from "@/components/TaskList";
+import TaskNoteCard from "@/components/TaskNote";
 import { Button } from "@/components/form";
 import { Skeleton } from "@/components/ui";
 import { api, type Task } from "@/lib/api";
@@ -52,6 +53,8 @@ export default function TasksPage() {
           </>
         }
       />
+
+      <TaskNoteCard />
 
       {editing && (
         <Card title={editing === "new" ? "New task" : "Edit task"} className="mb-4 md:mb-6">

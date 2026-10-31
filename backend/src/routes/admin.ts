@@ -5,7 +5,7 @@ import { requireAdmin, requireAuth, requireSuperAdmin } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { dayStatus, dayTotals, isOffDay, mondayOf, monthReports, thisMonth } from "../lib/reports.js";
 import { dueDate, reportSelect } from "./weeklyReports.js";
-import { taskInclude } from "./tasks.js";
+import { taskInclude, taskNoteSelect } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { firstName, notify } from "../lib/notify.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
@@ -156,6 +156,19 @@ router.delete("/notes/:id", requireSuperAdmin, async (req, res) => {
   const { count } = await prisma.dayNote.deleteMany({ where: { id: String(req.params.id) } });
   if (!count) return res.status(404).json({ error: "Note not found" });
   res.json({ ok: true });
+});
+
+router.get("/task-notes", async (req, res) => {
+  const q = z.object({ userId: z.string().optional(), from: z.iso.date().optional(), to: z.iso.date().optional() }).catch({}).parse(req.query);
+  const notes = await prisma.dailyTaskNote.findMany({
+    where: {
+      ...(q.userId && { userId: q.userId }),
+      date: { gte: toDbDate(q.from ?? `${thisMonth()}-01`), lte: toDbDate(q.to ?? todayString()) },
+    },
+    select: { ...taskNoteSelect, user: { select: { id: true, name: true, photoUpdatedAt: true } } },
+    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+  });
+  res.json({ notes });
 });
 
 router.get("/tasks", async (req, res) => {

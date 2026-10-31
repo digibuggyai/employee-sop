@@ -26,7 +26,7 @@ export default function Avatar({ person, size = "md" }: { person: Person; size?:
   const face = <Face person={person} size={size} />;
   if (!online) return face;
   return (
-    <span className="relative inline-flex shrink-0" title="Online now">
+    <span className="relative inline-flex h-fit shrink-0" title="Online now">
       {face}
       <span aria-label="Online" className={`absolute right-0 bottom-0 rounded-full bg-emerald-500 ring-2 ring-white ${dotSizes[size]}`} />
     </span>
