@@ -80,7 +80,7 @@ export default function LeavePage() {
         </Card>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <div className="space-y-6">
           {data && (
             <Card title="Leave">
@@ -150,15 +150,15 @@ export default function LeavePage() {
           {data && data.leaves.length > 0 && (
             <ul className="divide-y divide-zinc-100">
               {data.leaves.map((l) => (
-                <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
-                  <div className="w-24 shrink-0">
+                <li key={l.id} className="flex items-start gap-3 px-4 py-3 sm:items-center sm:gap-4 sm:px-5">
+                  <div className="w-16 shrink-0 sm:w-24">
                     <p className="text-sm font-medium text-zinc-900">{fmtDate(l.date, false)}</p>
                     <p className="text-xs text-zinc-500">
-                      {new Date(l.date).toLocaleDateString("en-IN", { weekday: "long", timeZone: "UTC" })}
+                      {new Date(l.date).toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}
                     </p>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] text-zinc-700">
+                    <p className="line-clamp-2 text-[13px] wrap-break-word text-zinc-700">
                       {l.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
                       {l.reason ?? "No reason given"}
                     </p>
@@ -167,12 +167,14 @@ export default function LeavePage() {
                       {l.reviewedBy && ` · ${l.status === "REJECTED" ? "Rejected" : "Approved"} by ${l.reviewedBy.name}`}
                     </p>
                   </div>
-                  <LeaveStatusBadge status={l.status} />
-                  {l.status === "PENDING" && (
-                    <Button variant="ghost" size="sm" onClick={() => cancel(l)}>
-                      Withdraw
-                    </Button>
-                  )}
+                  <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
+                    <LeaveStatusBadge status={l.status} />
+                    {l.status === "PENDING" && (
+                      <Button variant="ghost" size="sm" onClick={() => cancel(l)}>
+                        Withdraw
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -208,7 +210,7 @@ function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skip
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="From">
           <input name="from" type="date" required min={todayIST()} value={form.from} onChange={update} className={inputClass} />
         </Field>

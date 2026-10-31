@@ -52,7 +52,7 @@ export default function DirectoryPage() {
         <EmptyState icon={Users} title={`No one matches "${query}"`} description="Try a first name, a team or a role." />
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((p) => (
           <article key={p.id} className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
             <div className="flex items-start gap-3">

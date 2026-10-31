@@ -102,23 +102,25 @@ function MyRequests({ requests, onChanged }: { requests: Correction[]; onChanged
         {requests.map((c) => {
           const [label, tone] = statusBadge[c.status];
           return (
-            <li key={c.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
-              <div className="w-20 shrink-0 text-sm font-medium text-zinc-900">{fmtDate(c.date, false)}</div>
+            <li key={c.id} className="flex items-start gap-3 px-4 py-3 sm:items-center sm:gap-4 sm:px-5">
+              <div className="w-14 shrink-0 text-sm font-medium text-zinc-900 sm:w-20">{fmtDate(c.date, false)}</div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-zinc-800">{describe(c)}</p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs wrap-break-word text-zinc-500">
                   {c.reason}
                   {c.reviewedBy && ` · ${c.status === "APPROVED" ? "Approved" : "Rejected"} by ${c.reviewedBy.name}`}
                 </p>
               </div>
-              <Badge tone={tone} dot>
-                {label}
-              </Badge>
-              {c.status === "PENDING" && (
-                <Button variant="ghost" size="sm" onClick={() => withdraw(c)}>
-                  Withdraw
-                </Button>
-              )}
+              <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <Badge tone={tone} dot>
+                  {label}
+                </Badge>
+                {c.status === "PENDING" && (
+                  <Button variant="ghost" size="sm" onClick={() => withdraw(c)}>
+                    Withdraw
+                  </Button>
+                )}
+              </div>
             </li>
           );
         })}

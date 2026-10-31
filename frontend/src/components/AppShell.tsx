@@ -195,6 +195,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </li>
           ))}
         </ul>
+        <div className="-mx-2 mt-2 space-y-0.5 border-t border-zinc-100 pt-2">
+          <Link
+            href="/profile"
+            onClick={() => setMoreOpen(false)}
+            className={`flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium ${
+              pathname === "/profile" ? "bg-zinc-100 text-zinc-900" : "text-zinc-700 hover:bg-zinc-50"
+            }`}
+          >
+            <Avatar person={user} size="xs" />
+            My profile
+          </Link>
+          <button
+            onClick={() => {
+              setMoreOpen(false);
+              logout();
+            }}
+            className="flex h-12 w-full items-center gap-3 rounded-lg px-3 text-[15px] font-medium text-red-700 hover:bg-red-50"
+          >
+            <LogOut size={18} />
+            Log out
+          </button>
+        </div>
       </Modal>
     </div>
   );

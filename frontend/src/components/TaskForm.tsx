@@ -79,7 +79,7 @@ export default function TaskForm({
       <Field label="Details">
         <textarea name="details" rows={2} value={form.details} onChange={update} className={inputClass} />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Priority">
           <select name="priority" value={form.priority} onChange={update} className={inputClass}>
             {Object.entries(priorityLabels).map(([v, l]) => (

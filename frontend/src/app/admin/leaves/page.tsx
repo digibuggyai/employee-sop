@@ -116,22 +116,22 @@ export default function AdminLeavesPage() {
         ) : (
           <ul className="divide-y divide-zinc-100">
             {pending.map((l) => (
-              <li key={l.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5">
+              <li key={l.id} className="flex flex-wrap items-start gap-x-3 gap-y-3 px-4 py-3.5 sm:flex-nowrap sm:items-center sm:gap-x-4 sm:px-5">
                 <Avatar person={l.user ?? { name: "?" }} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-zinc-900">
                     {l.user?.name} <span className="font-normal text-zinc-500">· {fullDay(l.date)}</span>
                   </p>
-                  <p className="text-[13px] text-zinc-600">
+                  <p className="text-[13px] wrap-break-word text-zinc-600">
                     {l.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
                     {l.reason}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => review(l, "REJECTED")}>
+                <div className="flex w-full gap-2 pl-11 sm:w-auto sm:pl-0">
+                  <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={() => review(l, "REJECTED")}>
                     <X size={14} /> Reject
                   </Button>
-                  <Button size="sm" onClick={() => review(l, "APPROVED")}>
+                  <Button size="sm" className="flex-1 sm:flex-none" onClick={() => review(l, "APPROVED")}>
                     <Check size={14} /> Approve
                   </Button>
                 </div>
@@ -272,7 +272,7 @@ function RecordLeaveForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Field label="Employee">
           <select name="userId" required value={form.userId} onChange={update} className={inputClass}>
             <option value="">Choose an employee</option>

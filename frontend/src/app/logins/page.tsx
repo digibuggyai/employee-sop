@@ -241,14 +241,14 @@ function Cell({ item, column, compact = false }: { item: VaultItem; column: Vaul
 
   const text = column.secret ? (secret ?? "••••••••") : String(value);
   return (
-    <span className="group inline-flex max-w-full items-center gap-1">
+    <span className={`group items-center gap-1 ${compact ? "flex w-full" : "inline-flex max-w-full"}`}>
       {!column.secret && looksLikeLink(text) ? (
-        <a href={hrefOf(text)} target="_blank" rel="noreferrer" className={`inline-flex min-w-0 items-center gap-1 text-brand-700 hover:underline ${compact ? "" : "max-w-56"}`}>
+        <a href={hrefOf(text)} target="_blank" rel="noreferrer" className={`inline-flex min-w-0 items-center gap-1 text-brand-700 hover:underline ${compact ? "flex-1" : "max-w-56"}`}>
           <span className="truncate">{text.replace(/^https?:\/\/(www\.)?/i, "")}</span>
           <ExternalLink size={12} className="shrink-0" />
         </a>
       ) : (
-        <span className={`truncate ${column.secret ? "font-mono" : ""} ${compact ? "" : "max-w-56"}`} title={column.secret ? undefined : text}>
+        <span className={`truncate ${column.secret ? "font-mono" : ""} ${compact ? "min-w-0 flex-1" : "max-w-56"}`} title={column.secret ? undefined : text}>
           {text}
         </span>
       )}

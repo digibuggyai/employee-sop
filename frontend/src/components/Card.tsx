@@ -32,7 +32,7 @@ export default function Card({
             {action && (
               <Link
                 href={action.href}
-                className="inline-flex items-center gap-0.5 text-[13px] font-medium text-zinc-500 transition hover:text-zinc-900"
+                className="-my-2.5 -mr-2 inline-flex h-10 items-center gap-0.5 rounded-lg px-2 text-[13px] font-medium text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900"
               >
                 {action.label} <ChevronRight size={14} />
               </Link>

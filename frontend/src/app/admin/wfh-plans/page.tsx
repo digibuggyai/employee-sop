@@ -101,7 +101,7 @@ export default function WfhPlansPage() {
                     </div>
                   </div>
                   {(r.plan || r.report) && (
-                    <div className="mt-3 grid gap-3 sm:ml-11 md:grid-cols-2">
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:ml-11 md:grid-cols-2">
                       <Note title="Plan" text={r.plan} />
                       <Note title="Report" text={r.report} empty={r.checkOut ? "No report" : "Still working"} />
                     </div>

@@ -136,7 +136,7 @@ export default function EmployeesAdminPage() {
               </IconButton>
             </div>
           </div>
-          <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+          <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
             <dt className="text-amber-800">Email</dt>
             <dd className="font-medium break-all text-zinc-900">{share.email}</dd>
             <dt className="text-amber-800">Temporary password</dt>
@@ -206,9 +206,13 @@ function PeopleList({
             <span className="w-5 shrink-0 text-right text-xs text-zinc-400 tabular-nums">{i + 1}</span>
             <Avatar person={u} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 truncate text-sm font-medium text-zinc-900">
-                {u.name}
-                {u.role !== "EMPLOYEE" && <Badge tone="brand">{roleLabels[u.role]}</Badge>}
+              <p className="flex min-w-0 items-center gap-2 text-sm font-medium text-zinc-900">
+                <span className="truncate">{u.name}</span>
+                {u.role !== "EMPLOYEE" && (
+                  <span className="shrink-0">
+                    <Badge tone="brand">{roleLabels[u.role]}</Badge>
+                  </span>
+                )}
               </p>
               <p className="truncate text-xs text-zinc-500">
                 {u.designation ?? employmentLabels[u.employmentType]}
