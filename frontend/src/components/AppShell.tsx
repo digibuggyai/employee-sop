@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
-import { DotsThreeCircle, SignOut } from "@phosphor-icons/react";
-import { isAdmin as hasAdminAccess } from "@/lib/api";
+import { CaretDown, DotsThreeCircle, Key, SignOut, UserCircle } from "@phosphor-icons/react";
+import { isAdmin as hasAdminAccess, type User } from "@/lib/api";
 import { adminNav, publicPaths, workspaceNav, type NavItem } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
 import { usePending } from "./Pending";
@@ -63,9 +63,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-zinc-200 bg-white md:flex">
-        <div className="flex h-14 items-center justify-between pr-3 pl-4">
+        <div className="flex h-14 items-center px-4">
           <Logo />
-          <NotificationBell />
         </div>
 
         {isAdmin && (
@@ -91,32 +90,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="border-t border-zinc-200 p-3">
-          <div className="flex items-center gap-1">
-            <Link
-              href="/profile"
-              className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1.5 transition hover:bg-zinc-100 ${
-                pathname === "/profile" ? "bg-zinc-100" : ""
-              }`}
-            >
-              <Avatar person={user} size="sm" />
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium text-zinc-900">{user.name}</p>
-                <p className="truncate text-xs text-zinc-500">{user.email}</p>
-              </div>
-            </Link>
-            <button
-              onClick={logout}
-              aria-label="Log out"
-              title="Log out"
-              className="grid size-8 shrink-0 place-items-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
-            >
-              <SignOut size={17} />
-            </button>
-          </div>
-          <div className="mt-2 px-1.5">
-            <BackendStatus />
-          </div>
+        <div className="border-t border-zinc-200 px-4.5 py-3">
+          <BackendStatus />
         </div>
       </aside>
 
@@ -132,6 +107,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="pb-24 md:pb-0 md:pl-60">
+        <div className="sticky top-0 z-10 hidden h-14 items-center justify-end gap-2 border-b border-zinc-200 bg-white/85 px-8 backdrop-blur md:flex">
+          <NotificationBell />
+          <ProfileMenu user={user} active={pathname === "/profile"} onLogout={logout} />
+        </div>
         <div className="mx-auto max-w-6xl px-4 pt-4 pb-6 md:px-8 md:py-8">{children}</div>
       </main>
 
@@ -249,6 +228,68 @@ function Logo({ compact = false }: { compact?: boolean }) {
         <BrandLogo className="h-[18px] w-auto max-w-none shrink-0 md:h-5" priority />
       )}
     </Link>
+  );
+}
+
+function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const item = "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-100";
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`flex items-center gap-2.5 rounded-full py-1 pr-2.5 pl-1 transition hover:bg-zinc-100 ${open || active ? "bg-zinc-100" : ""}`}
+      >
+        <Avatar person={user} size="sm" />
+        <span className="max-w-40 truncate text-[13px] font-medium text-zinc-900">{user.name}</span>
+        <CaretDown size={14} className={`text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div role="menu" className="absolute top-full right-0 z-30 mt-2 w-64 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg">
+          <div className="flex items-center gap-2.5 px-2.5 py-2">
+            <Avatar person={user} />
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold text-zinc-900">{user.name}</p>
+              <p className="truncate text-xs text-zinc-500">{user.email}</p>
+            </div>
+          </div>
+          <div className="my-1 border-t border-zinc-100" />
+          <Link href="/profile" role="menuitem" onClick={() => setOpen(false)} className={item}>
+            <UserCircle size={17} className="text-zinc-500" /> My profile
+          </Link>
+          <Link href="/change-password" role="menuitem" onClick={() => setOpen(false)} className={item}>
+            <Key size={17} className="text-zinc-500" /> Change password
+          </Link>
+          <div className="my-1 border-t border-zinc-100" />
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+            className={`${item} text-red-700 hover:bg-red-50`}
+          >
+            <SignOut size={17} /> Log out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
