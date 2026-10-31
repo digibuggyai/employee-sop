@@ -247,7 +247,8 @@ function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; 
     };
   }, [open]);
 
-  const item = "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-100";
+  const base = "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium";
+  const item = `${base} text-zinc-700 hover:bg-zinc-100`;
   return (
     <div ref={ref} className="relative">
       <button
@@ -283,7 +284,7 @@ function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; 
               setOpen(false);
               onLogout();
             }}
-            className={`${item} text-red-700 hover:bg-red-50`}
+            className={`${base} text-red-700 hover:bg-red-50`}
           >
             <SignOut size={17} /> Log out
           </button>
