@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Ellipsis, LoaderCircle, LogOut } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
+import { DotsThreeCircle, SignOut } from "@phosphor-icons/react";
 import { isAdmin as hasAdminAccess } from "@/lib/api";
 import { adminNav, publicPaths, workspaceNav, type NavItem } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
@@ -55,6 +56,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const tabItems = items.filter((i) => i.mobile);
   const moreItems = items.filter((i) => !i.mobile);
   const moreActive = moreItems.some((i) => isActive(i.href));
+  const tabCount = tabItems.length + (moreItems.length ? 1 : 0);
+  const tabText = tabCount > 5 ? "text-[10px] tracking-[-0.02em] min-[400px]:text-[11px] min-[400px]:tracking-normal" : "text-[11px]";
   const totalPending = counts.leaves + counts.corrections + counts.reimbursements;
 
   return (
@@ -108,7 +111,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               title="Log out"
               className="grid size-8 shrink-0 place-items-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
             >
-              <LogOut size={16} />
+              <SignOut size={17} />
             </button>
           </div>
           <div className="mt-2 px-1.5">
@@ -117,9 +120,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-zinc-200 bg-white/90 px-4 backdrop-blur md:hidden">
-        <Logo />
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-zinc-200 bg-white/90 pr-3 pl-4 backdrop-blur md:hidden">
+        <Logo compact={isAdmin} />
+        <div className="flex min-w-0 items-center gap-1.5">
           {isAdmin && <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact />}
           <NotificationBell />
           <Link href="/profile" aria-label="Profile">
@@ -138,40 +141,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         style={{ gridTemplateColumns: `repeat(${tabItems.length + (moreItems.length ? 1 : 0)}, minmax(0, 1fr))` }}
       >
         {tabItems.map((item) => {
-            const { href, label, short, icon: Icon } = item;
-            const active = isActive(href);
-            const count = badgeOf(item);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`relative flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] font-medium ${
-                  active ? "text-brand-700" : "text-zinc-500"
-                }`}
-              >
-                {active && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-brand-700" />}
-                <span className="relative">
-                  <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-                  {count > 0 && (
-                    <span className="absolute -top-1.5 -right-2.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums">
-                      {count}
-                    </span>
-                  )}
-                </span>
-                {short ?? label}
-              </Link>
-            );
-          })}
+          const { href, label, short, icon: Icon } = item;
+          const active = isActive(href);
+          const count = badgeOf(item);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-w-0 flex-col items-center gap-0.5 pt-2 pb-1.5 ${tabText} ${active ? "font-semibold text-brand-700" : "font-medium text-zinc-500"}`}
+            >
+              <TabIcon active={active} count={count}>
+                <Icon size={22} weight={active ? "fill" : "regular"} />
+              </TabIcon>
+              <span className="max-w-full truncate">{short ?? label}</span>
+            </Link>
+          );
+        })}
         {moreItems.length > 0 && (
           <button
             onClick={() => setMoreOpen(true)}
-            className={`relative flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] font-medium ${
-              moreActive ? "text-brand-700" : "text-zinc-500"
-            }`}
+            className={`flex min-w-0 flex-col items-center gap-0.5 pt-2 pb-1.5 ${tabText} ${moreActive ? "font-semibold text-brand-700" : "font-medium text-zinc-500"}`}
           >
-            {moreActive && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-brand-700" />}
-            <Ellipsis size={20} strokeWidth={moreActive ? 2.25 : 1.75} />
+            <TabIcon active={moreActive} count={0}>
+              <DotsThreeCircle size={22} weight={moreActive ? "fill" : "regular"} />
+            </TabIcon>
             More
           </button>
         )}
@@ -189,7 +183,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   isActive(href) ? "bg-zinc-100 text-zinc-900" : "text-zinc-700 hover:bg-zinc-50"
                 }`}
               >
-                <Icon size={18} className={isActive(href) ? "text-brand-700" : "text-zinc-400"} />
+                <Icon size={20} weight={isActive(href) ? "fill" : "regular"} className={isActive(href) ? "text-brand-700" : "text-zinc-500"} />
                 {label}
               </Link>
             </li>
@@ -213,7 +207,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             }}
             className="flex h-12 w-full items-center gap-3 rounded-lg px-3 text-[15px] font-medium text-red-700 hover:bg-red-50"
           >
-            <LogOut size={18} />
+            <SignOut size={20} />
             Log out
           </button>
         </div>
@@ -232,7 +226,7 @@ function SideLink({ item, active, count }: { item: NavItem; active: boolean; cou
         active ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
       }`}
     >
-      <Icon size={16} className={active ? "text-brand-700" : "text-zinc-400"} />
+      <Icon size={17} weight={active ? "fill" : "regular"} className={active ? "text-brand-700" : "text-zinc-400"} />
       {item.label}
       {count > 0 && (
         <span
@@ -246,17 +240,34 @@ function SideLink({ item, active, count }: { item: NavItem; active: boolean; cou
   );
 }
 
-function Logo() {
+function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href="/" aria-label="Digibuggy, go to dashboard" className="flex items-center">
-      <BrandLogo className="h-[18px] w-auto md:h-5" priority />
+    <Link href="/" aria-label="Digibuggy, go to dashboard" className="flex shrink-0 items-center">
+      {compact ? (
+        <BrandLogo variant="mark" className="h-6 w-auto shrink-0" priority />
+      ) : (
+        <BrandLogo className="h-[18px] w-auto max-w-none shrink-0 md:h-5" priority />
+      )}
     </Link>
+  );
+}
+
+function TabIcon({ active, count, children }: { active: boolean; count: number; children: React.ReactNode }) {
+  return (
+    <span className={`relative grid h-7 w-12 max-w-full place-items-center rounded-full transition-colors ${active ? "bg-brand-50" : ""}`}>
+      {children}
+      {count > 0 && (
+        <span className="absolute -top-1 right-2 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums ring-2 ring-white">
+          {count}
+        </span>
+      )}
+    </span>
   );
 }
 
 function AreaSwitch({ inAdmin, pending, compact = false }: { inAdmin: boolean; pending: number; compact?: boolean }) {
   const seg = (active: boolean) =>
-    `flex-1 rounded-md text-center font-medium transition ${compact ? "px-2.5 py-1 text-xs" : "py-1 text-[13px]"} ${
+    `flex-1 rounded-md text-center font-medium whitespace-nowrap transition ${compact ? "px-2.5 py-1.5 text-xs" : "py-1 text-[13px]"} ${
       active ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-500 hover:text-zinc-800"
     }`;
   return (
@@ -267,7 +278,10 @@ function AreaSwitch({ inAdmin, pending, compact = false }: { inAdmin: boolean; p
       <Link href="/admin" className={`relative ${seg(inAdmin)}`} aria-current={inAdmin ? "page" : undefined}>
         Admin
         {pending > 0 && !inAdmin && (
-          <span aria-label={`${pending} waiting for review`} className="absolute top-1 right-1.5 size-2 rounded-full bg-red-600" />
+          <span
+            aria-label={`${pending} waiting for review`}
+            className={`absolute rounded-full bg-red-600 ring-2 ring-zinc-100 ${compact ? "-top-0.5 -right-0.5 size-2.5" : "top-1 right-1.5 size-2"}`}
+          />
         )}
       </Link>
     </div>

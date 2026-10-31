@@ -1,30 +1,30 @@
 import {
-  BookOpen,
+  AddressBook,
+  AirplaneTilt,
+  BookOpenText,
   CalendarCheck,
-  CalendarOff,
-  CalendarRange,
-  ClipboardList,
+  CalendarDots,
+  CalendarX,
+  ChartPieSlice,
+  ClipboardText,
   FileText,
   House,
-  Gauge,
-  Inbox,
-  KeyRound,
-  LayoutDashboard,
-  ListTodo,
+  HouseLine,
+  Key,
+  ListChecks,
   Megaphone,
+  Receipt,
   ShieldCheck,
-  Plane,
-  ReceiptIndianRupee,
-  UserCog,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+  Tray,
+  UserGear,
+  type Icon,
+} from "@phosphor-icons/react";
 
 export type NavItem = {
   href: string;
   label: string;
   short?: string;
-  icon: LucideIcon;
+  icon: Icon;
   group: string;
   mobile?: boolean;
   badge?: "leaves" | "corrections" | "reimbursements";
@@ -33,28 +33,28 @@ export type NavItem = {
 };
 
 export const workspaceNav: NavItem[] = [
-  { href: "/", label: "Dashboard", short: "Home", icon: LayoutDashboard, group: "Work", mobile: true },
+  { href: "/", label: "Dashboard", short: "Home", icon: House, group: "Work", mobile: true },
   { href: "/attendance", label: "Attendance", icon: CalendarCheck, group: "Work", mobile: true, employeeOnly: true },
-  { href: "/tasks", label: "Tasks", icon: ListTodo, group: "Work", mobile: true },
-  { href: "/leave", label: "Leave & WFH", short: "Leave", icon: Plane, group: "Work", mobile: true, employeeOnly: true },
+  { href: "/tasks", label: "Tasks", icon: ListChecks, group: "Work", mobile: true },
+  { href: "/leave", label: "Leave & WFH", short: "Leave", icon: AirplaneTilt, group: "Work", mobile: true, employeeOnly: true },
   { href: "/weekly-report", label: "Weekly report", short: "Report", icon: FileText, group: "Work", mobile: true, remoteOnly: true },
-  { href: "/reimbursements", label: "Reimbursements", short: "Expenses", icon: ReceiptIndianRupee, group: "Work" },
+  { href: "/reimbursements", label: "Reimbursements", short: "Expenses", icon: Receipt, group: "Work" },
   { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company" },
-  { href: "/directory", label: "Directory", icon: Users, group: "Company" },
-  { href: "/sops", label: "SOPs", icon: BookOpen, group: "Company" },
-  { href: "/logins", label: "Logins", icon: KeyRound, group: "Company" },
+  { href: "/directory", label: "Directory", icon: AddressBook, group: "Company" },
+  { href: "/sops", label: "SOPs", icon: BookOpenText, group: "Company" },
+  { href: "/logins", label: "Logins", icon: Key, group: "Company" },
 ];
 
 export const adminNav: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: Gauge, group: "Monitor", mobile: true },
-  { href: "/admin/attendance", label: "Attendance", icon: CalendarRange, group: "Monitor", mobile: true },
-  { href: "/admin/tasks", label: "Tasks", icon: ClipboardList, group: "Monitor", mobile: true },
-  { href: "/admin/requests", label: "Requests", icon: Inbox, group: "Manage", mobile: true, badge: "corrections" },
-  { href: "/admin/leaves", label: "Leaves", icon: CalendarOff, group: "Manage", mobile: true, badge: "leaves" },
-  { href: "/admin/reimbursements", label: "Reimbursements", short: "Expenses", icon: ReceiptIndianRupee, group: "Manage", badge: "reimbursements" },
-  { href: "/admin/wfh-plans", label: "WFH plans", icon: House, group: "Manage" },
+  { href: "/admin", label: "Overview", icon: ChartPieSlice, group: "Monitor", mobile: true },
+  { href: "/admin/attendance", label: "Attendance", icon: CalendarDots, group: "Monitor", mobile: true },
+  { href: "/admin/tasks", label: "Tasks", icon: ClipboardText, group: "Monitor", mobile: true },
+  { href: "/admin/requests", label: "Requests", icon: Tray, group: "Manage", mobile: true, badge: "corrections" },
+  { href: "/admin/leaves", label: "Leaves", icon: CalendarX, group: "Manage", mobile: true, badge: "leaves" },
+  { href: "/admin/reimbursements", label: "Reimbursements", short: "Expenses", icon: Receipt, group: "Manage", badge: "reimbursements" },
+  { href: "/admin/wfh-plans", label: "WFH plans", icon: HouseLine, group: "Manage" },
   { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage" },
-  { href: "/admin/employees", label: "Employees", short: "People", icon: UserCog, group: "Manage" },
+  { href: "/admin/employees", label: "Employees", short: "People", icon: UserGear, group: "Manage" },
   { href: "/admin/access", label: "Roles & access", icon: ShieldCheck, group: "Manage" },
 ];
 

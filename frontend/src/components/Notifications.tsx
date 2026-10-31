@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellSlash } from "@phosphor-icons/react";
 import { api, type AppNotification } from "@/lib/api";
 import { useAuth } from "./AuthProvider";
 import Modal from "./Modal";
@@ -127,7 +127,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       >
         {items.length === 0 ? (
           <div className="flex flex-col items-center py-8 text-center">
-            <BellOff size={22} className="text-zinc-300" />
+            <BellSlash size={24} className="text-zinc-300" />
             <p className="mt-2 text-sm text-zinc-500">Nothing yet. Notes, tasks and replies to your requests show up here.</p>
           </div>
         ) : (
@@ -184,11 +184,11 @@ export function NotificationBell() {
       onClick={openPanel}
       aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
       title="Notifications"
-      className="relative grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
+      className="relative grid size-10 shrink-0 place-items-center rounded-full text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
     >
-      <Bell size={18} />
+      <Bell size={22} weight={unread > 0 ? "fill" : "regular"} />
       {unread > 0 && (
-        <span className="absolute top-0.5 right-0 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums">
+        <span className="absolute top-1 right-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums ring-2 ring-white">
           {unread > 9 ? "9+" : unread}
         </span>
       )}
