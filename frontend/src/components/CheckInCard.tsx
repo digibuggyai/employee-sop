@@ -69,14 +69,20 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
   async function checkOut(halfDay: boolean) {
     if (needsNotes) return setReportFor({ halfDay });
-    if (halfDay) {
-      const ok = await confirm({
-        title: "Leave as a half day?",
-        description: "You'll be checked out now and today will count as a half day.",
-        confirmLabel: "Half day exit",
-      });
-      if (!ok) return;
-    }
+    const ok = await confirm(
+      halfDay
+        ? {
+            title: "Leave as a half day?",
+            description: "You'll be checked out now and today will count as a half day.",
+            confirmLabel: "Half day exit",
+          }
+        : {
+            title: "Check out for today?",
+            description: `This ends your day at ${new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })}. Only check out when you're done working.`,
+            confirmLabel: "Check out",
+          },
+    );
+    if (!ok) return;
     act("check-out", halfDay ? { halfDay: true } : undefined);
   }
 
