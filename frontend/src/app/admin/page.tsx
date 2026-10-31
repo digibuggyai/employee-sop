@@ -7,6 +7,7 @@ import Avatar from "@/components/Avatar";
 import { LiveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import PageHeader from "@/components/PageHeader";
+import { lastSeenText, usePresence } from "@/components/Presence";
 import { inputBase } from "@/components/form";
 import { EmptyState, Skeleton, table } from "@/components/ui";
 import { api, type LiveStatus, type OverviewRow } from "@/lib/api";
@@ -71,6 +72,8 @@ export default function AdminOverviewPage() {
         <Kpi label="On leave" value={rows ? count("ON_LEAVE") : null} />
         <Kpi label="Hours logged" value={rows ? fmtDuration(totalWorked) : null} hint="Across everyone" />
       </div>
+
+      <OnlineNow />
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
@@ -193,5 +196,36 @@ function Kpi({ label, value, hint }: { label: string; value: React.ReactNode | n
       )}
       {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
     </div>
+  );
+}
+
+function OnlineNow() {
+  const { people } = usePresence();
+  const online = people.filter((p) => p.online);
+  const earlier = people.filter((p) => !p.online).slice(0, 8);
+  return (
+    <Card
+      title="On the site now"
+      description={online.length ? `${online.length} with the site open on their screen` : "No one else has the site open right now"}
+      className="mb-6"
+    >
+      {online.length > 0 && (
+        <ul className="flex flex-wrap gap-2">
+          {online.map((p) => (
+            <li key={p.id} className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 py-1 pr-3 pl-1">
+              <Avatar person={p} size="sm" />
+              <span className="text-[13px] font-medium text-zinc-900">{p.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {earlier.length > 0 && (
+        <p className={`text-xs text-zinc-500 ${online.length ? "mt-3" : ""}`}>
+          <span className="font-medium text-zinc-600">Seen recently: </span>
+          {earlier.map((p) => `${p.name.split(" ")[0]} ${lastSeenText(p.lastSeenAt)}`).join(" · ")}
+        </p>
+      )}
+      {!online.length && !earlier.length && <p className="text-[13px] text-zinc-500">People show up here while they have the site open.</p>}
+    </Card>
   );
 }

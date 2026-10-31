@@ -53,6 +53,8 @@ model User {
   vaultViews     VaultView[]
   dayNotes       DayNote[]       @relation("DayNoteAuthor")
   notifications  Notification[]
+  lastSeenAt     DateTime?
+  onlineUntil    DateTime?
   reimbursements Reimbursement[] @relation("ReimbursementOwner")
   reviewedClaims Reimbursement[] @relation("ReimbursementReviewer")
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Person } from "@/lib/api";
 import { photoUrl } from "@/lib/image";
+import { usePresence } from "./Presence";
 
 const palettes = [
   "bg-rose-100 text-rose-800",
@@ -15,9 +16,24 @@ const palettes = [
   "bg-indigo-100 text-indigo-800",
 ];
 
+const dotSizes = { xs: "size-2", sm: "size-2.5", md: "size-2.5", lg: "size-3.5", xl: "size-5 ring-[3px]" };
+
 const sizes = { xs: "size-6 text-[10px]", sm: "size-8 text-xs", md: "size-9 text-[13px]", lg: "size-14 text-lg", xl: "size-24 text-3xl" };
 
 export default function Avatar({ person, size = "md" }: { person: Person; size?: keyof typeof sizes }) {
+  const { online: onlineIds } = usePresence();
+  const online = !!person.id && onlineIds.has(person.id);
+  const face = <Face person={person} size={size} />;
+  if (!online) return face;
+  return (
+    <span className="relative inline-flex shrink-0" title="Online now">
+      {face}
+      <span aria-label="Online" className={`absolute right-0 bottom-0 rounded-full bg-emerald-500 ring-2 ring-white ${dotSizes[size]}`} />
+    </span>
+  );
+}
+
+function Face({ person, size }: { person: Person; size: keyof typeof sizes }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const src = person.id && person.photoUpdatedAt ? photoUrl(person.id, person.photoUpdatedAt) : null;
 
