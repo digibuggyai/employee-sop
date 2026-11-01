@@ -91,6 +91,7 @@ export default function MonthSheet({
       ]),
       [],
       ["Total worked", fmtDuration(summary.workedMs), "Extra hours (beyond the shift and extra days)", fmtDuration(summary.extraMs), "Extra days", extraDays],
+      ["Extra in-office", fmtDuration(extraOffice.ms), "Extra WFH", fmtDuration(extraHome.ms)],
       ["Days present", summary.present, "In-office", summary.inOffice, "WFH", summary.remote ? `${summary.wfh} (remote)` : `${summary.wfh} of ${summary.wfhAllowance}`],
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
@@ -106,13 +107,29 @@ export default function MonthSheet({
   const overWfh = !summary.remote && summary.wfh > summary.wfhAllowance;
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
   const extraDays = days.filter((d) => d.extraDay).length;
-  const beyondShift = days.filter((d) => d.extraMin && !d.extraDay).length;
-  const extraHint = [
-    extraDays && `${extraDays} extra day${extraDays === 1 ? "" : "s"}`,
-    beyondShift && `${beyondShift} day${beyondShift === 1 ? "" : "s"} beyond the shift`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const extraBy = (place: "IN_OFFICE" | "WFH") => {
+    const list = days.filter((d) => d.extraMin && d.place === place);
+    const ms = list.reduce((sum, d) => sum + d.extraMin! * 60000, 0);
+    const extra = list.filter((d) => d.extraDay).length;
+    const beyond = list.length - extra;
+    const detail = [beyond && `${beyond} day${beyond === 1 ? "" : "s"}`, extra && `${extra} extra day${extra === 1 ? "" : "s"}`]
+      .filter(Boolean)
+      .join(", ");
+    return { ms, detail };
+  };
+  const extraOffice = extraBy("IN_OFFICE");
+  const extraHome = extraBy("WFH");
+  const extraRow = (label: string, e: { ms: number; detail: string }) => (
+    <span className="block">
+      <span className="flex items-baseline justify-between gap-2">
+        <span>{label}</span>
+        <span className={`font-medium tabular-nums ${e.ms ? "text-emerald-700" : "text-zinc-400"}`}>
+          {e.ms ? `+${fmtDuration(e.ms)}` : "0h 0m"}
+        </span>
+      </span>
+      {e.detail && <span className="block text-[11px] text-zinc-400">{e.detail}</span>}
+    </span>
+  );
 
   const thisWeek = currentWeek(weeks, today);
   const weekMs = thisWeek ? thisWeek.workedMs : weeks.reduce((sum, w) => sum + w.workedMs, 0) / (weeks.length || 1);
@@ -177,7 +194,12 @@ export default function MonthSheet({
         <Stat
           label="Extra hours"
           value={summary.extraMs ? `+${fmtDuration(summary.extraMs)}` : "0h 0m"}
-          hint={extraHint || "Time beyond your shift and weekend work"}
+          hint={
+            <span className="mt-1.5 block space-y-0.5">
+              {extraRow("In-office", extraOffice)}
+              {extraRow("WFH", extraHome)}
+            </span>
+          }
           emphasis={summary.extraMs ? "positive" : undefined}
         />
         <Stat

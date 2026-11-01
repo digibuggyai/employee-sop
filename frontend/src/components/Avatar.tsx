@@ -39,7 +39,6 @@ function Face({ person, size }: { person: Person; size: keyof typeof sizes }) {
 
   if (src && failedSrc !== src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt=""
