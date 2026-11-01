@@ -32,6 +32,11 @@ function lateTag(d: DayRow): { text: string; tone: "zinc" | "amber" | "green" } 
   return { text, tone: d.halfDay ? "amber" : "zinc" };
 }
 
+function extraTag(d: DayRow): string | null {
+  if (d.extraDay) return `Extra day${d.extraMin ? ` · +${mins(d.extraMin)}` : ""}`;
+  return d.extraMin ? `+${mins(d.extraMin)} extra` : null;
+}
+
 function dayNotes(d: DayRow): string[] {
   const notes: string[] = [];
   if (d.note) notes.push(d.note);
@@ -39,7 +44,8 @@ function dayNotes(d: DayRow): string[] {
   if (d.halfDay) notes.push(halfDayLabel[d.halfDay]);
   const late = lateTag(d);
   if (late) notes.push(late.text);
-  if (d.extraMin) notes.push(`+${mins(d.extraMin)} extra`);
+  const extra = extraTag(d);
+  if (extra) notes.push(extra);
   if (d.plan) notes.push(`Plan: ${d.plan}`);
   if (d.report) notes.push(`Report: ${d.report}`);
   d.dayNotes?.forEach((n) => notes.push(`Note from ${n.author}: ${n.text}`));
@@ -84,7 +90,7 @@ export default function MonthSheet({
         dayNotes(d).join("; "),
       ]),
       [],
-      ["Total worked", fmtDuration(summary.workedMs), "Extra hours (beyond the shift)", fmtDuration(summary.extraMs)],
+      ["Total worked", fmtDuration(summary.workedMs), "Extra hours (beyond the shift and extra days)", fmtDuration(summary.extraMs), "Extra days", extraDays],
       ["Days present", summary.present, "In-office", summary.inOffice, "WFH", summary.remote ? `${summary.wfh} (remote)` : `${summary.wfh} of ${summary.wfhAllowance}`],
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
@@ -99,7 +105,14 @@ export default function MonthSheet({
   const notMadeUp = summary.leaves - summary.leavesCompensated;
   const overWfh = !summary.remote && summary.wfh > summary.wfhAllowance;
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
-  const extraDays = days.filter((d) => d.extraMin).length;
+  const extraDays = days.filter((d) => d.extraDay).length;
+  const beyondShift = days.filter((d) => d.extraMin && !d.extraDay).length;
+  const extraHint = [
+    extraDays && `${extraDays} extra day${extraDays === 1 ? "" : "s"}`,
+    beyondShift && `${beyondShift} day${beyondShift === 1 ? "" : "s"} beyond the shift`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const thisWeek = currentWeek(weeks, today);
   const weekMs = thisWeek ? thisWeek.workedMs : weeks.reduce((sum, w) => sum + w.workedMs, 0) / (weeks.length || 1);
@@ -164,7 +177,7 @@ export default function MonthSheet({
         <Stat
           label="Extra hours"
           value={summary.extraMs ? `+${fmtDuration(summary.extraMs)}` : "0h 0m"}
-          hint={extraDays ? `On ${extraDays} day${extraDays === 1 ? "" : "s"}, beyond the shift` : "Time beyond your shift shows here"}
+          hint={extraHint || "Time beyond your shift and weekend work"}
           emphasis={summary.extraMs ? "positive" : undefined}
         />
         <Stat
@@ -222,13 +235,13 @@ export default function MonthSheet({
                         <span className="font-medium">{n.author}:</span> {n.text}
                       </p>
                     ))}
-                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || d.extraMin) && (
+                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || extraTag(d)) && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                         {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
                         {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
-                        {!!d.extraMin && <Tag tone="green">+{mins(d.extraMin)} extra</Tag>}
+                        {extraTag(d) && <Tag tone="green">{extraTag(d)}</Tag>}
                         {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
                         {d.compensates && <Tag tone="violet">Makes up {fmtDate(d.compensates, false)}</Tag>}
                         {d.leave && (
@@ -296,7 +309,7 @@ export default function MonthSheet({
                           {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                           {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
                           {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
-                          {!!d.extraMin && <Tag tone="green">+{mins(d.extraMin)} extra</Tag>}
+                          {extraTag(d) && <Tag tone="green">{extraTag(d)}</Tag>}
                           {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
                           {d.plan && (
                             <span title={d.plan} className="cursor-help">

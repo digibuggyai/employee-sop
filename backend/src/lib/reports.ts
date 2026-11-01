@@ -54,6 +54,7 @@ export type DayRow = {
   shortMin?: number;
   madeUp?: boolean;
   extraMin?: number;
+  extraDay?: boolean;
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;
@@ -176,6 +177,9 @@ export async function monthReports(userIds: string[], month: string) {
         summary.workedMs += workedMs;
         if (att.halfDay) summary.halfDays++;
         const madeUp = leaveByMakeUpDay.get(date);
+        const extraDay = isOffDay(date) && !madeUp;
+        const extraMin = extraDay && att.checkOut ? Math.round(workedMs / 60000) : 0;
+        if (extraMin) summary.extraMs += extraMin * 60000;
         return {
           ...base,
           status: att.checkOut ? "PRESENT" : "WORKING",
@@ -192,6 +196,8 @@ export async function monthReports(userIds: string[], month: string) {
           ...(att.halfDay && { halfDay: "MARKED" as const }),
           ...flags,
           ...(madeUp && { compensates: dayKey(madeUp.date) }),
+          ...(extraDay && { extraDay: true }),
+          ...(extraMin && { extraMin }),
         };
       }
       if (leave) {
@@ -265,7 +271,7 @@ export async function monthReports(userIds: string[], month: string) {
     }
 
     days
-      .filter((d) => d.place === "WFH" && !summary.remote)
+      .filter((d) => d.place === "WFH" && !summary.remote && !d.extraDay)
       .slice(summary.wfhAllowance)
       .forEach((d) => {
         if (d.halfDay) return;

@@ -104,6 +104,7 @@ export type DayRow = {
   shortMin?: number;
   madeUp?: boolean;
   extraMin?: number;
+  extraDay?: boolean;
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;
