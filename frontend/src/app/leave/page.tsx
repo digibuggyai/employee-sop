@@ -183,7 +183,7 @@ export default function LeavePage() {
             </ul>
           )}
           <p className="hidden border-t border-zinc-100 px-5 py-3 text-xs text-zinc-500 md:block">
-            Worked a weekend or holiday to make up for a leave? Let your admin know and they will link it.
+            Each Saturday or holiday you work makes up one leave automatically. Extra ones count as overtime.
           </p>
         </Card>
       </div>

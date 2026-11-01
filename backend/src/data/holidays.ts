@@ -16,6 +16,5 @@ export const holidays: Holiday[] = [
   { date: "2026-11-07", name: "Choti Diwali", type: "Gazetted" },
   { date: "2026-11-08", name: "Diwali", type: "Gazetted" },
   { date: "2026-11-10", name: "Govardhan", type: "Gazetted" },
-  { date: "2026-11-11", name: "Bhai Dooj", type: "Gazetted" },
   { date: "2026-12-25", name: "Christmas", type: "Gazetted" },
 ];

@@ -30,6 +30,8 @@ export function daysOfMonth(month: string): string[] {
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+export const isSunday = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() === 0;
+
 export function isOffDay(date: string) {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   return weekday === 0 || weekday === 6 || holidays.some((h) => h.date === date);

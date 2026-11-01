@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Building2, Coffee, House, LogIn, LogOut, Play, TimerOff } from "lucide-react";
 import { api, type Attendance, type Place } from "@/lib/api";
-import { fmtDuration, fmtTime } from "@/lib/format";
+import { fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { useNow } from "@/lib/useNow";
 import { useAuth } from "./AuthProvider";
 import { useConfirm } from "./Feedback";
@@ -86,6 +86,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
     act("check-out", halfDay ? { halfDay: true } : undefined);
   }
 
+  const sunday = new Date(`${todayIST()}T00:00:00Z`).getUTCDay() === 0;
   const openBreak = day?.breaks.find((b) => !b.end);
   const state: State = !day ? "out" : day.checkOut ? "done" : openBreak ? "break" : "working";
   const { breakMs, workedMs } = day && now ? totals(day, now) : { breakMs: 0, workedMs: 0 };
@@ -129,7 +130,9 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
                 </dd>
               </dl>
             ) : (
-              <p className="text-[13px] text-zinc-500 sm:max-w-56">Pick where you&apos;re working, then check in.</p>
+              <p className="text-[13px] text-zinc-500 sm:max-w-56">
+                {sunday ? "Sunday is off. Check-in opens again on Monday." : <>Pick where you&apos;re working, then check in.</>}
+              </p>
             )}
           </div>
         )}
@@ -147,7 +150,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           </div>
         )}
 
-        {loaded && state === "out" && needsNotes && (
+        {loaded && state === "out" && needsNotes && !sunday && (
           <Field label="Today's plan" hint="Required for WFH: your to-do list before you start.">
             <textarea
               rows={3}
@@ -161,7 +164,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-4">
           {state === "out" ? (
-            <Segmented
+            !sunday && <Segmented
               value={place}
               onChange={setPlace}
               options={[
@@ -179,7 +182,8 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           )}
 
           <div className="flex flex-wrap gap-2">
-            {loaded && state === "out" && (
+            {loaded && state === "out" && sunday && <p className="text-[13px] text-zinc-500">Enjoy your Sunday.</p>}
+            {loaded && state === "out" && !sunday && (
               <Button loading={busy} onClick={() => act("check-in", { place, ...(needsNotes && { plan }) })}>
                 <LogIn size={16} /> Check in
               </Button>

@@ -18,6 +18,7 @@ import tasksRouter from "./routes/tasks.js";
 import adminRouter from "./routes/admin.js";
 import leavesRouter from "./routes/leaves.js";
 import photosRouter from "./routes/photos.js";
+import { startAutoCheckout } from "./lib/autoCheckout.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -57,4 +58,5 @@ app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: Ne
 
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
+  startAutoCheckout();
 });

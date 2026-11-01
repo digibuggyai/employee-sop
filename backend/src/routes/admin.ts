@@ -9,6 +9,7 @@ import { taskInclude, taskNoteSelect } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { firstName, notify } from "../lib/notify.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
+import { syncMakeUps } from "../lib/makeups.js";
 
 const router = Router();
 
@@ -238,6 +239,7 @@ router.post("/leaves", async (req, res) => {
     })),
     skipDuplicates: true,
   });
+  await syncMakeUps(userId);
   res.status(201).json({ created: count, skipped: dates.length - count });
 });
 
@@ -298,11 +300,13 @@ router.patch("/leaves/:id", async (req, res) => {
     include: adminLeaveInclude,
   });
   if (status && status !== leave.status) {
+    await syncMakeUps(leave.userId);
     await notify(leave.userId, {
       title: status === "APPROVED" ? "Leave approved" : "Leave not approved",
       body: `${dayLabel(leave.date)} · by ${firstName(req.user!.name)}`,
       link: "/leave",
     });
+    return res.json(await prisma.leave.findUnique({ where: { id: leave.id }, include: adminLeaveInclude }));
   }
   res.json(updated);
 });
@@ -333,6 +337,7 @@ router.delete("/attendance/:userId/:date", async (req, res) => {
   if (!date.success) return res.status(400).json({ error: "Invalid date" });
   const { count } = await prisma.attendance.deleteMany({ where: { userId: req.params.userId, date: toDbDate(date.data) } });
   if (!count) return res.status(404).json({ error: "No attendance on that day" });
+  await syncMakeUps(req.params.userId);
   res.json({ ok: true });
 });
 

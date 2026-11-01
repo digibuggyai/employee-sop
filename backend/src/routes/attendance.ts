@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
-import { monthReports, thisMonth } from "../lib/reports.js";
+import { isSunday, monthReports, thisMonth } from "../lib/reports.js";
+import { syncMakeUps } from "../lib/makeups.js";
 import { checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 import { notifyAdmins } from "../lib/notify.js";
 import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern } from "../lib/policy.js";
@@ -44,6 +45,7 @@ router.post("/check-in", async (req, res) => {
     return res.status(400).json({ error: "Write today's to-do plan before you start (WFH policy)" });
   }
 
+  if (isSunday(todayString())) return res.status(400).json({ error: "Sunday is off. Check-in is closed today." });
   if (await findToday(req.user!.id)) return res.status(409).json({ error: "You've already checked in today" });
 
   const day = await prisma.attendance.create({
@@ -86,6 +88,7 @@ router.post("/check-out", async (req, res) => {
     prisma.break.updateMany({ where: { attendanceId: day.id, end: null }, data: { end: now } }),
     prisma.attendance.update({ where: { id: day.id }, data: { checkOut: now, halfDay, ...(report && { report }) } }),
   ]);
+  await syncMakeUps(req.user!.id);
   res.json(await findToday(req.user!.id));
 });
 

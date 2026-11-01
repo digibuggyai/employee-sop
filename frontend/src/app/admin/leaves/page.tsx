@@ -144,7 +144,7 @@ export default function AdminLeavesPage() {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-zinc-900">Reviewed leave</h2>
-          <p className="hidden text-[13px] text-zinc-500 md:block">Link a worked weekend or holiday to make up for a leave. One day covers one leave.</p>
+          <p className="hidden text-[13px] text-zinc-500 md:block">Worked Saturdays and holidays make up leaves automatically, oldest first. One day covers one leave.</p>
         </div>
         <MonthSwitcher
           month={month}

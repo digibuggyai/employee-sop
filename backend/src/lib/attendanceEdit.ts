@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "./prisma.js";
 import { istDateTime, toDbDate, todayString } from "./dates.js";
+import { syncMakeUps } from "./makeups.js";
 
 export const dayChangeSchema = z.object({
   date: z.iso.date(),
@@ -46,10 +47,11 @@ export async function checkDayChange(userId: string, date: string, change: DayCh
 export async function applyDayChange(userId: string, date: string, change: DayChange) {
   const key = { userId_date: { userId, date: toDbDate(date) } };
   const data = Object.fromEntries(Object.entries(change).filter(([, v]) => v !== undefined));
-  if (await prisma.attendance.findUnique({ where: key })) {
-    return prisma.attendance.update({ where: key, data });
-  }
-  return prisma.attendance.create({
-    data: { userId, date: toDbDate(date), place: change.place!, checkIn: change.checkIn!, checkOut: change.checkOut ?? null, note: change.note ?? null, halfDay: change.halfDay ?? false },
-  });
+  const saved = (await prisma.attendance.findUnique({ where: key }))
+    ? await prisma.attendance.update({ where: key, data })
+    : await prisma.attendance.create({
+        data: { userId, date: toDbDate(date), place: change.place!, checkIn: change.checkIn!, checkOut: change.checkOut ?? null, note: change.note ?? null, halfDay: change.halfDay ?? false },
+      });
+  await syncMakeUps(userId);
+  return saved;
 }

@@ -7,6 +7,8 @@ export const LEAVE_PER_MONTH = 1.5;
 export const LEAVE_POLICY_START = "2026-10";
 export const EMERGENCY_LEAVES_PER_MONTH = 1;
 
+export const AUTO_CHECKOUT_AT = "23:00";
+
 export const PLAN_MIN_CHARS = 10;
 export const REPORT_MIN_CHARS = 20;
 
