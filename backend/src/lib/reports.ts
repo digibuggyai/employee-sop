@@ -227,9 +227,17 @@ export async function monthReports(userIds: string[], month: string) {
     if (shift) {
       const shiftLength = shift.end - shift.start;
       for (const d of days) {
-        if (!d.checkIn || isOffDay(d.date)) continue;
+        if (!d.checkIn) continue;
         const dayStart = Date.parse(`${d.date}T00:00:00+05:30`);
         const minuteOf = (t: Date) => Math.round((t.getTime() - dayStart) / 60000);
+        if (isOffDay(d.date)) {
+          const over = d.compensates && d.checkOut ? minuteOf(d.checkOut) - minuteOf(d.checkIn) - shiftLength : 0;
+          if (over >= GRACE_MIN) {
+            d.extraMin = over;
+            summary.extraMs += over * 60000;
+          }
+          continue;
+        }
         const flexible = d.place === "WFH";
         const late = minuteOf(d.checkIn) - shift.start;
         if (!flexible && late > GRACE_MIN) {
