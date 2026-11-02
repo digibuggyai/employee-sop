@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Coffee, House, LogIn, LogOut, Play, TimerOff } from "lucide-react";
-import { api, type Attendance, type Place } from "@/lib/api";
+import { Building2, Coffee, House, LogIn, LogOut, PencilLine, Play, TimerOff } from "lucide-react";
+import { api, type Attendance, type DayRow, type Place } from "@/lib/api";
 import { fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { useNow } from "@/lib/useNow";
 import { useAuth } from "./AuthProvider";
 import { useConfirm } from "./Feedback";
+import DayEditDialog from "./DayEditDialog";
 import Modal from "./Modal";
-import { Button, ErrorBox, Field, Segmented, inputClass } from "./form";
+import { Button, ErrorBox, Field, IconButton, Segmented, inputClass } from "./form";
 import { Badge, Skeleton, type Tone } from "./ui";
 
 const placeLabel: Record<Place, string> = { IN_OFFICE: "In-office", WFH: "WFH" };
@@ -21,6 +22,18 @@ function totals(day: Attendance, now: number) {
   const end = day.checkOut ? Date.parse(day.checkOut) : now;
   return { breakMs, workedMs: end - Date.parse(day.checkIn) - breakMs };
 }
+
+const toDayRow = (day: Attendance): DayRow => ({
+  date: day.date.slice(0, 10),
+  weekday: new Date(day.date).toLocaleDateString("en-IN", { weekday: "long", timeZone: "UTC" }),
+  status: day.checkOut ? "PRESENT" : "WORKING",
+  place: day.place,
+  checkIn: day.checkIn,
+  checkOut: day.checkOut,
+  breaks: day.breaks.length,
+  note: day.note,
+  ...(day.halfDay && { halfDay: "MARKED" as const }),
+});
 
 type State = "out" | "working" | "break" | "done";
 const stateBadge: Record<State, [string, Tone]> = {
@@ -41,6 +54,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
   const { user } = useAuth();
   const [plan, setPlan] = useState("");
   const [reportFor, setReportFor] = useState<{ halfDay: boolean } | null>(null);
+  const [changeFor, setChangeFor] = useState<DayRow | null>(null);
 
   useEffect(() => {
     api<Attendance | null>("/api/attendance/today")
@@ -97,9 +111,16 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
       <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3.5">
         <h2 className="text-sm font-semibold text-zinc-900">Today</h2>
         {loaded && (
-          <Badge tone={badgeTone} dot>
-            {badgeLabel}
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge tone={badgeTone} dot>
+              {badgeLabel}
+            </Badge>
+            {day && (
+              <IconButton label="Request a change" onClick={() => setChangeFor(toDayRow(day))} className="-my-1.5 -mr-2">
+                <PencilLine size={15} />
+              </IconButton>
+            )}
+          </div>
         )}
       </div>
 
@@ -219,6 +240,8 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
         {error && !reportFor && <p className="text-sm text-red-600">{error}</p>}
       </div>
+
+      <DayEditDialog day={changeFor} mode="request" onClose={() => setChangeFor(null)} onSaved={() => onChange?.()} />
 
       <WorkReportDialog
         open={!!reportFor}

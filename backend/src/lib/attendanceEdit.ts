@@ -40,6 +40,9 @@ export async function checkDayChange(userId: string, date: string, change: DayCh
   const checkIn = change.checkIn ?? current?.checkIn;
   const checkOut = change.checkOut === undefined ? current?.checkOut : change.checkOut;
   if (checkIn && checkOut && checkOut <= checkIn) return "The out time must be after the in time";
+  if ((change.checkIn && change.checkIn.getTime() > Date.now()) || (change.checkOut && change.checkOut.getTime() > Date.now())) {
+    return "Times can't be later than now";
+  }
   if (!checkOut && date < todayString()) return "Add the out time for a past day";
   return null;
 }

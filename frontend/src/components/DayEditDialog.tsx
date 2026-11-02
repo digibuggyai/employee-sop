@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Building2, House, Trash2 } from "lucide-react";
 import { api, type DayRow, type Place } from "@/lib/api";
-import { fmtDate, toTimeInput } from "@/lib/format";
+import { fmtDate, toTimeInput, todayIST } from "@/lib/format";
 import { useConfirm, useToast } from "./Feedback";
 import Modal from "./Modal";
 import { Button, ErrorBox, Field, Segmented, inputClass } from "./form";
@@ -78,7 +78,7 @@ function DayForm({
     const body: Record<string, string | boolean | null> = { date: day.date };
     if (changed("place")) body.place = form.place;
     if (changed("checkIn") && form.checkIn) body.checkIn = form.checkIn;
-    if (changed("checkOut")) body.checkOut = form.checkOut || null;
+    if (changed("checkOut") && (form.checkOut || hasRecord)) body.checkOut = form.checkOut || null;
     if (changed("note")) body.note = form.note || null;
     if (changed("halfDay")) body.halfDay = form.halfDay;
     if (Object.keys(body).length === 1) return setError("Nothing has changed yet");
@@ -138,7 +138,7 @@ function DayForm({
           <input type="time" required={!hasRecord} value={form.checkIn} onChange={set("checkIn")} className={inputClass} />
         </Field>
         <Field label="Out">
-          <input type="time" required value={form.checkOut} onChange={set("checkOut")} className={inputClass} />
+          <input type="time" required={day.date < todayIST()} value={form.checkOut} onChange={set("checkOut")} className={inputClass} />
         </Field>
       </div>
       <Field label="Note" hint="Optional, e.g. 'Client visit'">

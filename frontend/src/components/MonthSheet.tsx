@@ -72,7 +72,7 @@ export default function MonthSheet({
 }) {
   const { days, summary, weeks } = report;
   const today = todayIST();
-  const canEdit = (d: DayRow) => !!onEditDay && d.date < today && d.status !== "NOT_JOINED" && d.status !== "LEFT";
+  const canEdit = (d: DayRow) => !!onEditDay && d.date <= today && d.status !== "NOT_JOINED" && d.status !== "LEFT";
 
   function exportCsv() {
     downloadCsv(`attendance-${name.replaceAll(" ", "-")}-${report.month}.csv`, [
