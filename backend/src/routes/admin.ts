@@ -9,7 +9,7 @@ import { taskInclude, taskNoteSelect } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { firstName, notify } from "../lib/notify.js";
 import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
-import { syncMakeUps } from "../lib/makeups.js";
+import { sameMonth, syncMakeUps } from "../lib/makeups.js";
 
 const router = Router();
 
@@ -245,10 +245,10 @@ router.post("/leaves", async (req, res) => {
 
 router.get("/leaves/make-up-options", async (req, res) => {
   const userId = String(req.query.userId ?? "");
-  const since = new Date(Date.now() - 120 * 86400000);
+  const month = monthParam.parse(req.query.month);
   const [worked, used] = await Promise.all([
     prisma.attendance.findMany({
-      where: { userId, date: { gte: since }, checkOut: { not: null } },
+      where: { userId, date: { gte: toDbDate(`${month}-01`), lte: toDbDate(`${month}${lastDay(month)}`) }, checkOut: { not: null } },
       select: { date: true, place: true },
       orderBy: { date: "desc" },
     }),
@@ -278,6 +278,9 @@ router.patch("/leaves/:id", async (req, res) => {
   if (compensatedOn) {
     if (finalStatus !== "APPROVED") return res.status(400).json({ error: "Approve the leave before linking a make-up day" });
     if (!isOffDay(compensatedOn)) return res.status(400).json({ error: "A make-up day must be a weekend or holiday" });
+    if (!sameMonth(compensatedOn, leave.date.toISOString().slice(0, 10))) {
+      return res.status(400).json({ error: "A leave can only be made up in the same month" });
+    }
     const worked = await prisma.attendance.findUnique({
       where: { userId_date: { userId: leave.userId, date: toDbDate(compensatedOn) } },
     });

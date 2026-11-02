@@ -183,7 +183,7 @@ export default function LeavePage() {
             </ul>
           )}
           <p className="hidden border-t border-zinc-100 px-5 py-3 text-xs text-zinc-500 md:block">
-            Each Saturday or holiday you work makes up one leave automatically. Extra ones count as overtime.
+            Each Saturday or holiday you work makes up one leave of the same month automatically. Extra ones count as overtime.
           </p>
         </Card>
       </div>

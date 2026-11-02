@@ -5,6 +5,8 @@ import { LEAVE_POLICY_START } from "./policy.js";
 
 const key = (d: Date) => d.toISOString().slice(0, 10);
 
+export const sameMonth = (a: string, b: string) => a.slice(0, 7) === b.slice(0, 7);
+
 export async function syncMakeUps(userId: string) {
   try {
     const since = toDbDate(`${LEAVE_POLICY_START}-01`);
@@ -12,7 +14,7 @@ export async function syncMakeUps(userId: string) {
       prisma.leave.findMany({
         where: { userId, status: "APPROVED", date: { gte: since } },
         orderBy: { date: "asc" },
-        select: { id: true, compensatedOn: true },
+        select: { id: true, date: true, compensatedOn: true },
       }),
       prisma.attendance.findMany({
         where: { userId, date: { gte: since }, checkOut: { not: null } },
@@ -23,16 +25,21 @@ export async function syncMakeUps(userId: string) {
     const extraDays = worked.map((a) => key(a.date)).filter(isOffDay);
     const valid = new Set(extraDays);
 
-    const broken = leaves.filter((l) => l.compensatedOn && key(l.compensatedOn) >= key(since) && !valid.has(key(l.compensatedOn)));
-    const used = new Set(leaves.filter((l) => l.compensatedOn && !broken.includes(l)).map((l) => key(l.compensatedOn!)));
-    const open = leaves.filter((l) => !l.compensatedOn || broken.includes(l));
-    const free = extraDays.filter((d) => !used.has(d));
+    const isBroken = (l: (typeof leaves)[number]) =>
+      !!l.compensatedOn &&
+      key(l.compensatedOn) >= key(since) &&
+      (!valid.has(key(l.compensatedOn)) || !sameMonth(key(l.date), key(l.compensatedOn)));
+    const used = new Set(leaves.filter((l) => l.compensatedOn && !isBroken(l)).map((l) => key(l.compensatedOn!)));
 
-    const updates = open.flatMap((l, i) =>
-      free[i] || l.compensatedOn
-        ? [prisma.leave.update({ where: { id: l.id }, data: { compensatedOn: free[i] ? toDbDate(free[i]) : null } })]
-        : [],
-    );
+    const broken = leaves.filter(isBroken);
+    const updates = broken.map((l) => prisma.leave.update({ where: { id: l.id }, data: { compensatedOn: null } }));
+    for (const l of leaves) {
+      if (l.compensatedOn && !broken.includes(l)) continue;
+      const day = extraDays.find((d) => !used.has(d) && sameMonth(d, key(l.date)));
+      if (!day) continue;
+      used.add(day);
+      updates.push(prisma.leave.update({ where: { id: l.id }, data: { compensatedOn: toDbDate(day) } }));
+    }
     if (updates.length) await prisma.$transaction(updates);
   } catch (err) {
     console.error("syncMakeUps failed", err);

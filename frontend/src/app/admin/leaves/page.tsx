@@ -144,7 +144,7 @@ export default function AdminLeavesPage() {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-zinc-900">Reviewed leave</h2>
-          <p className="hidden text-[13px] text-zinc-500 md:block">Worked Saturdays and holidays make up leaves automatically, oldest first. One day covers one leave.</p>
+          <p className="hidden text-[13px] text-zinc-500 md:block">Worked Saturdays and holidays make up leaves of the same month automatically. One day covers one leave.</p>
         </div>
         <MonthSwitcher
           month={month}
@@ -181,7 +181,7 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
   async function loadOptions() {
     if (options || !leave.user) return;
     const r = await api<{ options: { date: string; place: string }[] }>(
-      `/api/admin/leaves/make-up-options?userId=${leave.user.id}`,
+      `/api/admin/leaves/make-up-options?userId=${leave.user.id}&month=${leave.date.slice(0, 7)}`,
     );
     setOptions(r.options);
   }
