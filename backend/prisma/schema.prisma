@@ -54,6 +54,7 @@ model User {
   dayNotes       DayNote[]       @relation("DayNoteAuthor")
   notifications  Notification[]
   taskNotes      DailyTaskNote[]
+  payBonuses     PayBonus[]
   lastSeenAt     DateTime?
   onlineUntil    DateTime?
   reimbursements Reimbursement[] @relation("ReimbursementOwner")
@@ -351,4 +352,25 @@ model DailyTaskNote {
 
   @@unique([userId, date])
   @@index([date])
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  name      String
+  type      String   @default("Gazetted")
+  createdAt DateTime @default(now())
+}
+
+model PayBonus {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  month     String
+  percent   Float
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, month])
 }

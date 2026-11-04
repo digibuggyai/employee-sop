@@ -18,7 +18,9 @@ import tasksRouter from "./routes/tasks.js";
 import adminRouter from "./routes/admin.js";
 import leavesRouter from "./routes/leaves.js";
 import photosRouter from "./routes/photos.js";
+import payrollRouter from "./routes/payroll.js";
 import { startAutoCheckout } from "./lib/autoCheckout.js";
+import { loadHolidays, startHolidayRefresh } from "./lib/holidays.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -49,12 +51,16 @@ app.use("/api/vault", vaultRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/reimbursements", reimbursementsRouter);
 app.use("/api/presence", presenceRouter);
+app.use("/api/payroll", payrollRouter);
 
 app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {
   if (err.type === "entity.too.large") return res.status(413).json({ error: "That file is too large" });
   console.error(err);
   res.status(500).json({ error: "Something went wrong on the server" });
 });
+
+await loadHolidays().catch((err) => console.error("loadHolidays failed", err));
+startHolidayRefresh();
 
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);

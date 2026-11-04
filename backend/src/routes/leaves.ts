@@ -12,11 +12,11 @@ router.use(requireAuth);
 
 export const leaveInclude = { reviewedBy: { select: { id: true, name: true } } };
 
-export function workingDaysBetween(from: string, to: string): string[] {
+export function workingDaysBetween(from: string, to: string, employmentType?: string | null): string[] {
   const out: string[] = [];
   for (let d = new Date(`${from}T00:00:00Z`); d <= new Date(`${to}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
     const date = d.toISOString().slice(0, 10);
-    if (!isOffDay(date)) out.push(date);
+    if (!isOffDay(date, employmentType)) out.push(date);
   }
   return out;
 }
@@ -62,7 +62,7 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "You've already used this month's emergency leave. Other leave must be asked for in advance." });
   }
 
-  const dates = workingDaysBetween(from, to);
+  const dates = workingDaysBetween(from, to, req.user!.employmentType);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
   if (dates.length > 31) return res.status(400).json({ error: "Request at most a month at a time" });
 

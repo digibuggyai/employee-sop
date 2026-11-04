@@ -1,8 +1,9 @@
 import { prisma } from "./prisma.js";
 import { TIMEZONE, toDbDate, todayString } from "./dates.js";
-import { holidays } from "../data/holidays.js";
+import { holidayList, holidayOn } from "./holidays.js";
 import {
   FREE_SHORT_LEAVES, GRACE_MIN, LATES_PER_ABSENCE, LEAVE_PER_MONTH, LEAVE_POLICY_START, SHORT_LEAVE_MAX_MIN, parseTimings,
+  worksSaturdays,
 } from "./policy.js";
 import type { Attendance, Break } from "../generated/prisma/client.js";
 
@@ -32,9 +33,10 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 export const isSunday = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() === 0;
 
-export function isOffDay(date: string) {
+export function isOffDay(date: string, employmentType?: string | null) {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-  return weekday === 0 || weekday === 6 || holidays.some((h) => h.date === date);
+  if (weekday === 0 || holidayOn(date)) return true;
+  return weekday === 6 && !worksSaturdays(employmentType, date);
 }
 
 export type DayRow = {
@@ -140,7 +142,7 @@ export async function monthReports(userIds: string[], month: string) {
   ]);
 
   const today = todayString();
-  const holidayByDate = new Map(holidays.map((h) => [h.date, h.name]));
+  const holidayByDate = new Map(holidayList().map((h) => [h.date, h.name]));
   const reports = new Map<string, { days: DayRow[]; summary: MonthSummary; weeks: WeekRow[] }>();
 
   for (const userId of userIds) {
@@ -179,7 +181,7 @@ export async function monthReports(userIds: string[], month: string) {
         summary.workedMs += workedMs;
         if (att.halfDay) summary.halfDays++;
         const madeUp = leaveByMakeUpDay.get(date);
-        const extraDay = isOffDay(date) && !madeUp;
+        const extraDay = isOffDay(date, person?.employmentType) && !madeUp;
         const extraMin = extraDay && att.checkOut ? Math.round(workedMs / 60000) : 0;
         if (extraMin) summary.extraMs += extraMin * 60000;
         return {
@@ -216,7 +218,7 @@ export async function monthReports(userIds: string[], month: string) {
       }
       if (leftOn && date > leftOn) return { ...base, status: "LEFT" };
       if (holidayByDate.has(date)) return { ...base, status: "HOLIDAY" };
-      if (weekdayIndex === 0 || weekdayIndex === 6) return { ...base, status: "WEEKEND" };
+      if (isOffDay(date, person?.employmentType)) return { ...base, status: "WEEKEND" };
       if (date >= today) return { ...base, status: "UPCOMING" };
       if (date < start) return { ...base, status: "NOT_JOINED" };
       summary.absent++;
@@ -230,7 +232,7 @@ export async function monthReports(userIds: string[], month: string) {
         if (!d.checkIn) continue;
         const dayStart = Date.parse(`${d.date}T00:00:00+05:30`);
         const minuteOf = (t: Date) => Math.round((t.getTime() - dayStart) / 60000);
-        if (isOffDay(d.date)) {
+        if (isOffDay(d.date, person?.employmentType)) {
           const over = d.compensates && d.checkOut ? minuteOf(d.checkOut) - minuteOf(d.checkIn) - shiftLength : 0;
           if (over >= GRACE_MIN) {
             d.extraMin = over;

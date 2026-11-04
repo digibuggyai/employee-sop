@@ -10,7 +10,8 @@ export const sameMonth = (a: string, b: string) => a.slice(0, 7) === b.slice(0, 
 export async function syncMakeUps(userId: string) {
   try {
     const since = toDbDate(`${LEAVE_POLICY_START}-01`);
-    const [leaves, worked] = await Promise.all([
+    const [person, leaves, worked] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true } }),
       prisma.leave.findMany({
         where: { userId, status: "APPROVED", date: { gte: since } },
         orderBy: { date: "asc" },
@@ -22,7 +23,7 @@ export async function syncMakeUps(userId: string) {
         select: { date: true },
       }),
     ]);
-    const extraDays = worked.map((a) => key(a.date)).filter(isOffDay);
+    const extraDays = worked.map((a) => key(a.date)).filter((d) => isOffDay(d, person?.employmentType));
     const valid = new Set(extraDays);
 
     const isBroken = (l: (typeof leaves)[number]) =>

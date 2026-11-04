@@ -199,9 +199,32 @@ export type Leave = {
 };
 
 export type Holiday = {
+  id: string;
   date: string;
   name: string;
   type: "Gazetted" | "Compulsory";
+};
+
+export type PayrollRow = {
+  user: Pick<User, "id" | "name" | "designation" | "employmentType" | "photoUpdatedAt">;
+  workingDays: number;
+  daysLeft: number;
+  notEmployed: number;
+  absent: number;
+  latePenaltyDays: number;
+  halfDays: number;
+  paidLeaves: number;
+  unpaidLeaves: number;
+  pendingLeaves: number;
+  madeUpLeaves: number;
+  leaveBalance: number | null;
+  extraDays: number;
+  deductions: number;
+  payableDays: number;
+  payPercent: number;
+  bonusPercent: number;
+  bonusNote: string | null;
+  totalPercent: number;
 };
 
 export type NoticeAudience = "ALL" | "FULL_TIME" | "PART_TIME" | "INTERN" | "REMOTE_INTERN";

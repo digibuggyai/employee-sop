@@ -4,6 +4,7 @@ import {
   BookOpenText,
   CalendarCheck,
   CalendarDots,
+  CalendarStar,
   CalendarX,
   ChartPieSlice,
   ClipboardText,
@@ -13,6 +14,7 @@ import {
   Key,
   ListChecks,
   Megaphone,
+  Percent,
   Receipt,
   ShieldCheck,
   Tray,
@@ -30,6 +32,7 @@ export type NavItem = {
   badge?: "leaves" | "corrections" | "reimbursements";
   employeeOnly?: boolean;
   remoteOnly?: boolean;
+  superAdminOnly?: boolean;
 };
 
 export const workspaceNav: NavItem[] = [
@@ -53,6 +56,8 @@ export const adminNav: NavItem[] = [
   { href: "/admin/leaves", label: "Leaves", icon: CalendarX, group: "Manage", mobile: true, badge: "leaves" },
   { href: "/admin/reimbursements", label: "Reimbursements", short: "Expenses", icon: Receipt, group: "Manage", badge: "reimbursements" },
   { href: "/admin/wfh-plans", label: "WFH plans", icon: HouseLine, group: "Manage" },
+  { href: "/admin/holidays", label: "Holidays", icon: CalendarStar, group: "Manage" },
+  { href: "/admin/payroll", label: "Payroll", icon: Percent, group: "Manage", superAdminOnly: true },
   { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage" },
   { href: "/admin/employees", label: "Employees", short: "People", icon: UserGear, group: "Manage" },
   { href: "/admin/access", label: "Roles & access", icon: ShieldCheck, group: "Manage" },

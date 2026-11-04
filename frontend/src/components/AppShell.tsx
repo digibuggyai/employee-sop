@@ -47,7 +47,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAdmin = hasAdminAccess(user);
   const items = (inAdmin ? adminNav : workspaceNav).filter(
-    (i) => (user.isEmployee || !i.employeeOnly) && (user.employmentType === "REMOTE_INTERN" || !i.remoteOnly),
+    (i) =>
+      (user.isEmployee || !i.employeeOnly) &&
+      (user.employmentType === "REMOTE_INTERN" || !i.remoteOnly) &&
+      (user.role === "SUPER_ADMIN" || !i.superAdminOnly),
   );
   const groups = [...new Set(items.map((i) => i.group))];
   const isActive = (href: string) =>
