@@ -1,0 +1,1 @@
+ALTER TABLE "Attendance" ADD COLUMN "wfhFullDay" BOOLEAN NOT NULL DEFAULT false;

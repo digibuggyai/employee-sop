@@ -105,6 +105,7 @@ export type DayRow = {
   madeUp?: boolean;
   extraMin?: number;
   extraDay?: boolean;
+  wfhFullDay?: boolean;
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;

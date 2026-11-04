@@ -8,7 +8,7 @@ import { dueDate, reportSelect } from "./weeklyReports.js";
 import { taskInclude, taskNoteSelect } from "./tasks.js";
 import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { firstName, notify } from "../lib/notify.js";
-import { applyDayChange, checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
+import { adminDayChangeSchema, applyDayChange, checkDayChange, toDayChange } from "../lib/attendanceEdit.js";
 import { sameMonth, syncMakeUps } from "../lib/makeups.js";
 
 const router = Router();
@@ -334,7 +334,7 @@ router.get("/pending", async (_req, res) => {
 });
 
 router.put("/attendance/:userId/day", async (req, res) => {
-  const parsed = dayChangeSchema.safeParse(req.body);
+  const parsed = adminDayChangeSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const userId = req.params.userId;
   if (!(await prisma.user.findUnique({ where: { id: userId } }))) return res.status(404).json({ error: "Employee not found" });

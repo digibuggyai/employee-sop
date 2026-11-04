@@ -11,7 +11,8 @@ export const dayChangeSchema = z.object({
   note: z.string().trim().max(300).nullable().optional(),
   halfDay: z.boolean().optional(),
 });
-export type DayChangeInput = z.infer<typeof dayChangeSchema>;
+export const adminDayChangeSchema = dayChangeSchema.extend({ wfhFullDay: z.boolean().optional() });
+export type DayChangeInput = z.infer<typeof dayChangeSchema> & { wfhFullDay?: boolean };
 
 export type DayChange = {
   place?: "IN_OFFICE" | "WFH";
@@ -19,6 +20,7 @@ export type DayChange = {
   checkOut?: Date | null;
   note?: string | null;
   halfDay?: boolean;
+  wfhFullDay?: boolean;
 };
 
 export function toDayChange(input: DayChangeInput): DayChange {
@@ -28,6 +30,7 @@ export function toDayChange(input: DayChangeInput): DayChange {
     checkOut: input.checkOut === undefined ? undefined : input.checkOut ? istDateTime(input.date, input.checkOut) : null,
     note: input.note === undefined ? undefined : input.note || null,
     halfDay: input.halfDay,
+    wfhFullDay: input.wfhFullDay,
   };
 }
 
@@ -53,7 +56,7 @@ export async function applyDayChange(userId: string, date: string, change: DayCh
   const saved = (await prisma.attendance.findUnique({ where: key }))
     ? await prisma.attendance.update({ where: key, data })
     : await prisma.attendance.create({
-        data: { userId, date: toDbDate(date), place: change.place!, checkIn: change.checkIn!, checkOut: change.checkOut ?? null, note: change.note ?? null, halfDay: change.halfDay ?? false },
+        data: { userId, date: toDbDate(date), place: change.place!, checkIn: change.checkIn!, checkOut: change.checkOut ?? null, note: change.note ?? null, halfDay: change.halfDay ?? false, wfhFullDay: change.wfhFullDay ?? false },
       });
   await syncMakeUps(userId);
   return saved;

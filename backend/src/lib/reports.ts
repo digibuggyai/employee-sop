@@ -59,6 +59,7 @@ export type DayRow = {
   madeUp?: boolean;
   extraMin?: number;
   extraDay?: boolean;
+  wfhFullDay?: boolean;
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;
@@ -201,6 +202,7 @@ export async function monthReports(userIds: string[], month: string) {
           ...flags,
           ...(madeUp && { compensates: dayKey(madeUp.date) }),
           ...(extraDay && { extraDay: true }),
+          ...(att.wfhFullDay && { wfhFullDay: true }),
           ...(extraMin && { extraMin }),
         };
       }
@@ -286,7 +288,7 @@ export async function monthReports(userIds: string[], month: string) {
       .filter((d) => d.place === "WFH" && !summary.remote && !d.extraDay)
       .slice(summary.wfhAllowance)
       .forEach((d) => {
-        if (d.halfDay) return;
+        if (d.halfDay || d.wfhFullDay) return;
         d.halfDay = "EXTRA_WFH";
         summary.halfDays++;
       });

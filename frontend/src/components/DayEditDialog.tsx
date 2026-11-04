@@ -61,6 +61,7 @@ function DayForm({
     checkOut: toTimeInput(day.checkOut),
     note: day.note ?? "",
     halfDay: day.halfDay === "MARKED",
+    wfhFullDay: !!day.wfhFullDay,
   };
   const [form, setForm] = useState({ ...original, reason: "" });
   const [error, setError] = useState("");
@@ -74,13 +75,14 @@ function DayForm({
     e.preventDefault();
     setError("");
 
-    const changed = (k: "place" | "checkIn" | "checkOut" | "note" | "halfDay") => !hasRecord || form[k] !== original[k];
+    const changed = (k: "place" | "checkIn" | "checkOut" | "note" | "halfDay" | "wfhFullDay") => !hasRecord || form[k] !== original[k];
     const body: Record<string, string | boolean | null> = { date: day.date };
     if (changed("place")) body.place = form.place;
     if (changed("checkIn") && form.checkIn) body.checkIn = form.checkIn;
     if (changed("checkOut") && (form.checkOut || hasRecord)) body.checkOut = form.checkOut || null;
     if (changed("note")) body.note = form.note || null;
     if (changed("halfDay")) body.halfDay = form.halfDay;
+    if (mode === "admin" && form.place === "WFH" && changed("wfhFullDay")) body.wfhFullDay = form.wfhFullDay;
     if (Object.keys(body).length === 1) return setError("Nothing has changed yet");
 
     setLoading(true);
@@ -156,6 +158,20 @@ function DayForm({
           <span className="block text-[13px] text-zinc-500">Came late or left early. Counts as half a working day.</span>
         </span>
       </label>
+      {mode === "admin" && form.place === "WFH" && (
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
+          <input
+            type="checkbox"
+            checked={form.wfhFullDay}
+            onChange={(e) => setForm({ ...form, wfhFullDay: e.target.checked })}
+            className="mt-0.5 size-4 accent-brand-700"
+          />
+          <span>
+            <span className="block text-sm font-medium text-zinc-900">Count as full day</span>
+            <span className="block text-[13px] text-zinc-500">WFH over the monthly allowance normally counts as half a day.</span>
+          </span>
+        </label>
+      )}
       {mode === "request" && (
         <Field label="Reason for the change">
           <textarea
