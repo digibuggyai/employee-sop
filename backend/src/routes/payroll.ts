@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireSuperAdmin } from "../lib/auth.js";
-import { toDbDate } from "../lib/dates.js";
+import { toDbDate, todayString } from "../lib/dates.js";
 import { isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 import { EXTRA_HOURS_PER_DAY } from "../lib/policy.js";
 
@@ -27,14 +27,18 @@ router.get("/", async (req, res) => {
     prisma.payBonus.findMany({ where: { month, userId: { in: users.map((u) => u.id) } } }),
   ]);
 
+  const today = todayString();
   const rows = users.map((user) => {
     const { days, summary } = reports.get(user.id)!;
     const fullTime = user.employmentType === "FULL_TIME";
     const working = days.filter((d) => !isOffDay(d.date, user.employmentType));
     const workingDays = working.length;
-    const notEmployed = working.filter((d) => d.status === "NOT_JOINED" || d.status === "LEFT").length;
-    const leavesNotMadeUp = days.filter((d) => d.status === "LEAVE" && !d.leave?.compensatedOn).length;
-    const pendingLeaves = days.filter((d) => d.status === "LEAVE_PENDING").length;
+    const notYet = (d: (typeof days)[number]) => d.date > today || (d.date === today && !d.checkIn);
+    const passed = days.filter((d) => !notYet(d));
+    const daysLeft = working.filter(notYet).length;
+    const notEmployed = passed.filter((d) => working.includes(d) && (d.status === "NOT_JOINED" || d.status === "LEFT")).length;
+    const leavesNotMadeUp = passed.filter((d) => d.status === "LEAVE" && !d.leave?.compensatedOn).length;
+    const pendingLeaves = passed.filter((d) => d.status === "LEAVE_PENDING").length;
     const overBalance = fullTime && summary.leaveBalance !== null && summary.leaveBalance < 0 ? -summary.leaveBalance : 0;
     const unpaidLeaves = fullTime ? Math.min(leavesNotMadeUp, overBalance) : leavesNotMadeUp;
     const paidLeaves = leavesNotMadeUp - unpaidLeaves;
@@ -43,14 +47,14 @@ router.get("/", async (req, res) => {
     const extraHoursMin = days.filter((d) => d.extraMin && !d.extraDay).reduce((sum, d) => sum + d.extraMin!, 0);
     const extraHourDays = fullTime ? 0 : Math.floor(extraHoursMin / (EXTRA_HOURS_PER_DAY * 60));
     const deductions = notEmployed + summary.absent + summary.latePenaltyDays + halfDayCut + unpaidLeaves + pendingLeaves;
-    const payableDays = round2(workingDays - deductions + extraDays + extraHourDays);
+    const payableDays = round2(workingDays - daysLeft - deductions + extraDays + extraHourDays);
     const payPercent = workingDays ? round2((payableDays / workingDays) * 100) : 0;
     const bonus = bonuses.find((b) => b.userId === user.id);
 
     return {
       user,
       workingDays,
-      daysLeft: working.filter((d) => d.status === "UPCOMING").length,
+      daysLeft,
       notEmployed,
       absent: summary.absent,
       latePenaltyDays: summary.latePenaltyDays,

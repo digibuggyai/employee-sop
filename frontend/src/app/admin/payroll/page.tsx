@@ -103,7 +103,7 @@ export default function PayrollPage() {
           title={monthLabel(month)}
           description={
             inProgress
-              ? "Month in progress: days still to come count as worked until they pass."
+              ? "Month in progress: pay builds up day by day. Days still to come are not counted yet."
               : "100% = full salary. Interns work Mon to Fri, full-time Mon to Sat."
           }
           flush
@@ -125,7 +125,7 @@ export default function PayrollPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
                         <p className="text-xs text-zinc-500 tabular-nums">
-                          {r.payableDays} of {r.workingDays} days · {employmentLabels[r.user.employmentType]}
+                          {r.payableDays} of {r.workingDays} days{r.daysLeft ? ` · ${r.daysLeft} to go` : ""} · {employmentLabels[r.user.employmentType]}
                         </p>
                       </div>
                       <p className="text-lg font-semibold text-zinc-900 tabular-nums">{pct(r.totalPercent)}</p>
@@ -158,7 +158,10 @@ export default function PayrollPage() {
                             </div>
                           </div>
                         </td>
-                        <td className={`${table.td} tabular-nums`}>{r.workingDays}</td>
+                        <td className={`${table.td} tabular-nums`}>
+                          <p>{r.workingDays}</p>
+                          {r.daysLeft > 0 && <p className="text-xs text-zinc-500">{r.workingDays - r.daysLeft} so far</p>}
+                        </td>
                         <td className={`${table.td} w-72 min-w-56`}>
                           {r.deductions ? (
                             <>
