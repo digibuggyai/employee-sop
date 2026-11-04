@@ -44,21 +44,23 @@ model User {
   leaveOpening       Float     @default(0)
   isEmployee         Boolean   @default(true)
 
-  photoUpdatedAt DateTime?
-  photo          UserPhoto?
-  weeklyReports  WeeklyReport[]
-  sopsWritten    Sop[]           @relation("SopAuthor")
-  vaultAccess    VaultAccess[]   @relation("VaultAccessUser")
-  vaultGrants    VaultAccess[]   @relation("VaultAccessGrantor")
-  vaultViews     VaultView[]
-  dayNotes       DayNote[]       @relation("DayNoteAuthor")
-  notifications  Notification[]
-  taskNotes      DailyTaskNote[]
-  payBonuses     PayBonus[]
-  lastSeenAt     DateTime?
-  onlineUntil    DateTime?
-  reimbursements Reimbursement[] @relation("ReimbursementOwner")
-  reviewedClaims Reimbursement[] @relation("ReimbursementReviewer")
+  photoUpdatedAt      DateTime?
+  photo               UserPhoto?
+  weeklyReports       WeeklyReport[]
+  sopsWritten         Sop[]           @relation("SopAuthor")
+  vaultAccess         VaultAccess[]   @relation("VaultAccessUser")
+  vaultGrants         VaultAccess[]   @relation("VaultAccessGrantor")
+  vaultViews          VaultView[]
+  dayNotes            DayNote[]       @relation("DayNoteAuthor")
+  notifications       Notification[]
+  taskNotes           DailyTaskNote[]
+  payBonuses          PayBonus[]
+  dayRequests         DayRequest[]    @relation("DayRequestOwner")
+  reviewedDayRequests DayRequest[]    @relation("DayRequestReviewer")
+  lastSeenAt          DateTime?
+  onlineUntil         DateTime?
+  reimbursements      Reimbursement[] @relation("ReimbursementOwner")
+  reviewedClaims      Reimbursement[] @relation("ReimbursementReviewer")
 
   attendance Attendance[]
 
@@ -374,4 +376,31 @@ model PayBonus {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, month])
+}
+
+enum DayRequestKind {
+  WFH
+  HALF_DAY
+  SHORT_LEAVE
+}
+
+model DayRequest {
+  id     String         @id @default(cuid())
+  userId String
+  user   User           @relation("DayRequestOwner", fields: [userId], references: [id])
+  date   DateTime       @db.Date
+  kind   DayRequestKind
+  time   String?
+  reason String
+  status LeaveStatus    @default(PENDING)
+
+  reviewedById String?
+  reviewedBy   User?     @relation("DayRequestReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, kind])
+  @@index([status])
 }

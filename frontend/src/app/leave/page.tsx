@@ -6,9 +6,9 @@ import { LeaveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import { useConfirm, useToast } from "@/components/Feedback";
 import PageHeader from "@/components/PageHeader";
-import { Button, ErrorBox, Field, inputClass } from "@/components/form";
+import { Button, ErrorBox, Field, Segmented, inputClass } from "@/components/form";
 import { EmptyState, Skeleton } from "@/components/ui";
-import { api, type Leave } from "@/lib/api";
+import { api, dayRequestLabels, type DayRequest, type DayRequestKind, type Leave } from "@/lib/api";
 import { fmtDate, todayIST } from "@/lib/format";
 
 type LeaveData = {
@@ -18,19 +18,48 @@ type LeaveData = {
   emergency: { used: number; allowed: number };
 };
 
+const kindHints: Record<"LEAVE" | DayRequestKind, string> = {
+  LEAVE: "Ask in advance. Starting today counts as your emergency leave (1 a month). Weekends and holidays are skipped.",
+  WFH: "Your first 4 WFH days a month are free. After that, an approved WFH day still counts as a full day.",
+  HALF_DAY: "An approved half day counts as half a working day.",
+  SHORT_LEAVE: "Coming in late or leaving early by up to 2 hours. It uses one of your 2 free short leaves a month.",
+};
+
 export default function LeavePage() {
   const toast = useToast();
   const confirm = useConfirm();
   const [data, setData] = useState<LeaveData | null>(null);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [kind, setKind] = useState<"LEAVE" | DayRequestKind>("LEAVE");
+  const [requests, setRequests] = useState<DayRequest[] | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
     api<LeaveData>("/api/leaves")
       .then(setData)
       .catch((err) => setError(err.message));
+    api<DayRequest[]>("/api/day-requests")
+      .then(setRequests)
+      .catch(() => setRequests([]));
   }, [version]);
+
+  async function withdraw(r: DayRequest) {
+    const ok = await confirm({
+      title: `Withdraw this ${dayRequestLabels[r.kind].toLowerCase()} request?`,
+      description: `Your request for ${fmtDate(r.date)} will be removed.`,
+      confirmLabel: "Withdraw",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api(`/api/day-requests/${r.id}`, { method: "DELETE" });
+      toast.success("Request withdrawn");
+      setVersion((v) => v + 1);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not withdraw");
+    }
+  }
 
   async function cancel(leave: Leave) {
     const ok = await confirm({
@@ -52,20 +81,40 @@ export default function LeavePage() {
   const wfh = data?.wfh;
   const requestButton = (
     <Button onClick={() => setShowForm(true)}>
-      <Plus size={16} /> Request leave
+      <Plus size={16} /> New request
     </Button>
   );
 
   return (
     <>
-      <PageHeader title="Leave & WFH" subtitle="Request leave and keep track of approvals." actions={!showForm && requestButton} />
+      <PageHeader title="Leave & WFH" subtitle="Ask for leave, WFH, a half day or a short leave." actions={!showForm && requestButton} />
 
       {showForm && (
-        <Card
-          title="Request leave"
-          description="Ask in advance. Starting today counts as your emergency leave (1 a month). Weekends and holidays are skipped."
-          className="mb-4 md:mb-6 max-w-2xl"
-        >
+        <Card title="New request" description={kindHints[kind]} className="mb-4 md:mb-6 max-w-2xl">
+          <div className="mb-4 overflow-x-auto">
+            <Segmented
+              value={kind}
+              onChange={setKind}
+              options={[
+                { value: "LEAVE", label: "Leave" },
+                ...(wfh?.remote ? [] : [{ value: "WFH" as const, label: "WFH" }]),
+                { value: "HALF_DAY", label: "Half day" },
+                { value: "SHORT_LEAVE", label: "Short leave" },
+              ]}
+            />
+          </div>
+          {kind !== "LEAVE" ? (
+            <DayRequestForm
+              key={kind}
+              kind={kind}
+              onDone={() => {
+                setShowForm(false);
+                toast.success(`${dayRequestLabels[kind]} requested. You will be notified once it is reviewed.`);
+                setVersion((v) => v + 1);
+              }}
+              onCancel={() => setShowForm(false)}
+            />
+          ) : (
           <LeaveRequestForm
             onDone={(created, skipped) => {
               setShowForm(false);
@@ -77,6 +126,7 @@ export default function LeavePage() {
             }}
             onCancel={() => setShowForm(false)}
           />
+          )}
         </Card>
       )}
 
@@ -132,6 +182,7 @@ export default function LeavePage() {
                     : wfh.used >= wfh.allowance
                       ? "Allowance used. Further WFH days this month count as half days."
                       : `${wfh.allowance - wfh.used} left before WFH days count as half days.`}
+                  {" "}Need more? Ask for WFH approval.
                 </p>
               </>
             ) : (
@@ -140,7 +191,8 @@ export default function LeavePage() {
           </Card>
         </div>
 
-        <Card title="My leave" className="lg:col-span-2" flush>
+        <div className="space-y-4 md:space-y-6 lg:col-span-2">
+        <Card title="My leave" flush>
           {error && <p className="p-5 text-sm text-red-600">{error}</p>}
           {!data && !error && (
             <div className="p-5">
@@ -186,6 +238,50 @@ export default function LeavePage() {
             Each Saturday or holiday you work makes up one leave of the same month automatically. Extra ones count as overtime.
           </p>
         </Card>
+
+        <Card title="My requests" description="WFH, half days and short leaves" flush>
+          {!requests ? (
+            <div className="p-5">
+              <Skeleton className="h-20" />
+            </div>
+          ) : requests.length === 0 ? (
+            <EmptyState compact icon={CalendarOff} title="No requests yet" description="Use New request to ask for WFH, a half day or a short leave." />
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {requests.map((q) => (
+                <li key={q.id} className="flex items-start gap-3 px-4 py-3 sm:items-center sm:gap-4 sm:px-5">
+                  <div className="w-16 shrink-0 sm:w-24">
+                    <p className="text-sm font-medium text-zinc-900">{fmtDate(q.date, false)}</p>
+                    <p className="text-xs text-zinc-500">{new Date(q.date).toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-[13px] wrap-break-word text-zinc-700">
+                      <span className="font-medium text-brand-700">
+                        {dayRequestLabels[q.kind]}
+                        {q.time ? ` at ${q.time}` : ""} ·{" "}
+                      </span>
+                      {q.reason}
+                    </p>
+                    {q.reviewedBy && (
+                      <p className="text-xs text-zinc-500">
+                        {q.status === "REJECTED" ? "Rejected" : "Approved"} by {q.reviewedBy.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
+                    <LeaveStatusBadge status={q.status} />
+                    {q.status === "PENDING" && (
+                      <Button variant="ghost" size="sm" onClick={() => withdraw(q)}>
+                        Withdraw
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        </div>
       </div>
     </>
   );
@@ -223,6 +319,59 @@ function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skip
       </div>
       <Field label="Reason">
         <textarea name="reason" rows={3} required value={form.reason} onChange={update} className={inputClass} placeholder="A short note for your admin" />
+      </Field>
+      <ErrorBox message={error} />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={loading}>
+          Send request
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function DayRequestForm({ kind, onDone, onCancel }: { kind: DayRequestKind; onDone: () => void; onCancel: () => void }) {
+  const [form, setForm] = useState({ date: todayIST(), time: "", reason: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await api("/api/day-requests", { method: "POST", body: { kind, date: form.date, time: form.time || null, reason: form.reason } });
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send request");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Date">
+          <input type="date" required min={todayIST()} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputClass} />
+        </Field>
+        {kind !== "WFH" && (
+          <Field label={kind === "SHORT_LEAVE" ? "Coming in or leaving at" : "Leaving at"} hint="Optional">
+            <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} className={inputClass} />
+          </Field>
+        )}
+      </div>
+      <Field label="Reason">
+        <textarea
+          rows={2}
+          required
+          value={form.reason}
+          onChange={(e) => setForm({ ...form, reason: e.target.value })}
+          className={inputClass}
+          placeholder={kind === "WFH" ? "e.g. Waiting for a delivery at home" : kind === "HALF_DAY" ? "e.g. Doctor appointment in the afternoon" : "e.g. Bank work, coming in at 12"}
+        />
       </Field>
       <ErrorBox message={error} />
       <div className="flex justify-end gap-2">

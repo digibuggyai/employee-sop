@@ -60,6 +60,7 @@ export type DayRow = {
   extraMin?: number;
   extraDay?: boolean;
   wfhFullDay?: boolean;
+  requests?: { kind: "WFH" | "HALF_DAY" | "SHORT_LEAVE"; status: "PENDING" | "APPROVED"; time: string | null }[];
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;
@@ -118,7 +119,7 @@ export async function monthReports(userIds: string[], month: string) {
   });
   const personOf = new Map(people.map((p) => [p.id, p]));
 
-  const [rows, leaves, pendingChanges, leavesUsed] = await Promise.all([
+  const [rows, leaves, pendingChanges, leavesUsed, dayRequests] = await Promise.all([
     prisma.attendance.findMany({
       where: { userId: { in: userIds }, date: { gte: toDbDate(firstMonday), lte: toDbDate(lastSunday) } },
       include: { breaks: true, notes: { orderBy: { createdAt: "asc" }, select: { text: true, author: { select: { name: true } } } } },
@@ -139,6 +140,10 @@ export async function monthReports(userIds: string[], month: string) {
         date: { gte: toDbDate(`${LEAVE_POLICY_START}-01`), lte: toDbDate(dates.at(-1)!) },
       },
       _count: true,
+    }),
+    prisma.dayRequest.findMany({
+      where: { userId: { in: userIds }, status: { not: "REJECTED" }, date: range },
+      select: { userId: true, date: true, kind: true, status: true, time: true },
     }),
   ]);
 
@@ -173,14 +178,19 @@ export async function monthReports(userIds: string[], month: string) {
       const att = attByDate.get(date);
       const leave = leaveByDate.get(date);
       const pending = pendingChanges.find((c) => c.userId === userId && dayKey(c.date) === date);
-      const flags = pending ? { pendingChange: pending.id } : {};
+      const dayReqs = dayRequests
+        .filter((q) => q.userId === userId && dayKey(q.date) === date)
+        .map((q) => ({ kind: q.kind, status: q.status as "PENDING" | "APPROVED", time: q.time }));
+      const approved = (kind: string) => dayReqs.some((q) => q.kind === kind && q.status === "APPROVED");
+      const flags = { ...(pending && { pendingChange: pending.id }), ...(dayReqs.length && { requests: dayReqs }) };
 
       if (att) {
         const { breakMs, workedMs } = dayTotals(att);
         summary.present++;
         summary[att.place === "WFH" ? "wfh" : "inOffice"]++;
         summary.workedMs += workedMs;
-        if (att.halfDay) summary.halfDays++;
+        const halfDay = att.halfDay || approved("HALF_DAY");
+        if (halfDay) summary.halfDays++;
         const madeUp = leaveByMakeUpDay.get(date);
         const extraDay = isOffDay(date, person?.employmentType) && !madeUp;
         const extraMin = extraDay && att.checkOut ? Math.round(workedMs / 60000) : 0;
@@ -198,11 +208,11 @@ export async function monthReports(userIds: string[], month: string) {
           plan: att.plan,
           ...(att.notes.length && { dayNotes: att.notes.map((n) => ({ text: n.text, author: n.author.name })) }),
           report: att.report,
-          ...(att.halfDay && { halfDay: "MARKED" as const }),
+          ...(halfDay && { halfDay: "MARKED" as const }),
           ...flags,
           ...(madeUp && { compensates: dayKey(madeUp.date) }),
           ...(extraDay && { extraDay: true }),
-          ...(att.wfhFullDay && { wfhFullDay: true }),
+          ...((att.wfhFullDay || approved("WFH")) && { wfhFullDay: true }),
           ...(extraMin && { extraMin }),
         };
       }
@@ -221,7 +231,7 @@ export async function monthReports(userIds: string[], month: string) {
       if (leftOn && date > leftOn) return { ...base, status: "LEFT" };
       if (holidayByDate.has(date)) return { ...base, status: "HOLIDAY" };
       if (isOffDay(date, person?.employmentType)) return { ...base, status: "WEEKEND" };
-      if (date >= today) return { ...base, status: "UPCOMING" };
+      if (date >= today) return { ...base, status: "UPCOMING", ...flags };
       if (date < start) return { ...base, status: "NOT_JOINED" };
       summary.absent++;
       return { ...base, status: "ABSENT", ...flags };

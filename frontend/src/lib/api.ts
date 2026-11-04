@@ -110,6 +110,7 @@ export type DayRow = {
   plan?: string | null;
   report?: string | null;
   compensates?: string;
+  requests?: { kind: DayRequestKind; status: "PENDING" | "APPROVED"; time: string | null }[];
   leave?: { id: string; reason: string | null; compensatedOn: string | null; emergency: boolean };
   note?: string | null;
   dayNotes?: { text: string; author: string }[];
@@ -186,6 +187,23 @@ export type Task = {
 };
 
 export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type DayRequestKind = "WFH" | "HALF_DAY" | "SHORT_LEAVE";
+
+export const dayRequestLabels: Record<DayRequestKind, string> = { WFH: "WFH", HALF_DAY: "Half day", SHORT_LEAVE: "Short leave" };
+
+export type DayRequest = {
+  id: string;
+  date: string;
+  kind: DayRequestKind;
+  time: string | null;
+  reason: string;
+  status: LeaveStatus;
+  reviewedBy: { id: string; name: string } | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  user?: { id: string; name: string; photoUpdatedAt?: string | null };
+};
 
 export type Leave = {
   id: string;

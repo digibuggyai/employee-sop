@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { Download, PencilLine } from "lucide-react";
-import type { DayRow, MonthReport, WeekRow } from "@/lib/api";
+import { dayRequestLabels, type DayRow, type MonthReport, type WeekRow } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { fmtMinutes } from "@/lib/shift";
 import { currentWeek, weekProgress } from "@/lib/weeks";
@@ -37,6 +37,15 @@ function extraTag(d: DayRow): string | null {
   return d.extraMin ? `+${mins(d.extraMin)} extra` : null;
 }
 
+function RequestTags({ d }: { d: DayRow }) {
+  return d.requests?.map((q) => (
+    <Tag key={q.kind} tone={q.status === "APPROVED" ? "green" : "amber"}>
+      {dayRequestLabels[q.kind]}
+      {q.time ? ` ${q.time}` : ""} {q.status === "APPROVED" ? "approved" : "requested"}
+    </Tag>
+  ));
+}
+
 function dayNotes(d: DayRow): string[] {
   const notes: string[] = [];
   if (d.note) notes.push(d.note);
@@ -46,6 +55,7 @@ function dayNotes(d: DayRow): string[] {
   if (late) notes.push(late.text);
   const extra = extraTag(d);
   if (extra) notes.push(extra);
+  d.requests?.forEach((q) => notes.push(`${dayRequestLabels[q.kind]} ${q.status === "APPROVED" ? "approved" : "requested"}`));
   if (d.plan) notes.push(`Plan: ${d.plan}`);
   if (d.report) notes.push(`Report: ${d.report}`);
   d.dayNotes?.forEach((n) => notes.push(`Note from ${n.author}: ${n.text}`));
@@ -257,9 +267,10 @@ export default function MonthSheet({
                         <span className="font-medium">{n.author}:</span> {n.text}
                       </p>
                     ))}
-                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || extraTag(d)) && (
+                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || extraTag(d) || d.requests) && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
+                        <RequestTags d={d} />
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                         {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
                         {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
@@ -323,6 +334,7 @@ export default function MonthSheet({
                       <td className={`${table.td} py-2.5`}>
                         <div className="flex items-center gap-1.5">
                           {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
+                        <RequestTags d={d} />
                           {d.note && (
                             <span className="max-w-56 truncate text-xs text-zinc-600" title={d.note}>
                               {d.note}

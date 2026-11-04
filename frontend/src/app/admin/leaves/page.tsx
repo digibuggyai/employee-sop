@@ -11,7 +11,7 @@ import { usePending } from "@/components/Pending";
 import PageHeader from "@/components/PageHeader";
 import { Button, ErrorBox, Field, Segmented, inputBase, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton } from "@/components/ui";
-import { api, type Leave, type OverviewRow, type UserBrief } from "@/lib/api";
+import { api, dayRequestLabels, type DayRequest, type Leave, type OverviewRow, type UserBrief } from "@/lib/api";
 import { fmtDate, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
 
 const dayName = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" });
@@ -22,6 +22,7 @@ export default function AdminLeavesPage() {
   const confirm = useConfirm();
   const [month, setMonth] = useState(thisMonthIST());
   const [pending, setPending] = useState<Leave[] | null>(null);
+  const [dayRequests, setDayRequests] = useState<DayRequest[]>([]);
   const [leaves, setLeaves] = useState<Leave[] | null>(null);
   const [employees, setEmployees] = useState<UserBrief[]>([]);
   const [error, setError] = useState("");
@@ -44,7 +45,20 @@ export default function AdminLeavesPage() {
         setLeaves(m.leaves.filter((l) => l.status !== "PENDING"));
       })
       .catch((err) => setError(err.message));
+    api<DayRequest[]>("/api/day-requests/admin")
+      .then(setDayRequests)
+      .catch(() => {});
   }, [month, version]);
+
+  async function reviewRequest(q: DayRequest, status: "APPROVED" | "REJECTED") {
+    try {
+      await api(`/api/day-requests/${q.id}`, { method: "PATCH", body: { status } });
+      toast.success(`${status === "APPROVED" ? "Approved" : "Rejected"} ${q.user?.name}'s ${dayRequestLabels[q.kind].toLowerCase()} on ${fullDay(q.date)}`);
+      reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update");
+    }
+  }
 
   const { refresh: refreshBadges } = usePending();
   const reload = () => {
@@ -140,6 +154,43 @@ export default function AdminLeavesPage() {
           </ul>
         )}
       </Card>
+
+      {dayRequests.length > 0 && (
+        <Card
+          title="WFH, half day and short leave"
+          actions={<Badge tone="amber">{dayRequests.length}</Badge>}
+          className="-mt-4 mb-8"
+          flush
+        >
+          <ul className="divide-y divide-zinc-100">
+            {dayRequests.map((q) => (
+              <li key={q.id} className="flex flex-wrap items-start gap-x-3 gap-y-3 px-4 py-3.5 sm:flex-nowrap sm:items-center sm:gap-x-4 sm:px-5">
+                <Avatar person={q.user ?? { name: "?" }} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-zinc-900">
+                    {q.user?.name} <span className="font-normal text-zinc-500">· {fullDay(q.date)}</span>
+                  </p>
+                  <p className="text-[13px] wrap-break-word text-zinc-600">
+                    <span className="font-medium text-brand-700">
+                      {dayRequestLabels[q.kind]}
+                      {q.time ? ` at ${q.time}` : ""} ·{" "}
+                    </span>
+                    {q.reason}
+                  </p>
+                </div>
+                <div className="flex w-full gap-2 pl-11 sm:w-auto sm:pl-0">
+                  <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={() => reviewRequest(q, "REJECTED")}>
+                    <X size={14} /> Reject
+                  </Button>
+                  <Button size="sm" className="flex-1 sm:flex-none" onClick={() => reviewRequest(q, "APPROVED")}>
+                    <Check size={14} /> Approve
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
