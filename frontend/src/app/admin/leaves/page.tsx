@@ -9,7 +9,7 @@ import { useConfirm, useToast } from "@/components/Feedback";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import { usePending } from "@/components/Pending";
 import PageHeader from "@/components/PageHeader";
-import { Button, ErrorBox, Field, inputBase, inputClass } from "@/components/form";
+import { Button, ErrorBox, Field, Segmented, inputBase, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton } from "@/components/ui";
 import { api, type Leave, type OverviewRow, type UserBrief } from "@/lib/api";
 import { fmtDate, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
@@ -251,7 +251,7 @@ function RecordLeaveForm({
   onDone: (created: number) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState({ userId: "", from: todayIST(), to: todayIST(), reason: "" });
+  const [form, setForm] = useState({ userId: "", from: todayIST(), to: todayIST(), reason: "", emergency: false });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const update = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -289,6 +289,17 @@ function RecordLeaveForm({
         <Field label="To">
           <input name="to" type="date" required min={form.from} value={form.to} onChange={update} className={inputClass} />
         </Field>
+      </div>
+      <div>
+        <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Category</p>
+        <Segmented
+          value={form.emergency ? "EMERGENCY" : "APPROVED"}
+          onChange={(v) => setForm({ ...form, emergency: v === "EMERGENCY" })}
+          options={[
+            { value: "APPROVED", label: "Approved leave" },
+            { value: "EMERGENCY", label: "Emergency leave" },
+          ]}
+        />
       </div>
       <Field label="Reason" hint="Optional">
         <input name="reason" value={form.reason} onChange={update} className={inputClass} />

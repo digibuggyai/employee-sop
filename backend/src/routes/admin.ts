@@ -220,11 +220,17 @@ function lastDay(month: string) {
 
 router.post("/leaves", async (req, res) => {
   const parsed = z
-    .object({ userId: z.string(), from: z.iso.date(), to: z.iso.date(), reason: z.string().trim().max(500).optional() })
+    .object({
+      userId: z.string(),
+      from: z.iso.date(),
+      to: z.iso.date(),
+      reason: z.string().trim().max(500).optional(),
+      emergency: z.boolean().optional(),
+    })
     .refine((v) => v.to >= v.from, "End date can't be before the start date")
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-  const { userId, from, to, reason } = parsed.data;
+  const { userId, from, to, reason, emergency = false } = parsed.data;
 
   const dates = workingDaysBetween(from, to);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
@@ -233,6 +239,7 @@ router.post("/leaves", async (req, res) => {
       userId,
       date: toDbDate(d),
       reason: reason || null,
+      emergency,
       status: "APPROVED" as const,
       reviewedById: req.user!.id,
       reviewedAt: new Date(),
