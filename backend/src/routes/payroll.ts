@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireSuperAdmin } from "../lib/auth.js";
 import { toDbDate } from "../lib/dates.js";
 import { isOffDay, monthReports, thisMonth } from "../lib/reports.js";
+import { EXTRA_HOURS_PER_DAY } from "../lib/policy.js";
 
 const router = Router();
 router.use(requireAuth, requireSuperAdmin);
@@ -39,8 +40,10 @@ router.get("/", async (req, res) => {
     const paidLeaves = leavesNotMadeUp - unpaidLeaves;
     const halfDayCut = summary.halfDays * 0.5;
     const extraDays = fullTime ? 0 : days.filter((d) => d.extraDay).length;
+    const extraHoursMin = days.filter((d) => d.extraMin && !d.extraDay).reduce((sum, d) => sum + d.extraMin!, 0);
+    const extraHourDays = fullTime ? 0 : Math.floor(extraHoursMin / (EXTRA_HOURS_PER_DAY * 60));
     const deductions = notEmployed + summary.absent + summary.latePenaltyDays + halfDayCut + unpaidLeaves + pendingLeaves;
-    const payableDays = round2(workingDays - deductions + extraDays);
+    const payableDays = round2(workingDays - deductions + extraDays + extraHourDays);
     const payPercent = workingDays ? round2((payableDays / workingDays) * 100) : 0;
     const bonus = bonuses.find((b) => b.userId === user.id);
 
@@ -58,6 +61,8 @@ router.get("/", async (req, res) => {
       madeUpLeaves: summary.leavesCompensated,
       leaveBalance: summary.leaveBalance,
       extraDays,
+      extraHoursMin,
+      extraHourDays,
       deductions: round2(deductions),
       payableDays,
       payPercent,

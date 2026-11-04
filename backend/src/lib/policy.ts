@@ -10,6 +10,7 @@ export const EMERGENCY_LEAVES_PER_MONTH = 1;
 export const AUTO_CHECKOUT_AT = "23:00";
 
 export const SIX_DAY_WEEK_FROM = "2026-11-01";
+export const EXTRA_HOURS_PER_DAY = 6;
 
 export const worksSaturdays = (employmentType: string | null | undefined, date: string) =>
   employmentType === "FULL_TIME" && date >= SIX_DAY_WEEK_FROM;

@@ -219,6 +219,8 @@ export type PayrollRow = {
   madeUpLeaves: number;
   leaveBalance: number | null;
   extraDays: number;
+  extraHoursMin: number;
+  extraHourDays: number;
   deductions: number;
   payableDays: number;
   payPercent: number;

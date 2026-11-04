@@ -12,7 +12,9 @@ import PageHeader from "@/components/PageHeader";
 import { Button, ErrorBox, Field, IconButton, inputClass } from "@/components/form";
 import { EmptyState, Skeleton, table } from "@/components/ui";
 import { api, employmentLabels, type PayrollRow } from "@/lib/api";
-import { downloadCsv, monthLabel, thisMonthIST } from "@/lib/format";
+import { downloadCsv, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
+
+const EXTRA_HOURS_PER_DAY = 6;
 
 const pct = (n: number) => `${n.toFixed(2).replace(/\.?0+$/, "")}%`;
 const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
@@ -31,6 +33,7 @@ function cuts(r: PayrollRow): string[] {
 function pluses(r: PayrollRow): string[] {
   return [
     r.extraDays && `+${days(r.extraDays)} extra`,
+    r.extraHourDays && `+${days(r.extraHourDays)} from ${fmtDuration(r.extraHoursMin * 60000)} extra hours`,
     r.paidLeaves && `${days(r.paidLeaves)} paid leave`,
     r.madeUpLeaves && `${r.madeUpLeaves} leave${r.madeUpLeaves === 1 ? "" : "s"} made up`,
   ].filter(Boolean) as string[];
@@ -64,7 +67,7 @@ export default function PayrollPage() {
         employmentLabels[r.user.employmentType],
         r.workingDays,
         r.deductions,
-        r.extraDays,
+        r.extraDays + r.extraHourDays,
         r.payableDays,
         r.payPercent,
         r.bonusPercent,
@@ -167,7 +170,17 @@ export default function PayrollPage() {
                           )}
                         </td>
                         <td className={`${table.td} whitespace-normal`}>
-                          {r.extraDays ? <p className="font-medium text-emerald-700 tabular-nums">+{r.extraDays}</p> : <span className="text-zinc-400">—</span>}
+                          {r.extraDays + r.extraHourDays ? (
+                            <p className="font-medium text-emerald-700 tabular-nums">+{r.extraDays + r.extraHourDays}</p>
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                          {r.extraHoursMin > 0 && r.user.employmentType !== "FULL_TIME" && (
+                            <p className="max-w-48 text-xs text-zinc-500">
+                              {fmtDuration(r.extraHoursMin * 60000)} extra hours
+                              {r.extraHourDays ? ` = ${days(r.extraHourDays)}` : ` · ${EXTRA_HOURS_PER_DAY}h = 1 day`}
+                            </p>
+                          )}
                           {(r.paidLeaves > 0 || r.madeUpLeaves > 0) && (
                             <p className="max-w-48 text-xs text-zinc-500">{pluses(r).filter((p) => !p.startsWith("+")).join(", ")}</p>
                           )}
