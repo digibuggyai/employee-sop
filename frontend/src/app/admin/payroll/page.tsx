@@ -12,7 +12,7 @@ import PageHeader from "@/components/PageHeader";
 import { Button, ErrorBox, Field, IconButton, inputClass } from "@/components/form";
 import { EmptyState, Skeleton, table } from "@/components/ui";
 import { api, employmentLabels, type PayrollRow } from "@/lib/api";
-import { downloadCsv, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
+import { downloadCsv, fmtDuration, fmtRupees, monthLabel, thisMonthIST } from "@/lib/format";
 
 const EXTRA_HOURS_PER_DAY = 6;
 
@@ -61,7 +61,7 @@ export default function PayrollPage() {
   function exportCsv() {
     if (!rows) return;
     downloadCsv(`payroll-${month}.csv`, [
-      ["Name", "Type", "Working days", "Deductions (days)", "Extra days", "Payable days", "Pay %", "Bonus %", "Total %", "Details"],
+      ["Name", "Type", "Working days", "Deductions (days)", "Extra days", "Payable days", "Pay %", "Bonus %", "Total %", "Reimbursement (Rs)", "Reimbursement still to pay (Rs)", "Details"],
       ...rows.map((r) => [
         r.user.name,
         employmentLabels[r.user.employmentType],
@@ -72,6 +72,8 @@ export default function PayrollPage() {
         r.payPercent,
         r.bonusPercent,
         r.totalPercent,
+        r.reimbursementPaise / 100,
+        r.reimbursementDuePaise / 100,
         [...cuts(r), ...pluses(r), r.bonusNote ? `Bonus: ${r.bonusNote}` : ""].filter(Boolean).join("; "),
       ]),
     ]);
@@ -131,6 +133,12 @@ export default function PayrollPage() {
                       <p className="text-lg font-semibold text-zinc-900 tabular-nums">{pct(r.totalPercent)}</p>
                     </div>
                     <Breakdown row={r} onEdit={() => setEditing(r)} />
+                    {r.reimbursementPaise > 0 && (
+                      <div className="mt-1.5 flex items-baseline justify-between pl-11 text-xs">
+                        <span className="text-zinc-500">Reimbursement</span>
+                        <Reimbursement row={r} />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -139,7 +147,7 @@ export default function PayrollPage() {
                 <table className={table.table}>
                   <thead className={table.thead}>
                     <tr>
-                      {["Name", "Working days", "Deductions", "Extra", "Pay %", "Bonus", "Total %"].map((h) => (
+                      {["Name", "Working days", "Deductions", "Extra", "Pay %", "Bonus", "Total %", "Reimbursement"].map((h) => (
                         <th key={h} className={table.th}>
                           {h}
                         </th>
@@ -201,6 +209,9 @@ export default function PayrollPage() {
                           {r.bonusNote && <p className="max-w-40 truncate text-xs text-zinc-500" title={r.bonusNote}>{r.bonusNote}</p>}
                         </td>
                         <td className={`${table.td} text-base font-semibold text-zinc-900 tabular-nums`}>{pct(r.totalPercent)}</td>
+                        <td className={table.td}>
+                          <Reimbursement row={r} />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -213,6 +224,22 @@ export default function PayrollPage() {
 
       <BonusDialog row={editing} month={month} onClose={() => setEditing(null)} onSaved={() => setVersion((v) => v + 1)} />
     </>
+  );
+}
+
+function Reimbursement({ row }: { row: PayrollRow }) {
+  if (!row.reimbursementPaise) return <span className="text-zinc-400">—</span>;
+  return (
+    <div className="text-right md:text-left">
+      <p className="font-semibold text-zinc-900 tabular-nums">+{fmtRupees(row.reimbursementPaise)}</p>
+      <p className="text-xs text-zinc-500">
+        {row.reimbursementDuePaise
+          ? row.reimbursementDuePaise === row.reimbursementPaise
+            ? "To pay"
+            : `${fmtRupees(row.reimbursementDuePaise)} to pay`
+          : "Paid"}
+      </p>
+    </div>
   );
 }
 

@@ -19,12 +19,18 @@ router.get("/", async (req, res) => {
     orderBy: [{ active: "desc" }, { name: "asc" }],
     select: { id: true, name: true, designation: true, employmentType: true, photoUpdatedAt: true },
   });
-  const [reports, bonuses] = await Promise.all([
+  const [y, m] = month.split("-").map(Number);
+  const monthRange = { gte: toDbDate(`${month}-01`), lte: new Date(Date.UTC(y, m, 0)) };
+  const [reports, bonuses, claims] = await Promise.all([
     monthReports(
       users.map((u) => u.id),
       month,
     ),
     prisma.payBonus.findMany({ where: { month, userId: { in: users.map((u) => u.id) } } }),
+    prisma.reimbursement.findMany({
+      where: { userId: { in: users.map((u) => u.id) }, status: { in: ["APPROVED", "PAID"] }, date: monthRange },
+      select: { userId: true, amountPaise: true, status: true },
+    }),
   ]);
 
   const today = todayString();
@@ -50,6 +56,9 @@ router.get("/", async (req, res) => {
     const payableDays = round2(workingDays - daysLeft - deductions + extraDays + extraHourDays);
     const payPercent = workingDays ? round2((payableDays / workingDays) * 100) : 0;
     const bonus = bonuses.find((b) => b.userId === user.id);
+    const myClaims = claims.filter((c) => c.userId === user.id);
+    const reimbursementPaise = myClaims.reduce((sum, c) => sum + c.amountPaise, 0);
+    const reimbursementDuePaise = myClaims.filter((c) => c.status === "APPROVED").reduce((sum, c) => sum + c.amountPaise, 0);
 
     return {
       user,
@@ -73,6 +82,9 @@ router.get("/", async (req, res) => {
       bonusPercent: bonus?.percent ?? 0,
       bonusNote: bonus?.note ?? null,
       totalPercent: round2(payPercent + (bonus?.percent ?? 0)),
+      reimbursementPaise,
+      reimbursementDuePaise,
+      reimbursementCount: myClaims.length,
     };
   });
   res.json({ month, rows });

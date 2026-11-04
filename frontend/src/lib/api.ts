@@ -246,6 +246,9 @@ export type PayrollRow = {
   bonusPercent: number;
   bonusNote: string | null;
   totalPercent: number;
+  reimbursementPaise: number;
+  reimbursementDuePaise: number;
+  reimbursementCount: number;
 };
 
 export type NoticeAudience = "ALL" | "FULL_TIME" | "PART_TIME" | "INTERN" | "REMOTE_INTERN";
