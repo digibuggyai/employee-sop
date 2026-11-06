@@ -9,7 +9,8 @@ import { useConfirm, useToast } from "@/components/Feedback";
 import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
-import { Button } from "@/components/form";
+import Modal from "@/components/Modal";
+import { Button, ErrorBox, Field, inputClass } from "@/components/form";
 import { Badge, Skeleton, type Tone } from "@/components/ui";
 import { api, type Correction, type DayRow, type MonthReport } from "@/lib/api";
 import { fmtDate, fmtTime, thisMonthIST } from "@/lib/format";
@@ -22,6 +23,7 @@ export default function AttendancePage() {
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   const [editing, setEditing] = useState<DayRow | null>(null);
+  const [reportFor, setReportFor] = useState<DayRow | null>(null);
 
   useEffect(() => {
     api<MonthReport>(`/api/attendance/month?month=${month}`)
@@ -54,12 +56,26 @@ export default function AttendancePage() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         {!report && !error && <Skeleton className="h-96" />}
         {report && (
-          <MonthSheet report={report} name={user?.name ?? "me"} onEditDay={setEditing} editLabel="Request a change" />
+          <MonthSheet
+            report={report}
+            name={user?.name ?? "me"}
+            onEditDay={setEditing}
+            editLabel="Request a change"
+            onSendReport={setReportFor}
+          />
         )}
         {requests.length > 0 && <MyRequests requests={requests} onChanged={reload} />}
       </div>
 
       <DayEditDialog day={editing} mode="request" onClose={() => setEditing(null)} onSaved={reload} />
+      <Modal
+        open={!!reportFor}
+        onClose={() => setReportFor(null)}
+        title={reportFor ? `WFH report for ${fmtDate(reportFor.date)}` : ""}
+        description="This day counts as absent until an admin approves your report."
+      >
+        {reportFor && <MissingReportForm key={reportFor.date} day={reportFor} onClose={() => setReportFor(null)} onSaved={reload} />}
+      </Modal>
     </>
   );
 }
@@ -126,5 +142,52 @@ function MyRequests({ requests, onChanged }: { requests: Correction[]; onChanged
         })}
       </ul>
     </Card>
+  );
+}
+
+function MissingReportForm({ day, onClose, onSaved }: { day: DayRow; onClose: () => void; onSaved: () => void }) {
+  const toast = useToast();
+  const [report, setReport] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await api("/api/day-requests", { method: "POST", body: { kind: "WFH_REPORT", date: day.date, reason: report } });
+      toast.success("Report sent. Your admin will review it.");
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={send} className="space-y-4">
+      <Field label="What did you get done that day?">
+        <textarea
+          required
+          minLength={20}
+          rows={5}
+          value={report}
+          onChange={(e) => setReport(e.target.value)}
+          className={inputClass}
+          placeholder="Tasks finished, progress on ongoing work, anything blocked"
+        />
+      </Field>
+      <ErrorBox message={error} />
+      <div className="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={loading}>
+          Send report
+        </Button>
+      </div>
+    </form>
   );
 }

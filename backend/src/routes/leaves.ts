@@ -5,6 +5,7 @@ import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { notifyAdmins } from "../lib/notify.js";
 import { EMERGENCY_LEAVES_PER_MONTH } from "../lib/policy.js";
+import { syncMakeUps } from "../lib/makeups.js";
 import { daysOfMonth, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 
 const router = Router();
@@ -85,8 +86,18 @@ router.post("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const leave = await prisma.leave.findUnique({ where: { id: req.params.id } });
   if (!leave || leave.userId !== req.user!.id) return res.status(404).json({ error: "Leave not found" });
-  if (leave.status !== "PENDING") return res.status(400).json({ error: "Only pending requests can be cancelled" });
+  const upcoming = leave.date.toISOString().slice(0, 10) >= todayString();
+  if (leave.status === "REJECTED" || (leave.status === "APPROVED" && !upcoming)) {
+    return res.status(400).json({ error: "Only pending leave, or approved leave for today or later, can be withdrawn" });
+  }
   await prisma.leave.delete({ where: { id: leave.id } });
+  if (leave.status === "APPROVED") {
+    await syncMakeUps(leave.userId);
+    await notifyAdmins(
+      { title: `${req.user!.name} withdrew a leave`, body: leave.date.toISOString().slice(0, 10), link: "/admin/leaves" },
+      leave.userId,
+    );
+  }
   res.json({ ok: true });
 });
 

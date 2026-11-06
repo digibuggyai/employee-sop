@@ -324,6 +324,15 @@ router.patch("/leaves/:id", async (req, res) => {
   res.json(updated);
 });
 
+router.delete("/leaves/:id", async (req, res) => {
+  const leave = await prisma.leave.findUnique({ where: { id: String(req.params.id) } });
+  if (!leave) return res.status(404).json({ error: "Leave not found" });
+  await prisma.leave.delete({ where: { id: leave.id } });
+  await syncMakeUps(leave.userId);
+  await notify(leave.userId, { title: "Leave cancelled", body: `${dayLabel(leave.date)} · by ${firstName(req.user!.name)}`, link: "/leave" });
+  res.json({ ok: true });
+});
+
 router.get("/pending", async (_req, res) => {
   const [leaves, dayRequests, corrections, reimbursements] = await Promise.all([
     prisma.leave.count({ where: { status: "PENDING" } }),

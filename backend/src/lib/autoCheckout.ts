@@ -38,7 +38,10 @@ export async function autoCheckout() {
       const label = day.date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
       await notify(day.userId, {
         title: "You forgot to check out",
-        body: `${label} · checked out at ${time} automatically. If that's wrong, ask for a change on Attendance.`,
+        body:
+          day.place === "WFH" && !day.report?.trim()
+            ? `${label} · checked out at ${time} automatically. No WFH report was sent, so the day counts as absent until you send it from Attendance.`
+            : `${label} · checked out at ${time} automatically. If that's wrong, ask for a change on Attendance.`,
         link: "/attendance",
       });
     }

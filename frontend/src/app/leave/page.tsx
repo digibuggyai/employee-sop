@@ -18,7 +18,9 @@ type LeaveData = {
   emergency: { used: number; allowed: number };
 };
 
-const kindHints: Record<"LEAVE" | DayRequestKind, string> = {
+type RequestKind = "LEAVE" | "WFH" | "HALF_DAY" | "SHORT_LEAVE";
+
+const kindHints: Record<RequestKind, string> = {
   LEAVE: "Ask in advance. Starting today counts as your emergency leave (1 a month). Weekends and holidays are skipped.",
   WFH: "Your first 4 WFH days a month are free. After that, an approved WFH day still counts as a full day.",
   HALF_DAY: "An approved half day counts as half a working day.",
@@ -31,7 +33,7 @@ export default function LeavePage() {
   const [data, setData] = useState<LeaveData | null>(null);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [kind, setKind] = useState<"LEAVE" | DayRequestKind>("LEAVE");
+  const [kind, setKind] = useState<RequestKind>("LEAVE");
   const [requests, setRequests] = useState<DayRequest[] | null>(null);
   const [version, setVersion] = useState(0);
 
@@ -63,7 +65,7 @@ export default function LeavePage() {
 
   async function cancel(leave: Leave) {
     const ok = await confirm({
-      title: "Cancel this leave request?",
+      title: leave.status === "APPROVED" ? "Withdraw this leave?" : "Cancel this leave request?",
       description: `Your request for ${fmtDate(leave.date)} will be withdrawn.`,
       confirmLabel: "Withdraw request",
       danger: true,
@@ -224,7 +226,7 @@ export default function LeavePage() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
                     <LeaveStatusBadge status={l.status} />
-                    {l.status === "PENDING" && (
+                    {(l.status === "PENDING" || (l.status === "APPROVED" && l.date.slice(0, 10) >= todayIST())) && (
                       <Button variant="ghost" size="sm" onClick={() => cancel(l)}>
                         Withdraw
                       </Button>
@@ -235,7 +237,7 @@ export default function LeavePage() {
             </ul>
           )}
           <p className="hidden border-t border-zinc-100 px-5 py-3 text-xs text-zinc-500 md:block">
-            Each Saturday or holiday you work makes up one leave of the same month automatically. Extra ones count as overtime.
+            Each Saturday or holiday you work makes up one leave of the same month automatically. Came in on a leave day? Checking in withdraws that leave.
           </p>
         </Card>
 
@@ -270,7 +272,7 @@ export default function LeavePage() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
                     <LeaveStatusBadge status={q.status} />
-                    {q.status === "PENDING" && (
+                    {(q.status === "PENDING" || (q.status === "APPROVED" && q.kind !== "WFH_REPORT" && q.date.slice(0, 10) >= todayIST())) && (
                       <Button variant="ghost" size="sm" onClick={() => withdraw(q)}>
                         Withdraw
                       </Button>

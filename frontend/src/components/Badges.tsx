@@ -72,7 +72,7 @@ export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {
   );
 }
 
-export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" | "green" }) {
+export function Tag({ children, tone = "zinc" }: { children: React.ReactNode; tone?: "zinc" | "amber" | "violet" | "green" | "red" }) {
   return <Badge tone={tone}>{children}</Badge>;
 }
 

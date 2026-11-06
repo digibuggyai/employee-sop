@@ -106,6 +106,7 @@ export type DayRow = {
   extraMin?: number;
   extraDay?: boolean;
   wfhFullDay?: boolean;
+  noReport?: boolean;
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;
@@ -188,9 +189,15 @@ export type Task = {
 
 export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
 
-export type DayRequestKind = "WFH" | "HALF_DAY" | "SHORT_LEAVE";
+export type DayRequestKind = "WFH" | "HALF_DAY" | "SHORT_LEAVE" | "LATE_EARLY" | "WFH_REPORT";
 
-export const dayRequestLabels: Record<DayRequestKind, string> = { WFH: "WFH", HALF_DAY: "Half day", SHORT_LEAVE: "Short leave" };
+export const dayRequestLabels: Record<DayRequestKind, string> = {
+  WFH: "WFH",
+  HALF_DAY: "Half day",
+  SHORT_LEAVE: "Short leave",
+  LATE_EARLY: "Late/early",
+  WFH_REPORT: "WFH report",
+};
 
 export type DayRequest = {
   id: string;

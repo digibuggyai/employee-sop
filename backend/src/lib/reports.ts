@@ -3,7 +3,7 @@ import { TIMEZONE, toDbDate, todayString } from "./dates.js";
 import { holidayList, holidayOn } from "./holidays.js";
 import {
   FREE_SHORT_LEAVES, GRACE_MIN, LATES_PER_ABSENCE, LEAVE_PER_MONTH, LEAVE_POLICY_START, SHORT_LEAVE_MAX_MIN, parseTimings,
-  worksSaturdays,
+  worksSaturdays, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM,
 } from "./policy.js";
 import type { Attendance, Break } from "../generated/prisma/client.js";
 
@@ -60,7 +60,8 @@ export type DayRow = {
   extraMin?: number;
   extraDay?: boolean;
   wfhFullDay?: boolean;
-  requests?: { kind: "WFH" | "HALF_DAY" | "SHORT_LEAVE"; status: "PENDING" | "APPROVED"; time: string | null }[];
+  noReport?: boolean;
+  requests?: { kind: "WFH" | "HALF_DAY" | "SHORT_LEAVE" | "LATE_EARLY" | "WFH_REPORT"; status: "PENDING" | "APPROVED"; time: string | null }[];
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
   report?: string | null;
@@ -186,6 +187,25 @@ export async function monthReports(userIds: string[], month: string) {
 
       if (att) {
         const { breakMs, workedMs } = dayTotals(att);
+        const noReport =
+          att.place === "WFH" && date >= WFH_REPORT_FROM && !att.report?.trim() && (!!att.checkOut || date < today);
+        if (noReport) {
+          summary.absent++;
+          return {
+            ...base,
+            status: "ABSENT",
+            noReport: true,
+            place: att.place,
+            checkIn: att.checkIn,
+            checkOut: att.checkOut,
+            breaks: att.breaks.length,
+            breakMs,
+            workedMs,
+            note: att.note,
+            plan: att.plan,
+            ...flags,
+          };
+        }
         summary.present++;
         summary[att.place === "WFH" ? "wfh" : "inOffice"]++;
         summary.workedMs += workedMs;
@@ -233,15 +253,21 @@ export async function monthReports(userIds: string[], month: string) {
       if (isOffDay(date, person?.employmentType)) return { ...base, status: "WEEKEND" };
       if (date >= today) return { ...base, status: "UPCOMING", ...flags };
       if (date < start) return { ...base, status: "NOT_JOINED" };
+      if (approved("HALF_DAY")) {
+        summary.present++;
+        summary.halfDays++;
+        return { ...base, status: "PRESENT", halfDay: "MARKED", ...flags };
+      }
       summary.absent++;
       return { ...base, status: "ABSENT", ...flags };
     });
 
+    const autoShort = new Set<string>();
     const shift = parseTimings(person?.timings);
     if (shift) {
       const shiftLength = shift.end - shift.start;
       for (const d of days) {
-        if (!d.checkIn) continue;
+        if (!d.checkIn || d.noReport) continue;
         const dayStart = Date.parse(`${d.date}T00:00:00+05:30`);
         const minuteOf = (t: Date) => Math.round((t.getTime() - dayStart) / 60000);
         if (isOffDay(d.date, person?.employmentType)) {
@@ -276,16 +302,25 @@ export async function monthReports(userIds: string[], month: string) {
           d.shortMin = counted;
           d.halfDay = "OVER_2H";
           summary.halfDays++;
-        } else if (counted > 0) {
-          d.shortMin = counted;
-          summary.shortLeaves++;
-          d.shortLeave = summary.shortLeaves <= FREE_SHORT_LEAVES ? "FREE" : "COUNTED";
-        } else if (d.lateMin || d.earlyMin) {
-          d.madeUp = true;
+          continue;
         }
+        if (counted > 0) d.shortMin = counted;
+        const triggered =
+          d.date >= SHORT_LEAVE_RULE_FROM
+            ? !flexible && (late > LATE_SHORT_LEAVE_MIN || early > EARLY_SHORT_LEAVE_MIN)
+            : counted > 0;
+        if (triggered) autoShort.add(d.date);
+        else if (d.lateMin || d.earlyMin) d.madeUp = counted <= 0;
       }
-      summary.latePenaltyDays = Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE);
     }
+    for (const d of days) {
+      const marked = d.requests?.some((q) => q.status === "APPROVED" && (q.kind === "SHORT_LEAVE" || q.kind === "LATE_EARLY"));
+      if (d.halfDay || d.noReport || (!autoShort.has(d.date) && !marked)) continue;
+      d.madeUp = false;
+      summary.shortLeaves++;
+      d.shortLeave = summary.shortLeaves <= FREE_SHORT_LEAVES ? "FREE" : "COUNTED";
+    }
+    summary.latePenaltyDays = Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE);
 
     if (person?.employmentType === "FULL_TIME") {
       const from = start.slice(0, 7) > LEAVE_POLICY_START ? start.slice(0, 7) : LEAVE_POLICY_START;
@@ -295,7 +330,7 @@ export async function monthReports(userIds: string[], month: string) {
     }
 
     days
-      .filter((d) => d.place === "WFH" && !summary.remote && !d.extraDay)
+      .filter((d) => d.place === "WFH" && !summary.remote && !d.extraDay && !d.noReport)
       .slice(summary.wfhAllowance)
       .forEach((d) => {
         if (d.halfDay || d.wfhFullDay) return;

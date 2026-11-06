@@ -33,7 +33,8 @@ router.get("/month", async (req, res) => {
   res.json({ month, ...report });
 });
 
-const needsWfhNotes = (user: { employmentType: string }, place: string) => place === "WFH" && isIntern(user.employmentType);
+const needsPlan = (user: { employmentType: string }, place: string) => place === "WFH" && isIntern(user.employmentType);
+const needsReport = (place: string) => place === "WFH";
 
 router.post("/check-in", async (req, res) => {
   const parsed = z
@@ -41,7 +42,7 @@ router.post("/check-in", async (req, res) => {
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Choose In-office or WFH" });
   const { place, plan } = parsed.data;
-  if (needsWfhNotes(req.user!, place) && (plan ?? "").length < PLAN_MIN_CHARS) {
+  if (needsPlan(req.user!, place) && (plan ?? "").length < PLAN_MIN_CHARS) {
     return res.status(400).json({ error: "Write today's to-do plan before you start (WFH policy)" });
   }
 
@@ -52,6 +53,11 @@ router.post("/check-in", async (req, res) => {
     data: { userId: req.user!.id, date: toDbDate(todayString()), place, plan: plan || null, checkIn: new Date() },
     include: withBreaks,
   });
+  const { count: leaveWithdrawn } = await prisma.leave.deleteMany({ where: { userId: req.user!.id, date: toDbDate(todayString()) } });
+  if (leaveWithdrawn) {
+    await syncMakeUps(req.user!.id);
+    await notifyAdmins({ title: `${req.user!.name} came in on a leave day`, body: "Their leave for today was withdrawn", link: "/admin/leaves" }, req.user!.id);
+  }
   res.status(201).json(day);
 });
 
@@ -79,7 +85,7 @@ router.post("/check-out", async (req, res) => {
   const day = await findToday(req.user!.id);
   if (!day) return res.status(400).json({ error: "Check in first" });
   if (day.checkOut) return res.status(400).json({ error: "You've already checked out" });
-  if (needsWfhNotes(req.user!, day.place) && report.length < REPORT_MIN_CHARS) {
+  if (needsReport(day.place) && report.length < REPORT_MIN_CHARS) {
     return res.status(400).json({ error: "Write your work report before checking out (WFH policy)" });
   }
 

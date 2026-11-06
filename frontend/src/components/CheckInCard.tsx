@@ -80,9 +80,10 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
   const intern = user?.employmentType === "INTERN" || user?.employmentType === "REMOTE_INTERN";
   const needsNotes = intern && (day ? day.place : place) === "WFH";
+  const needsReport = (day ? day.place : place) === "WFH";
 
   async function checkOut(halfDay: boolean) {
-    if (needsNotes) return setReportFor({ halfDay });
+    if (needsReport) return setReportFor({ halfDay });
     const ok = await confirm(
       halfDay
         ? {
@@ -278,7 +279,7 @@ function WorkReportDialog({
       open={open}
       onClose={onClose}
       title={halfDay ? "Work report, then half day exit" : "Work report"}
-      description="WFH policy: share what you got done today before logging out."
+      description="WFH policy: share what you got done today. Without a report, the day counts as absent."
     >
       <form
         onSubmit={(e) => {

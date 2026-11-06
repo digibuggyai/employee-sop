@@ -46,6 +46,25 @@ function RequestTags({ d }: { d: DayRow }) {
   ));
 }
 
+function NoReport({ d, onSend }: { d: DayRow; onSend?: (d: DayRow) => void }) {
+  if (!d.noReport) return null;
+  const sent = d.requests?.some((q) => q.kind === "WFH_REPORT");
+  return (
+    <>
+      <Tag tone="red">No WFH report: absent</Tag>
+      {sent ? (
+        <Tag tone="amber">Report sent, waiting for admin</Tag>
+      ) : (
+        onSend && (
+          <button onClick={() => onSend(d)} className="text-xs font-medium text-brand-700 hover:underline">
+            Send report
+          </button>
+        )
+      )}
+    </>
+  );
+}
+
 function dayNotes(d: DayRow): string[] {
   const notes: string[] = [];
   if (d.note) notes.push(d.note);
@@ -55,6 +74,7 @@ function dayNotes(d: DayRow): string[] {
   if (late) notes.push(late.text);
   const extra = extraTag(d);
   if (extra) notes.push(extra);
+  if (d.noReport) notes.push("No WFH report: absent");
   d.requests?.forEach((q) => notes.push(`${dayRequestLabels[q.kind]} ${q.status === "APPROVED" ? "approved" : "requested"}`));
   if (d.plan) notes.push(`Plan: ${d.plan}`);
   if (d.report) notes.push(`Report: ${d.report}`);
@@ -73,12 +93,14 @@ export default function MonthSheet({
   onEditDay,
   editLabel = "Edit day",
   canExport = false,
+  onSendReport,
 }: {
   report: MonthReport;
   name: string;
   onEditDay?: (day: DayRow) => void;
   editLabel?: string;
   canExport?: boolean;
+  onSendReport?: (day: DayRow) => void;
 }) {
   const { days, summary, weeks } = report;
   const today = todayIST();
@@ -267,12 +289,13 @@ export default function MonthSheet({
                         <span className="font-medium">{n.author}:</span> {n.text}
                       </p>
                     ))}
-                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || extraTag(d) || d.requests) && (
+                    {(d.holiday || d.halfDay || d.compensates || d.leave || d.pendingChange || lateTag(d) || extraTag(d) || d.requests || d.noReport) && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {d.pendingChange && <Tag tone="amber">Change requested</Tag>}
                         <RequestTags d={d} />
                         {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                         {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
+                        <NoReport d={d} onSend={onSendReport} />
                         {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
                         {extraTag(d) && <Tag tone="green">{extraTag(d)}</Tag>}
                         {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
@@ -342,7 +365,8 @@ export default function MonthSheet({
                           )}
                           {d.holiday && <Tag tone="amber">{d.holiday}</Tag>}
                           {d.halfDay && <Tag tone="amber">{halfDayLabel[d.halfDay]}</Tag>}
-                          {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
+                          <NoReport d={d} onSend={onSendReport} />
+                        {lateTag(d) && <Tag tone={lateTag(d)!.tone}>{lateTag(d)!.text}</Tag>}
                           {extraTag(d) && <Tag tone="green">{extraTag(d)}</Tag>}
                           {d.leave?.emergency && <Tag tone="violet">Emergency</Tag>}
                           {d.plan && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarCheck2, CalendarOff, Check, Plus, X } from "lucide-react";
+import { CalendarCheck2, CalendarOff, Check, Plus, Trash2, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { LeaveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
@@ -9,7 +9,7 @@ import { useConfirm, useToast } from "@/components/Feedback";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import { usePending } from "@/components/Pending";
 import PageHeader from "@/components/PageHeader";
-import { Button, ErrorBox, Field, Segmented, inputBase, inputClass } from "@/components/form";
+import { Button, ErrorBox, Field, IconButton, Segmented, inputBase, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton } from "@/components/ui";
 import { api, dayRequestLabels, type DayRequest, type Leave, type OverviewRow, type UserBrief } from "@/lib/api";
 import { fmtDate, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
@@ -23,6 +23,7 @@ export default function AdminLeavesPage() {
   const [month, setMonth] = useState(thisMonthIST());
   const [pending, setPending] = useState<Leave[] | null>(null);
   const [dayRequests, setDayRequests] = useState<DayRequest[]>([]);
+  const [recorded, setRecorded] = useState<DayRequest[] | null>(null);
   const [leaves, setLeaves] = useState<Leave[] | null>(null);
   const [employees, setEmployees] = useState<UserBrief[]>([]);
   const [error, setError] = useState("");
@@ -48,7 +49,27 @@ export default function AdminLeavesPage() {
     api<DayRequest[]>("/api/day-requests/admin")
       .then(setDayRequests)
       .catch(() => {});
+    api<DayRequest[]>(`/api/day-requests/admin?month=${month}`)
+      .then(setRecorded)
+      .catch(() => setRecorded([]));
   }, [month, version]);
+
+  async function removeRequest(q: DayRequest) {
+    const ok = await confirm({
+      title: `Remove this ${dayRequestLabels[q.kind].toLowerCase()}?`,
+      description: `${q.user?.name}'s ${dayRequestLabels[q.kind].toLowerCase()} on ${fullDay(q.date)} will be deleted.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api(`/api/day-requests/${q.id}/admin`, { method: "DELETE" });
+      toast.success("Removed");
+      reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove");
+    }
+  }
 
   async function reviewRequest(q: DayRequest, status: "APPROVED" | "REJECTED") {
     try {
@@ -93,19 +114,19 @@ export default function AdminLeavesPage() {
         actions={
           !showForm && (
             <Button variant="secondary" onClick={() => setShowForm(true)}>
-              <Plus size={16} /> Record leave
+              <Plus size={16} /> Record
             </Button>
           )
         }
       />
 
       {showForm && (
-        <Card title="Record leave" description="For leave taken before the app, or informed by phone. Saved as approved." className="mb-4 md:mb-6 max-w-3xl">
+        <Card title="Record" description="Mark leave, emergency leave, a half day, a short leave or late/early for someone. Saved as approved." className="mb-4 md:mb-6 max-w-3xl">
           <RecordLeaveForm
             employees={employees}
-            onDone={(created) => {
+            onDone={(message) => {
               setShowForm(false);
-              toast.success(`Recorded ${created} leave day${created === 1 ? "" : "s"}`);
+              toast.success(message);
               reload();
             }}
             onCancel={() => setShowForm(false)}
@@ -157,7 +178,7 @@ export default function AdminLeavesPage() {
 
       {dayRequests.length > 0 && (
         <Card
-          title="WFH, half day and short leave"
+          title="WFH, half day, short leave and missing reports"
           actions={<Badge tone="amber">{dayRequests.length}</Badge>}
           className="-mt-4 mb-8"
           flush
@@ -220,12 +241,64 @@ export default function AdminLeavesPage() {
           </ul>
         )}
       </Card>
+
+      <Card title="Half days, short leaves and late/early" description={monthLabel(month)} className="mt-6" flush>
+        {!recorded ? (
+          <div className="p-5">
+            <Skeleton className="h-20" />
+          </div>
+        ) : recorded.length === 0 ? (
+          <EmptyState compact icon={CalendarOff} title={`Nothing recorded in ${monthLabel(month)}`} />
+        ) : (
+          <ul className="divide-y divide-zinc-100">
+            {recorded.map((q) => (
+              <li key={q.id} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
+                <Avatar person={q.user ?? { name: "?" }} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-zinc-900">
+                    {q.user?.name} <span className="font-normal text-zinc-500">· {fullDay(q.date)}</span>
+                  </p>
+                  <p className="truncate text-[13px] text-zinc-600">
+                    <span className="font-medium text-brand-700">
+                      {dayRequestLabels[q.kind]}
+                      {q.time ? ` at ${q.time}` : ""} ·{" "}
+                    </span>
+                    {q.reason}
+                  </p>
+                </div>
+                <LeaveStatusBadge status={q.status} />
+                <IconButton label="Remove" tone="danger" onClick={() => removeRequest(q)}>
+                  <Trash2 size={15} />
+                </IconButton>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </>
   );
 }
 
 function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void }) {
   const toast = useToast();
+  const confirm = useConfirm();
+
+  async function cancelLeave() {
+    const ok = await confirm({
+      title: "Cancel this leave?",
+      description: `${leave.user?.name}'s leave on ${fullDay(leave.date)} will be deleted. If they didn't work that day, it shows as absent.`,
+      confirmLabel: "Cancel leave",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api(`/api/admin/leaves/${leave.id}`, { method: "DELETE" });
+      toast.success("Leave cancelled");
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not cancel");
+    }
+  }
   const [options, setOptions] = useState<{ date: string; place: string }[] | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -289,9 +362,30 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
           </select>
         </label>
       )}
+      <IconButton label="Cancel leave" tone="danger" onClick={cancelLeave}>
+        <Trash2 size={15} />
+      </IconButton>
     </li>
   );
 }
+
+type RecordType = "LEAVE" | "EMERGENCY" | "HALF_DAY" | "SHORT_LEAVE" | "LATE_EARLY";
+
+const recordLabels: Record<RecordType, string> = {
+  LEAVE: "Leave",
+  EMERGENCY: "Emergency leave",
+  HALF_DAY: "Half day",
+  SHORT_LEAVE: "Short leave",
+  LATE_EARLY: "Late/early",
+};
+
+const recordHints: Record<RecordType, string> = {
+  LEAVE: "Full-day leave, saved as approved.",
+  EMERGENCY: "Full-day emergency leave, saved as approved.",
+  HALF_DAY: "Counts as half a working day (-0.5).",
+  SHORT_LEAVE: "Uses one of their 2 free short leaves this month. After 2, every 3 count as 1 day absent.",
+  LATE_EARLY: "Marks them late or early. Counts like a short leave.",
+};
 
 function RecordLeaveForm({
   employees,
@@ -299,22 +393,36 @@ function RecordLeaveForm({
   onCancel,
 }: {
   employees: UserBrief[];
-  onDone: (created: number) => void;
+  onDone: (message: string) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState({ userId: "", from: todayIST(), to: todayIST(), reason: "", emergency: false });
+  const [type, setType] = useState<RecordType>("LEAVE");
+  const [form, setForm] = useState({ userId: "", from: todayIST(), to: todayIST(), time: "", reason: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const update = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
+  const fullDayLeave = type === "LEAVE" || type === "EMERGENCY";
+  const name = employees.find((u) => u.id === form.userId)?.name ?? "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const r = await api<{ created: number }>("/api/admin/leaves", { method: "POST", body: form });
-      onDone(r.created);
+      if (fullDayLeave) {
+        const r = await api<{ created: number }>("/api/admin/leaves", {
+          method: "POST",
+          body: { userId: form.userId, from: form.from, to: form.to, reason: form.reason, emergency: type === "EMERGENCY" },
+        });
+        onDone(`Recorded ${r.created} ${type === "EMERGENCY" ? "emergency " : ""}leave day${r.created === 1 ? "" : "s"} for ${name}`);
+      } else {
+        await api("/api/day-requests/record", {
+          method: "POST",
+          body: { userId: form.userId, kind: type, date: form.from, time: form.time || null, reason: form.reason || undefined },
+        });
+        onDone(`${recordLabels[type]} recorded for ${name} on ${fullDay(form.from)}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save");
       setLoading(false);
@@ -323,6 +431,17 @@ function RecordLeaveForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Type</p>
+        <div className="overflow-x-auto">
+          <Segmented
+            value={type}
+            onChange={setType}
+            options={(Object.keys(recordLabels) as RecordType[]).map((value) => ({ value, label: recordLabels[value] }))}
+          />
+        </div>
+        <p className="mt-1.5 text-xs text-zinc-500">{recordHints[type]}</p>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Field label="Employee">
           <select name="userId" required value={form.userId} onChange={update} className={inputClass}>
@@ -334,23 +453,18 @@ function RecordLeaveForm({
             ))}
           </select>
         </Field>
-        <Field label="From">
+        <Field label={fullDayLeave ? "From" : "Date"}>
           <input name="from" type="date" required value={form.from} onChange={update} className={inputClass} />
         </Field>
-        <Field label="To">
-          <input name="to" type="date" required min={form.from} value={form.to} onChange={update} className={inputClass} />
-        </Field>
-      </div>
-      <div>
-        <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Category</p>
-        <Segmented
-          value={form.emergency ? "EMERGENCY" : "APPROVED"}
-          onChange={(v) => setForm({ ...form, emergency: v === "EMERGENCY" })}
-          options={[
-            { value: "APPROVED", label: "Approved leave" },
-            { value: "EMERGENCY", label: "Emergency leave" },
-          ]}
-        />
+        {fullDayLeave ? (
+          <Field label="To">
+            <input name="to" type="date" required min={form.from} value={form.to} onChange={update} className={inputClass} />
+          </Field>
+        ) : (
+          <Field label={type === "HALF_DAY" ? "Left at" : "Came in or left at"} hint="Optional">
+            <input name="time" type="time" value={form.time} onChange={update} className={inputClass} />
+          </Field>
+        )}
       </div>
       <Field label="Reason" hint="Optional">
         <input name="reason" value={form.reason} onChange={update} className={inputClass} />
@@ -361,7 +475,7 @@ function RecordLeaveForm({
           Cancel
         </Button>
         <Button type="submit" loading={loading}>
-          Save leave
+          Save {recordLabels[type].toLowerCase()}
         </Button>
       </div>
     </form>
