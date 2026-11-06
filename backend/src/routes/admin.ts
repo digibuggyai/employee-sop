@@ -324,6 +324,42 @@ router.patch("/leaves/:id", async (req, res) => {
   res.json(updated);
 });
 
+router.put("/leaves/:id/kind", async (req, res) => {
+  const parsed = z.object({ kind: z.enum(["LEAVE", "EMERGENCY", "HALF_DAY", "SHORT_LEAVE"]) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Choose the kind of leave" });
+  const { kind } = parsed.data;
+  const leave = await prisma.leave.findUnique({ where: { id: String(req.params.id) } });
+  if (!leave) return res.status(404).json({ error: "Leave not found" });
+
+  if (kind === "LEAVE" || kind === "EMERGENCY") {
+    await prisma.leave.update({ where: { id: leave.id }, data: { emergency: kind === "EMERGENCY" } });
+    return res.json({ ok: true });
+  }
+
+  const data = {
+    reason: leave.reason || `Changed from leave by ${firstName(req.user!.name)}`,
+    time: null,
+    status: "APPROVED" as const,
+    reviewedById: req.user!.id,
+    reviewedAt: new Date(),
+  };
+  await prisma.$transaction([
+    prisma.leave.delete({ where: { id: leave.id } }),
+    prisma.dayRequest.upsert({
+      where: { userId_date_kind: { userId: leave.userId, date: leave.date, kind } },
+      create: { ...data, userId: leave.userId, date: leave.date, kind },
+      update: data,
+    }),
+  ]);
+  await syncMakeUps(leave.userId);
+  await notify(leave.userId, {
+    title: `Leave changed to ${kind === "HALF_DAY" ? "half day" : "short leave"}`,
+    body: `${dayLabel(leave.date)} · by ${firstName(req.user!.name)}`,
+    link: "/leave",
+  });
+  res.json({ ok: true });
+});
+
 router.delete("/leaves/:id", async (req, res) => {
   const leave = await prisma.leave.findUnique({ where: { id: String(req.params.id) } });
   if (!leave) return res.status(404).json({ error: "Leave not found" });

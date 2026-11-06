@@ -283,6 +283,28 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
   const toast = useToast();
   const confirm = useConfirm();
 
+  async function changeKind(kind: string) {
+    const convert = kind === "HALF_DAY" || kind === "SHORT_LEAVE";
+    if (convert) {
+      const ok = await confirm({
+        title: `Change to ${kind === "HALF_DAY" ? "half day" : "short leave"}?`,
+        description: `${leave.user?.name}'s full-day leave on ${fullDay(leave.date)} becomes a ${kind === "HALF_DAY" ? "half day (-0.5)" : "short leave"}.`,
+        confirmLabel: "Change",
+      });
+      if (!ok) return;
+    }
+    setSaving(true);
+    try {
+      await api(`/api/admin/leaves/${leave.id}/kind`, { method: "PUT", body: { kind } });
+      toast.success(convert ? "Changed" : kind === "EMERGENCY" ? "Marked as emergency leave" : "Marked as leave");
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not change");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function cancelLeave() {
     const ok = await confirm({
       title: "Cancel this leave?",
@@ -336,6 +358,20 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
         </p>
       </div>
       <LeaveStatusBadge status={leave.status} />
+      <label className="flex items-center gap-2 text-[13px] text-zinc-500">
+        Type
+        <select
+          value={leave.emergency ? "EMERGENCY" : "LEAVE"}
+          disabled={saving}
+          onChange={(e) => changeKind(e.target.value)}
+          className={`${inputBase} min-w-36`}
+        >
+          <option value="LEAVE">Leave</option>
+          <option value="EMERGENCY">Emergency leave</option>
+          <option value="HALF_DAY">Half day</option>
+          <option value="SHORT_LEAVE">Short leave</option>
+        </select>
+      </label>
       {leave.status === "APPROVED" && (
         <label className="flex items-center gap-2 text-[13px] text-zinc-500">
           Made up on
