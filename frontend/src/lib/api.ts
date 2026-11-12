@@ -160,6 +160,7 @@ export type OverviewRow = {
   workedMs: number;
   tasksTotal: number;
   tasksDone: number;
+  marks?: string[];
 };
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH";

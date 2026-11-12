@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Cake, CalendarCheck, Clock, Mail, MapPin, Phone, UserRound } from "lucide-react";
+import { Building2, Cake, CalendarCheck, Clock, Flag, Mail, MapPin, Phone, UserRound } from "lucide-react";
 import { api, employmentLabels, isAdmin, roleLabels, type MonthSummary, type Place, type User } from "@/lib/api";
 import { fmtDate, fmtDuration, fmtTime } from "@/lib/format";
 import Avatar from "./Avatar";
 import { useAuth } from "./AuthProvider";
+import MarkDayDialog from "./MarkDay";
 import Modal from "./Modal";
 import { ProfileContext } from "./profileContext";
 import { Badge, Skeleton } from "./ui";
@@ -22,16 +23,33 @@ type Profile = Pick<
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [id, setId] = useState<string | null>(null);
+  const [marking, setMarking] = useState<{ id: string; name: string } | null>(null);
   const open = useCallback((personId: string) => setId(personId), []);
   return (
     <ProfileContext.Provider value={open}>
       {children}
-      <ProfileSheet id={id} onClose={() => setId(null)} />
+      <ProfileSheet
+        id={id}
+        onClose={() => setId(null)}
+        onMark={(person) => {
+          setId(null);
+          setMarking(person);
+        }}
+      />
+      <MarkDayDialog person={marking} onClose={() => setMarking(null)} />
     </ProfileContext.Provider>
   );
 }
 
-function ProfileSheet({ id, onClose }: { id: string | null; onClose: () => void }) {
+function ProfileSheet({
+  id,
+  onClose,
+  onMark,
+}: {
+  id: string | null;
+  onClose: () => void;
+  onMark: (person: { id: string; name: string }) => void;
+}) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState("");
 
@@ -50,12 +68,12 @@ function ProfileSheet({ id, onClose }: { id: string | null; onClose: () => void 
 
   return (
     <Modal open={!!id} onClose={onClose} title={profile?.name ?? "Profile"}>
-      {error ? <p className="text-sm text-red-600">{error}</p> : !profile ? <Skeleton className="h-64" /> : <ProfileBody p={profile} onClose={onClose} />}
+      {error ? <p className="text-sm text-red-600">{error}</p> : !profile ? <Skeleton className="h-64" /> : <ProfileBody p={profile} onClose={onClose} onMark={() => onMark({ id: profile.id, name: profile.name })} />}
     </Modal>
   );
 }
 
-function ProfileBody({ p, onClose }: { p: Profile; onClose: () => void }) {
+function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; onMark: () => void }) {
   const { user } = useAuth();
   const admin = isAdmin(user);
   const rows: [React.ElementType, string, React.ReactNode][] = [
@@ -123,6 +141,12 @@ function ProfileBody({ p, onClose }: { p: Profile; onClose: () => void }) {
               ))}
             </div>
           )}
+          <button
+            onClick={onMark}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600/30 bg-brand-50/80 text-sm font-medium text-brand-700 hover:bg-brand-50 sm:h-9"
+          >
+            <Flag size={15} /> Mark half day, late, early or leave
+          </button>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href={`/admin/attendance?user=${p.id}`}

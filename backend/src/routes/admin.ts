@@ -36,11 +36,15 @@ const activeUsers = () =>
 
 router.get("/overview", async (req, res) => {
   const date = dateParam.parse(req.query.date);
-  const [users, attendance, tasks, leaves] = await Promise.all([
+  const [users, attendance, tasks, leaves, marks] = await Promise.all([
     activeUsers(),
     prisma.attendance.findMany({ where: { date: toDbDate(date) }, include: { breaks: true } }),
     prisma.task.groupBy({ by: ["userId", "status"], where: { date: toDbDate(date) }, _count: true }),
-    prisma.leave.findMany({ where: { date: toDbDate(date), status: "APPROVED" }, select: { userId: true } }),
+    prisma.leave.findMany({ where: { date: toDbDate(date), status: "APPROVED" }, select: { userId: true, emergency: true } }),
+    prisma.dayRequest.findMany({
+      where: { date: toDbDate(date), status: "APPROVED", kind: { in: ["HALF_DAY", "SHORT_LEAVE", "LATE_EARLY"] } },
+      select: { userId: true, kind: true, reason: true },
+    }),
   ]);
 
   const rows = users.map((u) => {
@@ -56,6 +60,14 @@ router.get("/overview", async (req, res) => {
       ...(day ? dayTotals(day) : { breakMs: 0, workedMs: 0 }),
       tasksTotal: myTasks.reduce((n, t) => n + t._count, 0),
       tasksDone: myTasks.filter((t) => t.status === "COMPLETED").reduce((n, t) => n + t._count, 0),
+      marks: [
+        ...leaves.filter((l) => l.userId === u.id).map((l) => (l.emergency ? "Emergency leave" : "Leave")),
+        ...marks
+          .filter((m) => m.userId === u.id)
+          .map((m) =>
+            m.kind === "HALF_DAY" ? "Half day" : m.kind === "SHORT_LEAVE" ? "Short leave" : m.reason.startsWith("Left early") ? "Left early" : m.reason.startsWith("Late") ? "Late" : "Late/early",
+          ),
+      ],
     };
   });
   res.json({ date, rows });

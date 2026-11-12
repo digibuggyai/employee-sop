@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Flag, Users } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import MarkDayDialog from "@/components/MarkDay";
+import { Tag } from "@/components/Badges";
 import { LiveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import PageHeader from "@/components/PageHeader";
 import { lastSeenText, usePresence } from "@/components/Presence";
-import { inputBase } from "@/components/form";
+import { Button, inputBase } from "@/components/form";
 import { EmptyState, Skeleton, table } from "@/components/ui";
 import { api, type LiveStatus, type OverviewRow } from "@/lib/api";
 import { fmtDuration, fmtTime, todayIST } from "@/lib/format";
@@ -28,12 +30,14 @@ export default function AdminOverviewPage() {
   const [rows, setRows] = useState<OverviewRow[] | null>(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
+  const [marking, setMarking] = useState<{ id: string; name: string } | null>(null);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     api<{ rows: OverviewRow[] }>(`/api/admin/overview?date=${date}`)
       .then((r) => setRows(r.rows))
       .catch((err) => setError(err.message));
-  }, [date]);
+  }, [date, version]);
 
   const count = (f: Filter) => (f === "ALL" ? (rows?.length ?? 0) : (rows?.filter((r) => r.status === f).length ?? 0));
   const present = count("WORKING") + count("ON_BREAK") + count("DONE");
@@ -114,11 +118,19 @@ export default function AdminOverviewPage() {
                       ? `${fmtTime(r.checkIn)}${r.checkOut ? ` – ${fmtTime(r.checkOut)}` : ""} · ${r.place === "WFH" ? "WFH" : "In-office"}`
                       : (r.user.designation ?? r.user.team ?? "")}
                   </p>
+                  <Marks marks={r.marks} />
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <LiveStatusBadge status={r.status} />
                   {r.checkIn && <span className="text-xs font-medium text-zinc-700 tabular-nums">{fmtDuration(r.workedMs)}</span>}
                 </div>
+                <button
+                  onClick={() => setMarking(r.user)}
+                  aria-label={`Mark ${r.user.name}`}
+                  className="-mr-1 grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100"
+                >
+                  <Flag size={17} />
+                </button>
               </li>
             ))}
           </ul>
@@ -126,7 +138,7 @@ export default function AdminOverviewPage() {
             <table className={table.table}>
               <thead className={table.thead}>
                 <tr>
-                  {["Employee", "Status", "Place", "In", "Out", "Breaks", "Worked", "Tasks"].map((h) => (
+                  {["Employee", "Status", "Place", "In", "Out", "Breaks", "Worked", "Tasks", ""].map((h) => (
                     <th key={h} className={table.th}>
                       {h}
                     </th>
@@ -142,6 +154,7 @@ export default function AdminOverviewPage() {
                         <div className="min-w-0">
                           <p className="font-medium text-zinc-900">{r.user.name}</p>
                           <p className="truncate text-xs text-zinc-500">{r.user.designation ?? r.user.team ?? ""}</p>
+                          <Marks marks={r.marks} />
                         </div>
                       </div>
                     </td>
@@ -173,6 +186,11 @@ export default function AdminOverviewPage() {
                         <span className="text-zinc-400">—</span>
                       )}
                     </td>
+                    <td className={`${table.td} text-right`}>
+                      <Button variant="secondary" size="sm" onClick={() => setMarking(r.user)}>
+                        <Flag size={14} /> Mark
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -181,7 +199,22 @@ export default function AdminOverviewPage() {
           </>
         )}
       </Card>
+
+      <MarkDayDialog person={marking} date={date} onClose={() => setMarking(null)} onSaved={() => setVersion((v) => v + 1)} />
     </>
+  );
+}
+
+function Marks({ marks }: { marks?: string[] }) {
+  if (!marks?.length) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {marks.map((m) => (
+        <Tag key={m} tone={m.includes("leave") || m === "Leave" ? "violet" : "amber"}>
+          {m}
+        </Tag>
+      ))}
+    </div>
   );
 }
 
