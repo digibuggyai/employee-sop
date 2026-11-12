@@ -9,7 +9,7 @@ import Avatar from "./Avatar";
 import { useAuth } from "./AuthProvider";
 import MarkDayDialog from "./MarkDay";
 import Modal from "./Modal";
-import { ProfileContext } from "./profileContext";
+import { ProfileContext, sendProfileAction } from "./profileContext";
 import { Badge, Skeleton } from "./ui";
 
 type Profile = Pick<
@@ -76,6 +76,7 @@ function ProfileSheet({
 function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; onMark: () => void }) {
   const { user } = useAuth();
   const admin = isAdmin(user);
+  const canEdit = user?.role === "SUPER_ADMIN" || p.id === user?.id || p.role === "EMPLOYEE";
   const rows: [React.ElementType, string, React.ReactNode][] = [
     [Mail, "Email", <a key="e" href={`mailto:${p.email}`} className="text-brand-700 hover:underline">{p.email}</a>],
     ...(p.phone ? [[Phone, "Phone", <a key="p" href={`tel:${p.phone}`} className="text-brand-700 hover:underline">{p.phone}</a>] as [React.ElementType, string, React.ReactNode]] : []),
@@ -150,18 +151,26 @@ function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; 
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href={`/admin/attendance?user=${p.id}`}
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                sendProfileAction({ type: "attendance", id: p.id });
+              }}
               className="flex h-11 flex-1 items-center justify-center rounded-lg bg-brand-700 text-sm font-medium text-white hover:bg-brand-800 sm:h-9"
             >
               View attendance
             </Link>
+            {canEdit && (
             <Link
               href={`/admin/employees?edit=${p.id}`}
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                sendProfileAction({ type: "edit", id: p.id });
+              }}
               className="flex h-11 flex-1 items-center justify-center rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 hover:bg-zinc-50 sm:h-9"
             >
               Edit details
             </Link>
+            )}
           </div>
         </div>
       )}

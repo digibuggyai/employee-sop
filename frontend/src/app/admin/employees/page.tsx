@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Copy, Pencil, Plus, Search, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
-import { useOpenProfile } from "@/components/profileContext";
+import { onProfileAction, useOpenProfile } from "@/components/profileContext";
 import Card from "@/components/Card";
 import EmployeeForm from "@/components/EmployeeForm";
 import { useToast } from "@/components/Feedback";
@@ -42,6 +42,15 @@ export default function EmployeesAdminPage() {
       })
       .catch((err) => setError(err.message));
   }, []);
+
+  useEffect(
+    () =>
+      onProfileAction("edit", (id) => {
+        const person = users?.find((u) => u.id === id);
+        if (person) setEditing(person);
+      }),
+    [users],
+  );
 
   const [share, setShare] = useState<{ name: string; email: string; password: string; reason: string } | null>(null);
 

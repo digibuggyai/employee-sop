@@ -10,6 +10,7 @@ import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/form";
 import { Badge, Skeleton, table } from "@/components/ui";
+import { onProfileAction } from "@/components/profileContext";
 import { api, type DayRow, type MonthReport, type MonthSummary, type UserBrief } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, monthLabel, thisMonthIST } from "@/lib/format";
 
@@ -44,6 +45,18 @@ export default function AdminAttendancePage() {
       .then(setReport)
       .catch((err) => setError(err.message));
   }, [selected, month, version]);
+
+  useEffect(
+    () =>
+      onProfileAction("attendance", (id) => {
+        const row = rows?.find((r) => r.user.id === id);
+        if (row) {
+          setReport(null);
+          setSelected(row.user);
+        }
+      }),
+    [rows],
+  );
 
   function changeMonth(m: string) {
     setRows(null);
