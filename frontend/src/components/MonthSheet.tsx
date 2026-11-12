@@ -156,7 +156,7 @@ export default function MonthSheet({
       <span className="flex items-baseline justify-between gap-2">
         <span>{label}</span>
         <span className={`font-medium tabular-nums ${e.ms ? "text-emerald-700" : "text-zinc-400"}`}>
-          {e.ms ? `+${fmtDuration(e.ms)}` : "0h 0m"}
+          {e.ms ? `+${fmtDuration(e.ms)}` : "0m"}
         </span>
       </span>
       {e.detail && <span className="block text-[11px] text-zinc-400">{e.detail}</span>}
@@ -225,7 +225,7 @@ export default function MonthSheet({
         />
         <Stat
           label="Extra hours"
-          value={summary.extraMs ? `+${fmtDuration(summary.extraMs)}` : "0h 0m"}
+          value={summary.extraMs ? `+${fmtDuration(summary.extraMs)}` : "0m"}
           hint={
             <span className="mt-1.5 block space-y-0.5">
               {extraRow("In-office", extraOffice)}

@@ -288,7 +288,7 @@ function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; 
         <CaretDown size={14} className={`text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div role="menu" className="absolute top-full right-0 z-30 mt-2 w-64 glass-sheet rounded-2xl p-1.5">
+        <div role="menu" className="absolute top-full right-0 z-30 mt-2 w-64 glass-pop rounded-2xl p-1.5">
           <div className="flex items-center gap-2.5 px-2.5 py-2">
             <Avatar person={user} profile={false} />
             <div className="min-w-0">

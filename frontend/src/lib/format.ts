@@ -22,7 +22,10 @@ export const fmtTime = (iso: string | null | undefined) =>
 
 export function fmtDuration(ms: number | undefined) {
   const mins = Math.max(0, Math.floor((ms ?? 0) / 60000));
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (!h) return `${m}m`;
+  return m ? `${h}h ${m}m` : `${h}h`;
 }
 
 export const monthLabel = (month: string) =>
