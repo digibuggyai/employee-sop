@@ -8,6 +8,7 @@ import { PendingProvider } from "@/components/Pending";
 import { NotificationsProvider } from "@/components/Notifications";
 import { PresenceProvider } from "@/components/Presence";
 import { ProfileProvider } from "@/components/ProfileSheet";
+import { themeScript } from "@/components/ThemeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +38,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full font-sans">
         <AuthProvider>
           <PendingProvider>

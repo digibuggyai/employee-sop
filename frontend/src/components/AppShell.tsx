@@ -13,6 +13,7 @@ import { usePending } from "./Pending";
 import Avatar from "./Avatar";
 import BackendStatus from "./BackendStatus";
 import BrandLogo from "./BrandLogo";
+import ThemeToggle from "./ThemeToggle";
 import Modal from "./Modal";
 import { NotificationBell } from "./Notifications";
 
@@ -121,7 +122,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
         <div className="flex min-w-0 items-center gap-1.5">
-          {isAdmin && <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact />}
+          {isAdmin ? <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact /> : <ThemeToggle />}
           <NotificationBell />
           <Link href="/profile" aria-label="Profile">
             <Avatar person={user} size="sm" profile={false} />
@@ -131,6 +132,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="pb-28 md:pb-0 md:pl-60">
         <div className="sticky top-0 z-10 hidden h-14 items-center justify-end gap-2 glass-bar border-b px-8 md:flex">
+          <ThemeToggle />
           <NotificationBell />
           <ProfileMenu user={user} active={pathname === "/profile"} onLogout={logout} />
         </div>
@@ -192,6 +194,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </ul>
         <div className="-mx-2 mt-2 space-y-0.5 border-t border-zinc-100 pt-2">
+          <ThemeToggle withLabel />
           <Link
             href="/profile"
             onClick={() => setMoreOpen(false)}
