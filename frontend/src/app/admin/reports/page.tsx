@@ -43,7 +43,7 @@ export default function AdminReportsPage() {
         title="Weekly reports"
         subtitle="Remote interns send these every Saturday."
         actions={
-          <div className="inline-flex h-10 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-1 shadow-xs sm:h-9">
+          <div className="inline-flex h-10 items-center gap-1 glass-control rounded-xl border px-1 sm:h-9">
             <button onClick={() => changeWeek(-1)} className={btn} aria-label="Previous week">
               <ChevronLeft size={16} />
             </button>

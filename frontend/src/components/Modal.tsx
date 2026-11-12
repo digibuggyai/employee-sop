@@ -37,7 +37,7 @@ export default function Modal({
       onClick={(e) => {
         if (e.target === ref.current && pressStartedOutside.current) onClose();
       }}
-      className="m-0 mt-auto w-full max-w-none rounded-t-2xl border border-zinc-200 bg-white p-0 shadow-xl sm:m-auto sm:max-w-lg sm:rounded-xl"
+      className="m-0 mt-auto w-full max-w-none glass-sheet rounded-t-[28px] p-0 sm:m-auto sm:max-w-lg sm:rounded-3xl"
     >
       {open && (
         <div className="max-h-[85dvh] overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">

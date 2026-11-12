@@ -54,7 +54,7 @@ export default function NoticesPage() {
               .map((n) => {
                 const { chip } = categoryStyle[n.category];
                 return (
-                  <div key={n.id} className="rounded-xl border border-zinc-200 bg-white p-3 shadow-xs sm:p-4">
+                  <div key={n.id} className="glass rounded-2xl p-3 sm:p-4">
                     <p className="text-xl font-semibold tracking-tight text-zinc-900 tabular-nums sm:text-2xl">{n.highlight!.value}</p>
                     <p className="mt-1 text-xs leading-snug text-zinc-500 sm:text-[13px]">{n.highlight!.label}</p>
                     <span className={`mt-3 hidden rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset sm:inline-block ${chip}`}>{n.category}</span>
@@ -87,7 +87,7 @@ export default function NoticesPage() {
           </div>
 
           {shown.length === 0 ? (
-            <div className="rounded-xl border border-zinc-200 bg-white">
+            <div className="glass rounded-2xl">
               <EmptyState compact icon={Megaphone} title={q ? `Nothing matches "${query}"` : "No notices here"} />
             </div>
           ) : (
@@ -107,7 +107,7 @@ function NoticeCard({ notice: n, forYou }: { notice: Notice; forYou: boolean }) 
   const { icon: Icon, chip } = categoryStyle[n.category];
   return (
     <article
-      className={`flex flex-col rounded-xl border bg-white p-5 shadow-xs ${n.deduction ? "border-red-200 ring-1 ring-red-100" : "border-zinc-200"}`}
+      className={`glass flex flex-col rounded-2xl p-5 ${n.deduction ? "ring-1 ring-red-200" : ""}`}
     >
       <div className="flex items-start gap-3">
         <span className={`grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-inset ${chip}`}>

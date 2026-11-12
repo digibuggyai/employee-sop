@@ -37,7 +37,7 @@ export function Stat({
   emphasis?: "warning" | "danger" | "positive";
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-xs sm:rounded-xl sm:p-4">
+    <div className="glass rounded-3xl p-3.5 sm:rounded-2xl sm:p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-medium text-zinc-500">{label}</p>
         {Icon && <Icon size={16} className="text-zinc-400" />}

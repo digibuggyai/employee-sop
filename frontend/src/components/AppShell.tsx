@@ -72,7 +72,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-zinc-200 bg-white md:flex">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col glass-bar border-r md:flex">
         <div className="flex h-14 items-center px-4">
           <Logo />
         </div>
@@ -105,7 +105,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-zinc-200 bg-white/90 pr-3 pl-4 backdrop-blur md:hidden">
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 glass-bar border-b pr-3 pl-4 md:hidden">
         {onTab || !pageTitle ? (
           <Logo compact={isAdmin} />
         ) : (
@@ -129,8 +129,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="pb-24 md:pb-0 md:pl-60">
-        <div className="sticky top-0 z-10 hidden h-14 items-center justify-end gap-2 border-b border-zinc-200 bg-white/85 px-8 backdrop-blur md:flex">
+      <main className="pb-28 md:pb-0 md:pl-60">
+        <div className="sticky top-0 z-10 hidden h-14 items-center justify-end gap-2 glass-bar border-b px-8 md:flex">
           <NotificationBell />
           <ProfileMenu user={user} active={pathname === "/profile"} onLogout={logout} />
         </div>
@@ -139,7 +139,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 grid border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="glass-sheet fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-20 grid rounded-[28px] px-1 md:hidden"
         style={{ gridTemplateColumns: `repeat(${tabItems.length + (moreItems.length ? 1 : 0)}, minmax(0, 1fr))` }}
       >
         {tabItems.map((item) => {
@@ -285,7 +285,7 @@ function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; 
         <CaretDown size={14} className={`text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div role="menu" className="absolute top-full right-0 z-30 mt-2 w-64 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg">
+        <div role="menu" className="absolute top-full right-0 z-30 mt-2 w-64 glass-sheet rounded-2xl p-1.5">
           <div className="flex items-center gap-2.5 px-2.5 py-2">
             <Avatar person={user} profile={false} />
             <div className="min-w-0">
@@ -319,7 +319,7 @@ function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; 
 
 function TabIcon({ active, count, children }: { active: boolean; count: number; children: React.ReactNode }) {
   return (
-    <span className={`relative grid h-7 w-12 max-w-full place-items-center rounded-full transition-colors ${active ? "bg-brand-50" : ""}`}>
+    <span className={`relative grid h-7 w-12 max-w-full place-items-center rounded-full transition-colors ${active ? "bg-white/90 shadow-sm" : ""}`}>
       {children}
       {count > 0 && (
         <span className="absolute -top-1 right-2 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums ring-2 ring-white">

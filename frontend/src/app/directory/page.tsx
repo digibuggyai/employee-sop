@@ -59,7 +59,7 @@ export default function DirectoryPage() {
           <article
             key={p.id}
             onClick={(e) => !(e.target as HTMLElement).closest("a") && openProfile(p.id)}
-            className="flex cursor-pointer flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs transition hover:border-zinc-300 hover:shadow-sm"
+            className="flex cursor-pointer flex-col glass rounded-2xl p-4 transition hover:bg-white/75"
           >
             <div className="flex items-start gap-3">
               <Avatar person={p} />

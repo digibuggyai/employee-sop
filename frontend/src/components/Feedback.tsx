@@ -46,7 +46,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm shadow-lg"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 glass-sheet rounded-2xl px-4 py-3 text-sm"
           >
             {t.kind === "success" ? (
               <CircleCheck size={18} className="mt-px shrink-0 text-emerald-600" />
@@ -71,7 +71,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
           e.preventDefault();
           close(false);
         }}
-        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-200 bg-white p-0 shadow-xl"
+        className="m-auto w-[calc(100%-2rem)] max-w-md glass-sheet rounded-3xl p-0"
       >
         {dialog && (
           <div className="p-5">

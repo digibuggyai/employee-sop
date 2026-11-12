@@ -13,7 +13,7 @@ export default function MonthSwitcher({ month, onChange }: { month: string; onCh
   const btn = "grid size-8 place-items-center sm:size-7 rounded-md text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-transparent";
 
   return (
-    <div className="inline-flex h-10 items-center sm:h-9 gap-1 rounded-lg border border-zinc-200 bg-white px-1 shadow-xs">
+    <div className="inline-flex h-10 items-center sm:h-9 gap-1 glass-control rounded-xl border px-1">
       <button onClick={() => shift(-1)} className={btn} aria-label="Previous month">
         <ChevronLeft size={16} />
       </button>

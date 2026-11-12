@@ -81,7 +81,7 @@ export default function ReimbursementsPage() {
 
       {data && (
         <div className="space-y-4 md:space-y-6">
-          <div className="grid grid-cols-3 divide-x divide-zinc-100 rounded-xl border border-zinc-200 bg-white shadow-xs">
+          <div className="grid grid-cols-3 divide-x divide-zinc-100 glass rounded-2xl">
             {totals.map((t) => (
               <div key={t.label} className="min-w-0 px-3 py-3.5 sm:px-5">
                 <p className="truncate text-xs font-medium text-zinc-500 sm:text-[13px]">{t.label}</p>

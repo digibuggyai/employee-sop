@@ -56,7 +56,7 @@ export default function WfhPlansPage() {
         title="WFH plans"
         subtitle="Morning to-do plans and end-of-day reports from people working from home."
         actions={
-          <div className="inline-flex h-10 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-1 shadow-xs sm:h-9">
+          <div className="inline-flex h-10 items-center gap-1 glass-control rounded-xl border px-1 sm:h-9">
             <button onClick={() => changeDay(-1)} className={btn} aria-label="Previous day">
               <ChevronLeft size={16} />
             </button>

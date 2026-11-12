@@ -29,7 +29,7 @@ export default function TaskList({
 
   if (tasks.length === 0)
     return (
-      <div className="rounded-xl border border-dashed border-zinc-300 bg-white">
+      <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/50">
         <EmptyState icon={ListTodo} title="No tasks in this period" description="Tasks you add will appear here, grouped by day." action={emptyAction} />
       </div>
     );
@@ -76,7 +76,7 @@ export default function TaskList({
                 {done} of {list.length} done
               </span>
             </div>
-            <ul className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
+            <ul className="divide-y divide-zinc-100 overflow-hidden glass rounded-2xl">
               {list.map((t) => {
                 const canDelete = isAdmin(user) || !t.assignedBy;
                 const completed = t.status === "COMPLETED";
