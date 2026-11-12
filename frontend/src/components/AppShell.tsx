@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
-import { CaretDown, DotsThreeCircle, Key, SignOut, UserCircle } from "@phosphor-icons/react";
+import { CaretDown, CaretLeft, DotsThreeCircle, Key, SignOut, UserCircle } from "@phosphor-icons/react";
 import { isAdmin as hasAdminAccess, type User } from "@/lib/api";
 import { adminNav, publicPaths, workspaceNav, type NavItem } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
@@ -59,6 +59,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const tabItems = items.filter((i) => i.mobile);
   const moreItems = items.filter((i) => !i.mobile);
   const moreActive = moreItems.some((i) => isActive(i.href));
+  const onTab = tabItems.some((i) => i.href === pathname);
+  const section = items.find((i) => i.href !== "/" && i.href !== "/admin" && isActive(i.href));
+  const pageTitle = pathname === "/profile" ? "My profile" : pathname === "/change-password" ? "Password" : (section?.label ?? "");
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push(section && section.href !== pathname ? section.href : inAdmin ? "/admin" : "/");
+  };
   const tabCount = tabItems.length + (moreItems.length ? 1 : 0);
   const tabText = tabCount > 5 ? "text-[10px] tracking-[-0.02em] min-[400px]:text-[11px] min-[400px]:tracking-normal" : "text-[11px]";
   const totalPending = counts.leaves + counts.corrections + counts.reimbursements;
@@ -99,12 +106,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b border-zinc-200 bg-white/90 pr-3 pl-4 backdrop-blur md:hidden">
-        <Logo compact={isAdmin} />
+        {onTab || !pageTitle ? (
+          <Logo compact={isAdmin} />
+        ) : (
+          <div className="-ml-2 flex min-w-0 items-center gap-0.5">
+            <button
+              onClick={goBack}
+              aria-label="Back"
+              className="grid size-10 shrink-0 place-items-center rounded-full text-zinc-800 active:bg-zinc-100"
+            >
+              <CaretLeft size={22} weight="bold" />
+            </button>
+            <span className="truncate text-[17px] font-semibold tracking-tight text-zinc-900">{pageTitle}</span>
+          </div>
+        )}
         <div className="flex min-w-0 items-center gap-1.5">
           {isAdmin && <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact />}
           <NotificationBell />
           <Link href="/profile" aria-label="Profile">
-            <Avatar person={user} size="sm" />
+            <Avatar person={user} size="sm" profile={false} />
           </Link>
         </div>
       </header>
@@ -179,7 +199,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               pathname === "/profile" ? "bg-zinc-100 text-zinc-900" : "text-zinc-700 hover:bg-zinc-50"
             }`}
           >
-            <Avatar person={user} size="xs" />
+            <Avatar person={user} size="xs" profile={false} />
             My profile
           </Link>
           <button
@@ -260,14 +280,14 @@ function ProfileMenu({ user, active, onLogout }: { user: User; active: boolean; 
         aria-haspopup="menu"
         className={`flex items-center gap-2.5 rounded-full py-1 pr-2.5 pl-1 transition hover:bg-zinc-100 ${open || active ? "bg-zinc-100" : ""}`}
       >
-        <Avatar person={user} size="sm" />
+        <Avatar person={user} size="sm" profile={false} />
         <span className="max-w-40 truncate text-[13px] font-medium text-zinc-900">{user.name}</span>
         <CaretDown size={14} className={`text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div role="menu" className="absolute top-full right-0 z-30 mt-2 w-64 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg">
           <div className="flex items-center gap-2.5 px-2.5 py-2">
-            <Avatar person={user} />
+            <Avatar person={user} profile={false} />
             <div className="min-w-0">
               <p className="truncate text-[13px] font-semibold text-zinc-900">{user.name}</p>
               <p className="truncate text-xs text-zinc-500">{user.email}</p>

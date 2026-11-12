@@ -26,7 +26,15 @@ export default function AdminAttendancePage() {
 
   useEffect(() => {
     api<{ rows: SummaryRow[] }>(`/api/admin/attendance/summary?month=${month}`)
-      .then((r) => setRows(r.rows))
+      .then((r) => {
+        setRows(r.rows);
+        const wanted = new URLSearchParams(window.location.search).get("user");
+        const row = wanted && r.rows.find((x) => x.user.id === wanted);
+        if (row) {
+          setSelected(row.user);
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      })
       .catch((err) => setError(err.message));
   }, [month]);
 

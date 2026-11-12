@@ -73,7 +73,7 @@ export default function PhotoUploader({ user, onChange }: { user: User; onChange
         aria-label="Change photo"
         className="group relative shrink-0 rounded-full"
       >
-        <Avatar person={user} size="xl" />
+        <Avatar person={user} size="xl" profile={false} />
         <span className="absolute inset-0 grid place-items-center rounded-full bg-black/0 text-white opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100">
           <Camera size={22} />
         </span>

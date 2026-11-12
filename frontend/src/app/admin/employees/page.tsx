@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Copy, Pencil, Plus, Search, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import { useOpenProfile } from "@/components/profileContext";
 import Card from "@/components/Card";
 import EmployeeForm from "@/components/EmployeeForm";
 import { useToast } from "@/components/Feedback";
@@ -30,7 +31,15 @@ export default function EmployeesAdminPage() {
 
   useEffect(() => {
     api<User[]>("/api/users")
-      .then(setUsers)
+      .then((list) => {
+        setUsers(list);
+        const wanted = new URLSearchParams(window.location.search).get("edit");
+        const person = wanted && list.find((u) => u.id === wanted);
+        if (person) {
+          setEditing(person);
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      })
       .catch((err) => setError(err.message));
   }, []);
 
@@ -197,12 +206,13 @@ function PeopleList({
   canEdit: (u: User) => boolean;
   onEdit: (u: User) => void;
 }) {
+  const openProfile = useOpenProfile();
   if (people.length === 0) return <EmptyState compact icon={Users} title={empty} />;
   return (
     <>
       <ul className="divide-y divide-zinc-100 md:hidden">
         {people.map((u, i) => (
-          <li key={u.id} className="flex items-center gap-3 px-4 py-3">
+          <li key={u.id} onClick={() => openProfile(u.id)} className="flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-zinc-50">
             <span className="w-5 shrink-0 text-right text-xs text-zinc-400 tabular-nums">{i + 1}</span>
             <Avatar person={u} size="sm" />
             <div className="min-w-0 flex-1">
@@ -221,7 +231,13 @@ function PeopleList({
               </p>
             </div>
             {canEdit(u) && (
-              <IconButton label={`Edit ${u.name}`} onClick={() => onEdit(u)}>
+              <IconButton
+                label={`Edit ${u.name}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(u);
+                }}
+              >
                 <Pencil size={15} />
               </IconButton>
             )}
@@ -241,7 +257,7 @@ function PeopleList({
           </thead>
           <tbody className={table.tbody}>
             {people.map((u, i) => (
-              <tr key={u.id} className={table.tr}>
+              <tr key={u.id} onClick={() => openProfile(u.id)} className={`${table.tr} cursor-pointer`}>
                 <td className={`${table.td} w-10 text-zinc-400 tabular-nums`}>{i + 1}</td>
                 <td className={table.td}>
                   <div className="flex items-center gap-3">
@@ -275,7 +291,13 @@ function PeopleList({
                 </td>
                 <td className={`${table.td} text-right`}>
                   {canEdit(u) && (
-                    <IconButton label={`Edit ${u.name}`} onClick={() => onEdit(u)}>
+                    <IconButton
+                label={`Edit ${u.name}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(u);
+                }}
+              >
                       <Pencil size={15} />
                     </IconButton>
                   )}

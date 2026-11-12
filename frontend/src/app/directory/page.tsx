@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Cake, Mail, Phone, Search, Users } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import { useOpenProfile } from "@/components/profileContext";
 import PageHeader from "@/components/PageHeader";
 import { inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton } from "@/components/ui";
@@ -15,6 +16,7 @@ export default function DirectoryPage() {
   const [people, setPeople] = useState<Person[] | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const openProfile = useOpenProfile();
 
   useEffect(() => {
     api<Person[]>("/api/directory")
@@ -54,7 +56,11 @@ export default function DirectoryPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((p) => (
-          <article key={p.id} className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
+          <article
+            key={p.id}
+            onClick={(e) => !(e.target as HTMLElement).closest("a") && openProfile(p.id)}
+            className="flex cursor-pointer flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs transition hover:border-zinc-300 hover:shadow-sm"
+          >
             <div className="flex items-start gap-3">
               <Avatar person={p} />
               <div className="min-w-0 flex-1">
