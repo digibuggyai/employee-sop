@@ -17,7 +17,21 @@ export default function BrandLogo({
   priority?: boolean;
 }) {
   const f = files[variant];
+  if (tone === "light") {
+    return <Image src={f.light} width={f.width} height={f.height} alt="Digibuggy" priority={priority} className={className} />;
+  }
   return (
-    <Image src={f[tone]} width={f.width} height={f.height} alt="Digibuggy" priority={priority} className={className} />
+    <>
+      <Image src={f.dark} width={f.width} height={f.height} alt="Digibuggy" priority={priority} className={`logo-on-light ${className}`} />
+      <Image
+        src={f.light}
+        width={f.width}
+        height={f.height}
+        alt=""
+        aria-hidden
+        priority={priority}
+        className={`logo-on-dark ${variant === "mark" ? "logo-invert" : ""} ${className}`}
+      />
+    </>
   );
 }
