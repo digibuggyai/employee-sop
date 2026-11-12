@@ -188,7 +188,11 @@ export async function monthReports(userIds: string[], month: string) {
       if (att) {
         const { breakMs, workedMs } = dayTotals(att);
         const noReport =
-          att.place === "WFH" && date >= WFH_REPORT_FROM && !att.report?.trim() && (!!att.checkOut || date < today);
+          att.place === "WFH" &&
+          date >= WFH_REPORT_FROM &&
+          !att.report?.trim() &&
+          (!!att.checkOut || date < today) &&
+          !isOffDay(date, person?.employmentType);
         if (noReport) {
           summary.absent++;
           return {

@@ -139,7 +139,7 @@ function DayForm({
         <Field label="In">
           <input type="time" required={!hasRecord} value={form.checkIn} onChange={set("checkIn")} className={inputClass} />
         </Field>
-        <Field label="Out">
+        <Field label="Out" hint={form.checkIn && form.checkOut && form.checkOut <= form.checkIn ? "Next morning (overnight)" : undefined}>
           <input type="time" required={day.date < todayIST()} value={form.checkOut} onChange={set("checkOut")} className={inputClass} />
         </Field>
       </div>

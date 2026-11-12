@@ -17,11 +17,15 @@ const withBreaks = {
   notes: { orderBy: { createdAt: "asc" as const }, select: { id: true, text: true, createdAt: true, author: { select: { name: true } } } },
 };
 
-const findToday = (userId: string) =>
-  prisma.attendance.findUnique({
-    where: { userId_date: { userId, date: toDbDate(todayString()) } },
+const findToday = async (userId: string) => {
+  const today = toDbDate(todayString());
+  const row = await prisma.attendance.findUnique({ where: { userId_date: { userId, date: today } }, include: withBreaks });
+  if (row) return row;
+  return prisma.attendance.findFirst({
+    where: { userId, checkOut: null, date: new Date(today.getTime() - 864e5) },
     include: withBreaks,
   });
+};
 
 router.get("/today", async (req, res) => {
   res.json(await findToday(req.user!.id));
@@ -47,7 +51,13 @@ router.post("/check-in", async (req, res) => {
   }
 
   if (isSunday(todayString())) return res.status(400).json({ error: "Sunday is off. Check-in is closed today." });
-  if (await findToday(req.user!.id)) return res.status(409).json({ error: "You've already checked in today" });
+  const existing = await findToday(req.user!.id);
+  if (existing) {
+    const fromYesterday = existing.date.toISOString().slice(0, 10) !== todayString();
+    return res
+      .status(409)
+      .json({ error: fromYesterday ? "You're still checked in from last night. Check out first." : "You've already checked in today" });
+  }
 
   const day = await prisma.attendance.create({
     data: { userId: req.user!.id, date: toDbDate(todayString()), place, plan: plan || null, checkIn: new Date() },

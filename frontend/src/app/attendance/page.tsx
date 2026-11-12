@@ -5,6 +5,8 @@ import { useAuth } from "@/components/AuthProvider";
 import Card from "@/components/Card";
 import CheckInCard from "@/components/CheckInCard";
 import DayEditDialog from "@/components/DayEditDialog";
+import ExtraWorkDialog from "@/components/ExtraWorkDialog";
+import { Plus } from "lucide-react";
 import { useConfirm, useToast } from "@/components/Feedback";
 import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
@@ -24,6 +26,7 @@ export default function AttendancePage() {
   const [version, setVersion] = useState(0);
   const [editing, setEditing] = useState<DayRow | null>(null);
   const [reportFor, setReportFor] = useState<DayRow | null>(null);
+  const [extraOpen, setExtraOpen] = useState(false);
 
   useEffect(() => {
     api<MonthReport>(`/api/attendance/month?month=${month}`)
@@ -42,13 +45,18 @@ export default function AttendancePage() {
         title="Attendance"
         subtitle="Your check-ins, breaks and monthly record. Spot a mistake? Use the pencil to ask for a change."
         actions={
-          <MonthSwitcher
-            month={month}
-            onChange={(m) => {
-              setReport(null);
-              setMonth(m);
-            }}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" onClick={() => setExtraOpen(true)}>
+              <Plus size={16} /> Add extra work
+            </Button>
+            <MonthSwitcher
+              month={month}
+              onChange={(m) => {
+                setReport(null);
+                setMonth(m);
+              }}
+            />
+          </div>
         }
       />
       <div className="space-y-4 md:space-y-6">
@@ -68,6 +76,7 @@ export default function AttendancePage() {
       </div>
 
       <DayEditDialog day={editing} mode="request" onClose={() => setEditing(null)} onSaved={reload} />
+      <ExtraWorkDialog open={extraOpen} onClose={() => setExtraOpen(false)} onSaved={reload} />
       <Modal
         open={!!reportFor}
         onClose={() => setReportFor(null)}

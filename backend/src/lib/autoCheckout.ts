@@ -22,6 +22,7 @@ export async function autoCheckout() {
       const date = day.date.toISOString().slice(0, 10);
       const shift = parseTimings(day.user.timings);
       const planned = istDateTime(date, shift ? hhmm(shift.end) : AUTO_CHECKOUT_AT);
+      if (planned <= day.checkIn && Date.now() - day.checkIn.getTime() < 12 * 3600_000) continue;
       const checkOut = planned > day.checkIn ? planned : day.checkIn;
 
       const { count } = await prisma.attendance.updateMany({

@@ -34,14 +34,19 @@ export function toDayChange(input: DayChangeInput): DayChange {
   };
 }
 
+const MAX_SESSION_MS = 20 * 3600_000;
+
 export async function checkDayChange(userId: string, date: string, change: DayChange): Promise<string | null> {
   if (date > todayString()) return "You can't change a day in the future";
   const current = await prisma.attendance.findUnique({ where: { userId_date: { userId, date: toDbDate(date) } } });
 
   if (!current && (!change.place || !change.checkIn)) return "Add the place and the in time for this day";
 
+  const startAt = change.checkIn ?? current?.checkIn;
+  if (startAt && change.checkOut && change.checkOut <= startAt) change.checkOut = new Date(change.checkOut.getTime() + 864e5);
   const checkIn = change.checkIn ?? current?.checkIn;
   const checkOut = change.checkOut === undefined ? current?.checkOut : change.checkOut;
+  if (checkIn && checkOut && checkOut.getTime() - checkIn.getTime() > MAX_SESSION_MS) return "A work session can be at most 20 hours";
   if (checkIn && checkOut && checkOut <= checkIn) return "The out time must be after the in time";
   if ((change.checkIn && change.checkIn.getTime() > Date.now()) || (change.checkOut && change.checkOut.getTime() > Date.now())) {
     return "Times can't be later than now";
