@@ -210,7 +210,7 @@ function Marks({ marks }: { marks?: string[] }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {marks.map((m) => (
-        <Tag key={m} tone={m.includes("leave") || m === "Leave" ? "violet" : "amber"}>
+        <Tag key={m} tone={m.startsWith("Absent") ? "red" : m.includes("leave") || m === "Leave" ? "violet" : "amber"}>
           {m}
         </Tag>
       ))}

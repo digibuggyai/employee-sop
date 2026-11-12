@@ -3,7 +3,7 @@ import { TIMEZONE, toDbDate, todayString } from "./dates.js";
 import { holidayList, holidayOn } from "./holidays.js";
 import {
   FREE_SHORT_LEAVES, GRACE_MIN, LATES_PER_ABSENCE, LEAVE_PER_MONTH, LEAVE_POLICY_START, SHORT_LEAVE_MAX_MIN, parseTimings,
-  worksSaturdays, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM,
+  worksSaturdays, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM, FORGOT_CHECKOUT_NOTE,
 } from "./policy.js";
 import type { Attendance, Break } from "../generated/prisma/client.js";
 
@@ -61,6 +61,7 @@ export type DayRow = {
   extraDay?: boolean;
   wfhFullDay?: boolean;
   noReport?: boolean;
+  absentReason?: string;
   requests?: { kind: "WFH" | "HALF_DAY" | "SHORT_LEAVE" | "LATE_EARLY" | "WFH_REPORT"; status: "PENDING" | "APPROVED"; time: string | null }[];
   shortLeave?: "FREE" | "COUNTED";
   plan?: string | null;
@@ -199,6 +200,10 @@ export async function monthReports(userIds: string[], month: string) {
             ...base,
             status: "ABSENT",
             noReport: true,
+            absentReason:
+              att.note?.startsWith(FORGOT_CHECKOUT_NOTE) || att.note === "Auto checked out"
+                ? "Forgot to check out, no report"
+                : "No WFH report",
             place: att.place,
             checkIn: att.checkIn,
             checkOut: att.checkOut,

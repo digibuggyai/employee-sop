@@ -16,6 +16,7 @@ export const SHORT_LEAVE_RULE_FROM = "2026-11-01";
 export const LATE_SHORT_LEAVE_MIN = 60;
 export const EARLY_SHORT_LEAVE_MIN = 15;
 export const WFH_REPORT_FROM = "2026-11-07";
+export const FORGOT_CHECKOUT_NOTE = "Forgot to check out";
 
 export const worksSaturdays = (employmentType: string | null | undefined, date: string) =>
   employmentType === "FULL_TIME" && date >= SIX_DAY_WEEK_FROM;

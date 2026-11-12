@@ -10,6 +10,7 @@ import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { firstName, notify } from "../lib/notify.js";
 import { adminDayChangeSchema, applyDayChange, checkDayChange, toDayChange } from "../lib/attendanceEdit.js";
 import { sameMonth, syncMakeUps } from "../lib/makeups.js";
+import { FORGOT_CHECKOUT_NOTE } from "../lib/policy.js";
 
 const router = Router();
 
@@ -61,6 +62,9 @@ router.get("/overview", async (req, res) => {
       tasksTotal: myTasks.reduce((n, t) => n + t._count, 0),
       tasksDone: myTasks.filter((t) => t.status === "COMPLETED").reduce((n, t) => n + t._count, 0),
       marks: [
+        ...(day?.place === "WFH" && day.checkOut && !day.report?.trim() && day.note?.startsWith(FORGOT_CHECKOUT_NOTE)
+          ? ["Absent: forgot to check out"]
+          : []),
         ...leaves.filter((l) => l.userId === u.id).map((l) => (l.emergency ? "Emergency leave" : "Leave")),
         ...marks
           .filter((m) => m.userId === u.id)

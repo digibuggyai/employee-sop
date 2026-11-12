@@ -51,7 +51,7 @@ function NoReport({ d, onSend }: { d: DayRow; onSend?: (d: DayRow) => void }) {
   const sent = d.requests?.some((q) => q.kind === "WFH_REPORT");
   return (
     <>
-      <Tag tone="red">No WFH report: absent</Tag>
+      <Tag tone="red">{d.absentReason ?? "No WFH report"}: absent</Tag>
       {sent ? (
         <Tag tone="amber">Report sent, waiting for admin</Tag>
       ) : (
@@ -74,7 +74,7 @@ function dayNotes(d: DayRow): string[] {
   if (late) notes.push(late.text);
   const extra = extraTag(d);
   if (extra) notes.push(extra);
-  if (d.noReport) notes.push("No WFH report: absent");
+  if (d.noReport) notes.push(`${d.absentReason ?? "No WFH report"}: absent`);
   d.requests?.forEach((q) => notes.push(`${dayRequestLabels[q.kind]} ${q.status === "APPROVED" ? "approved" : "requested"}`));
   if (d.plan) notes.push(`Plan: ${d.plan}`);
   if (d.report) notes.push(`Report: ${d.report}`);
