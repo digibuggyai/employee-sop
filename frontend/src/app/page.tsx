@@ -2,6 +2,7 @@ import Card from "@/components/Card";
 import CheckInCard from "@/components/CheckInCard";
 import EmployeeOnly from "@/components/EmployeeOnly";
 import NoticeList from "@/components/NoticeList";
+import TeamToday from "@/components/TeamToday";
 import UpcomingHolidays from "@/components/UpcomingHolidays";
 import { DashboardHeader, MonthAtGlance, ReimbursementsCard, TodayTasks } from "@/components/dashboard";
 
@@ -22,6 +23,7 @@ export default function Dashboard() {
         </div>
 
         <div className="min-w-0 space-y-4 md:space-y-6">
+          <TeamToday />
           <EmployeeOnly>
             <MonthAtGlance />
           </EmployeeOnly>

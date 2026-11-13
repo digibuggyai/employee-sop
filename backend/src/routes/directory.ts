@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { isAdmin, requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
-import { monthReports, thisMonth } from "../lib/reports.js";
+import { isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 
 const router = Router();
 
@@ -25,6 +25,36 @@ router.get("/", requireAuth, async (_req, res) => {
     },
   });
   res.json(people);
+});
+
+router.get("/today", requireAuth, async (_req, res) => {
+  const date = toDbDate(todayString());
+  const [people, attendance, leaves] = await Promise.all([
+    prisma.user.findMany({
+      where: { active: true, isEmployee: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, photoUpdatedAt: true, designation: true, employmentType: true },
+    }),
+    prisma.attendance.findMany({ where: { date }, select: { userId: true, place: true, checkOut: true } }),
+    prisma.leave.findMany({ where: { date, status: "APPROVED" }, select: { userId: true } }),
+  ]);
+  const today = todayString();
+  const rows = people.map(({ employmentType, ...person }) => {
+    const day = attendance.find((a) => a.userId === person.id);
+    const status = day
+      ? day.checkOut
+        ? "DONE"
+        : day.place === "WFH"
+          ? "WFH"
+          : "IN_OFFICE"
+      : leaves.some((l) => l.userId === person.id)
+        ? "LEAVE"
+        : isOffDay(today, employmentType)
+          ? "OFF"
+          : "NOT_IN";
+    return { person, status, place: day?.place ?? null };
+  });
+  res.json({ date: today, rows });
 });
 
 router.get("/:id", requireAuth, async (req, res) => {
