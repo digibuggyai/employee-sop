@@ -18,8 +18,16 @@ export const EARLY_SHORT_LEAVE_MIN = 15;
 export const WFH_REPORT_FROM = "2026-11-07";
 export const FORGOT_CHECKOUT_NOTE = "Forgot to check out";
 
-export const worksSaturdays = (employmentType: string | null | undefined, date: string) =>
-  employmentType === "FULL_TIME" && date >= SIX_DAY_WEEK_FROM;
+export type WorkType = string | null | undefined | { employmentType: string; fullTimeFrom?: Date | null };
+
+export function typeOn(who: WorkType, date: string) {
+  if (!who || typeof who === "string") return who ?? null;
+  const from = who.fullTimeFrom?.toISOString().slice(0, 10);
+  if (who.employmentType === "FULL_TIME" && from && date < from) return "INTERN";
+  return who.employmentType;
+}
+
+export const worksSaturdays = (who: WorkType, date: string) => typeOn(who, date) === "FULL_TIME" && date >= SIX_DAY_WEEK_FROM;
 
 export const PLAN_MIN_CHARS = 10;
 export const REPORT_MIN_CHARS = 20;

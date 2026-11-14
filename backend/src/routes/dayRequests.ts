@@ -57,7 +57,7 @@ router.post("/", async (req, res) => {
     if (day.report?.trim()) return res.status(400).json({ error: "That day already has a report" });
   } else {
     if (date < todayString()) return res.status(400).json({ error: "Ask before the day. For a past day, talk to your admin." });
-    if (isOffDay(date, me.employmentType)) return res.status(400).json({ error: "That day is already off" });
+    if (isOffDay(date, me)) return res.status(400).json({ error: "That day is already off" });
     if (kind === "WFH" && me.employmentType === "REMOTE_INTERN") {
       return res.status(400).json({ error: "Remote interns don't need WFH approval" });
     }
@@ -128,9 +128,9 @@ router.post("/record", requireAdmin, async (req, res) => {
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { userId, kind, date, time, reason } = parsed.data;
-  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true } });
+  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } });
   if (!person) return res.status(404).json({ error: "Employee not found" });
-  if (isOffDay(date, person.employmentType)) return res.status(400).json({ error: "That day is off for them" });
+  if (isOffDay(date, person)) return res.status(400).json({ error: "That day is off for them" });
 
   const data = {
     reason: reason || `Recorded by ${firstName(req.user!.name)}`,

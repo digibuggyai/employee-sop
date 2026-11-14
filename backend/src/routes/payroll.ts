@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireSuperAdmin } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { isOffDay, monthReports, thisMonth } from "../lib/reports.js";
-import { EXTRA_HOURS_PER_DAY } from "../lib/policy.js";
+import { EXTRA_HOURS_PER_DAY, typeOn } from "../lib/policy.js";
 
 const router = Router();
 router.use(requireAuth, requireSuperAdmin);
@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
   const users = await prisma.user.findMany({
     where: { isEmployee: true, OR: [{ active: true }, { leftOn: { gte: toDbDate(`${month}-01`) } }] },
     orderBy: [{ active: "desc" }, { name: "asc" }],
-    select: { id: true, name: true, designation: true, employmentType: true, photoUpdatedAt: true },
+    select: { id: true, name: true, designation: true, employmentType: true, fullTimeFrom: true, photoUpdatedAt: true },
   });
   const [y, m] = month.split("-").map(Number);
   const monthRange = { gte: toDbDate(`${month}-01`), lte: new Date(Date.UTC(y, m, 0)) };
@@ -36,8 +36,8 @@ router.get("/", async (req, res) => {
   const today = todayString();
   const rows = users.map((user) => {
     const { days, summary } = reports.get(user.id)!;
-    const fullTime = user.employmentType === "FULL_TIME";
-    const working = days.filter((d) => !isOffDay(d.date, user.employmentType));
+    const fullTime = typeOn(user, days.at(-1)!.date) === "FULL_TIME";
+    const working = days.filter((d) => !isOffDay(d.date, user));
     const workingDays = working.length;
     const notYet = (d: (typeof days)[number]) => d.date > today || (d.date === today && !d.checkIn);
     const passed = days.filter((d) => !notYet(d));

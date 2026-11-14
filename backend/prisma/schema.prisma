@@ -30,6 +30,7 @@ model User {
   phone          String?
   designation    String?
   employmentType EmploymentType @default(INTERN)
+  fullTimeFrom   DateTime?      @db.Date
   team           String?
   office         String?
   timings        String?

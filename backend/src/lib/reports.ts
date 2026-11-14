@@ -3,7 +3,7 @@ import { TIMEZONE, toDbDate, todayString } from "./dates.js";
 import { holidayList, holidayOn } from "./holidays.js";
 import {
   FREE_SHORT_LEAVES, GRACE_MIN, LATES_PER_ABSENCE, LEAVE_PER_MONTH, LEAVE_POLICY_START, SHORT_LEAVE_MAX_MIN, parseTimings,
-  worksSaturdays, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM, FORGOT_CHECKOUT_NOTE,
+  worksSaturdays, typeOn, type WorkType, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM, FORGOT_CHECKOUT_NOTE,
 } from "./policy.js";
 import type { Attendance, Break } from "../generated/prisma/client.js";
 
@@ -33,10 +33,10 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 export const isSunday = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() === 0;
 
-export function isOffDay(date: string, employmentType?: string | null) {
+export function isOffDay(date: string, who?: WorkType) {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   if (weekday === 0 || holidayOn(date)) return true;
-  return weekday === 6 && !worksSaturdays(employmentType, date);
+  return weekday === 6 && !worksSaturdays(who, date);
 }
 
 export type DayRow = {
@@ -116,7 +116,7 @@ export async function monthReports(userIds: string[], month: string) {
     where: { id: { in: userIds } },
     select: {
       id: true, joinedOn: true, leftOn: true, createdAt: true, wfhAllowance: true, weeklyHours: true,
-      timings: true, employmentType: true, leaveOpening: true,
+      timings: true, employmentType: true, fullTimeFrom: true, leaveOpening: true,
     },
   });
   const personOf = new Map(people.map((p) => [p.id, p]));
@@ -133,15 +133,14 @@ export async function monthReports(userIds: string[], month: string) {
       where: { userId: { in: userIds }, status: "PENDING", date: range },
       select: { id: true, userId: true, date: true },
     }),
-    prisma.leave.groupBy({
-      by: ["userId"],
+    prisma.leave.findMany({
       where: {
         userId: { in: userIds },
         status: "APPROVED",
         compensatedOn: null,
         date: { gte: toDbDate(`${LEAVE_POLICY_START}-01`), lte: toDbDate(dates.at(-1)!) },
       },
-      _count: true,
+      select: { userId: true, date: true },
     }),
     prisma.dayRequest.findMany({
       where: { userId: { in: userIds }, status: { not: "REJECTED" }, date: range },
@@ -193,7 +192,7 @@ export async function monthReports(userIds: string[], month: string) {
           date >= WFH_REPORT_FROM &&
           !att.report?.trim() &&
           (!!att.checkOut || date < today) &&
-          !isOffDay(date, person?.employmentType);
+          !isOffDay(date, person);
         if (noReport) {
           summary.absent++;
           return {
@@ -221,7 +220,7 @@ export async function monthReports(userIds: string[], month: string) {
         const halfDay = att.halfDay || approved("HALF_DAY");
         if (halfDay) summary.halfDays++;
         const madeUp = leaveByMakeUpDay.get(date);
-        const extraDay = isOffDay(date, person?.employmentType) && !madeUp;
+        const extraDay = isOffDay(date, person) && !madeUp;
         const extraMin = extraDay && att.checkOut ? Math.round(workedMs / 60000) : 0;
         if (extraMin) summary.extraMs += extraMin * 60000;
         return {
@@ -259,7 +258,7 @@ export async function monthReports(userIds: string[], month: string) {
       }
       if (leftOn && date > leftOn) return { ...base, status: "LEFT" };
       if (holidayByDate.has(date)) return { ...base, status: "HOLIDAY" };
-      if (isOffDay(date, person?.employmentType)) return { ...base, status: "WEEKEND" };
+      if (isOffDay(date, person)) return { ...base, status: "WEEKEND" };
       if (date >= today) return { ...base, status: "UPCOMING", ...flags };
       if (date < start) return { ...base, status: "NOT_JOINED" };
       if (approved("HALF_DAY")) {
@@ -279,7 +278,7 @@ export async function monthReports(userIds: string[], month: string) {
         if (!d.checkIn || d.noReport) continue;
         const dayStart = Date.parse(`${d.date}T00:00:00+05:30`);
         const minuteOf = (t: Date) => Math.round((t.getTime() - dayStart) / 60000);
-        if (isOffDay(d.date, person?.employmentType)) {
+        if (isOffDay(d.date, person)) {
           const over = d.compensates && d.checkOut ? minuteOf(d.checkOut) - minuteOf(d.checkIn) - shiftLength : 0;
           if (over >= GRACE_MIN) {
             d.extraMin = over;
@@ -331,10 +330,10 @@ export async function monthReports(userIds: string[], month: string) {
     }
     summary.latePenaltyDays = Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE);
 
-    if (person?.employmentType === "FULL_TIME") {
-      const from = start.slice(0, 7) > LEAVE_POLICY_START ? start.slice(0, 7) : LEAVE_POLICY_START;
+    if (person && typeOn(person, dates.at(-1)!) === "FULL_TIME") {
+      const from = [start.slice(0, 7), LEAVE_POLICY_START, person.fullTimeFrom?.toISOString().slice(0, 7) ?? ""].sort().at(-1)!;
       const months = month < from ? 0 : monthsBetween(from, month) + 1;
-      const used = leavesUsed.find((l) => l.userId === userId)?._count ?? 0;
+      const used = leavesUsed.filter((l) => l.userId === userId && dayKey(l.date) >= `${from}-01`).length;
       summary.leaveBalance = person.leaveOpening + months * LEAVE_PER_MONTH - used;
     }
 

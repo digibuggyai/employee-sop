@@ -11,6 +11,7 @@ import { firstName, notify } from "../lib/notify.js";
 import { adminDayChangeSchema, applyDayChange, checkDayChange, toDayChange } from "../lib/attendanceEdit.js";
 import { sameMonth, syncMakeUps } from "../lib/makeups.js";
 import { FORGOT_CHECKOUT_NOTE } from "../lib/policy.js";
+import { holidayList } from "../lib/holidays.js";
 
 const router = Router();
 
@@ -75,6 +76,34 @@ router.get("/overview", async (req, res) => {
     };
   });
   res.json({ date, rows });
+});
+
+router.get("/leave-calendar", async (req, res) => {
+  const month = monthParam.parse(req.query.month);
+  const users = await prisma.user.findMany({
+    where: { isEmployee: true, OR: [{ active: true }, { leftOn: { gte: toDbDate(`${month}-01`) } }] },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, photoUpdatedAt: true, designation: true },
+  });
+  const reports = await monthReports(
+    users.map((u) => u.id),
+    month,
+  );
+  const entries: { date: string; user: (typeof users)[number]; kind: string; reason: string | null; madeUp: boolean }[] = [];
+  for (const user of users) {
+    for (const d of reports.get(user.id)!.days) {
+      const add = (kind: string, reason: string | null = null, madeUp = false) => entries.push({ date: d.date, user, kind, reason, madeUp });
+      if (d.status === "LEAVE") add(d.leave?.emergency ? "EMERGENCY" : "LEAVE", d.leave?.reason ?? null, !!d.leave?.compensatedOn);
+      else if (d.status === "LEAVE_PENDING") add("PENDING", d.leave?.reason ?? null);
+      else if (d.status === "ABSENT") add("ABSENT", d.absentReason ?? null);
+      else if (d.halfDay) add("HALF_DAY", d.halfDay === "EXTRA_WFH" ? "Extra WFH" : d.halfDay === "OVER_2H" ? "Over 2h short" : null);
+      else if (d.shortLeave) add("SHORT_LEAVE");
+    }
+  }
+  const holidays = holidayList()
+    .filter((h) => h.date.startsWith(month))
+    .map((h) => ({ date: h.date, name: h.name }));
+  res.json({ month, holidays, entries });
 });
 
 router.get("/attendance/summary", async (req, res) => {
@@ -248,9 +277,9 @@ router.post("/leaves", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { userId, from, to, reason, emergency = false } = parsed.data;
 
-  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true } });
+  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } });
   if (!person) return res.status(404).json({ error: "Employee not found" });
-  const dates = workingDaysBetween(from, to, person.employmentType);
+  const dates = workingDaysBetween(from, to, person);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
   const { count } = await prisma.leave.createMany({
     data: dates.map((d) => ({
@@ -272,7 +301,7 @@ router.get("/leaves/make-up-options", async (req, res) => {
   const userId = String(req.query.userId ?? "");
   const month = monthParam.parse(req.query.month);
   const [person, worked, used] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } }),
     prisma.attendance.findMany({
       where: { userId, date: { gte: toDbDate(`${month}-01`), lte: toDbDate(`${month}${lastDay(month)}`) }, checkOut: { not: null } },
       select: { date: true, place: true },
@@ -283,7 +312,7 @@ router.get("/leaves/make-up-options", async (req, res) => {
   const usedDays = new Set(used.map((l) => l.compensatedOn!.toISOString().slice(0, 10)));
   const options = worked
     .map((a) => ({ date: a.date.toISOString().slice(0, 10), place: a.place }))
-    .filter((a) => isOffDay(a.date, person?.employmentType) && !usedDays.has(a.date));
+    .filter((a) => isOffDay(a.date, person) && !usedDays.has(a.date));
   res.json({ options });
 });
 
@@ -297,13 +326,13 @@ router.patch("/leaves/:id", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { status, compensatedOn } = parsed.data;
 
-  const leave = await prisma.leave.findUnique({ where: { id: req.params.id }, include: { user: { select: { employmentType: true } } } });
+  const leave = await prisma.leave.findUnique({ where: { id: req.params.id }, include: { user: { select: { employmentType: true, fullTimeFrom: true } } } });
   if (!leave) return res.status(404).json({ error: "Leave not found" });
   const finalStatus = status ?? leave.status;
 
   if (compensatedOn) {
     if (finalStatus !== "APPROVED") return res.status(400).json({ error: "Approve the leave before linking a make-up day" });
-    if (!isOffDay(compensatedOn, leave.user.employmentType)) return res.status(400).json({ error: "A make-up day must be a day off or holiday" });
+    if (!isOffDay(compensatedOn, leave.user)) return res.status(400).json({ error: "A make-up day must be a day off or holiday" });
     if (!sameMonth(compensatedOn, leave.date.toISOString().slice(0, 10))) {
       return res.status(400).json({ error: "A leave can only be made up in the same month" });
     }

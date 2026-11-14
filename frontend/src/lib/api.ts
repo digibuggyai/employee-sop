@@ -58,6 +58,7 @@ export type User = {
   wfhAllowance: number;
   weeklyHours: number | null;
   leaveOpening: number;
+  fullTimeFrom?: string | null;
   photoUpdatedAt: string | null;
   createdAt: string;
   updatedAt: string;

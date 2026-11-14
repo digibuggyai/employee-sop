@@ -33,13 +33,13 @@ router.get("/today", requireAuth, async (_req, res) => {
     prisma.user.findMany({
       where: { active: true, isEmployee: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, photoUpdatedAt: true, designation: true, employmentType: true },
+      select: { id: true, name: true, photoUpdatedAt: true, designation: true, employmentType: true, fullTimeFrom: true },
     }),
     prisma.attendance.findMany({ where: { date }, select: { userId: true, place: true, checkOut: true } }),
     prisma.leave.findMany({ where: { date, status: "APPROVED" }, select: { userId: true } }),
   ]);
   const today = todayString();
-  const rows = people.map(({ employmentType, ...person }) => {
+  const rows = people.map(({ employmentType, fullTimeFrom, ...person }) => {
     const day = attendance.find((a) => a.userId === person.id);
     const status = day
       ? day.checkOut
@@ -49,7 +49,7 @@ router.get("/today", requireAuth, async (_req, res) => {
           : "IN_OFFICE"
       : leaves.some((l) => l.userId === person.id)
         ? "LEAVE"
-        : isOffDay(today, employmentType)
+        : isOffDay(today, { employmentType, fullTimeFrom })
           ? "OFF"
           : "NOT_IN";
     return { person, status, place: day?.place ?? null };

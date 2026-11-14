@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { notifyAdmins } from "../lib/notify.js";
-import { EMERGENCY_LEAVES_PER_MONTH } from "../lib/policy.js";
+import { EMERGENCY_LEAVES_PER_MONTH, type WorkType } from "../lib/policy.js";
 import { syncMakeUps } from "../lib/makeups.js";
 import { daysOfMonth, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 
@@ -13,11 +13,11 @@ router.use(requireAuth);
 
 export const leaveInclude = { reviewedBy: { select: { id: true, name: true } } };
 
-export function workingDaysBetween(from: string, to: string, employmentType?: string | null): string[] {
+export function workingDaysBetween(from: string, to: string, who?: WorkType): string[] {
   const out: string[] = [];
   for (let d = new Date(`${from}T00:00:00Z`); d <= new Date(`${to}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
     const date = d.toISOString().slice(0, 10);
-    if (!isOffDay(date, employmentType)) out.push(date);
+    if (!isOffDay(date, who)) out.push(date);
   }
   return out;
 }
@@ -63,7 +63,7 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "You've already used this month's emergency leave. Other leave must be asked for in advance." });
   }
 
-  const dates = workingDaysBetween(from, to, req.user!.employmentType);
+  const dates = workingDaysBetween(from, to, req.user!);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
   if (dates.length > 31) return res.status(400).json({ error: "Request at most a month at a time" });
 

@@ -40,6 +40,7 @@ export default function EmployeeForm({
     timings: existing?.timings ?? "",
     birthday: toDateInput(existing?.birthday ?? null),
     joinedOn: toDateInput(existing?.joinedOn ?? null),
+    fullTimeFrom: toDateInput(existing?.fullTimeFrom ?? null),
     leftOn: toDateInput(existing?.leftOn ?? null),
     wfhAllowance: String(existing?.wfhAllowance ?? 4),
     weeklyHours: existing?.weeklyHours ? String(existing.weeklyHours) : "",
@@ -127,6 +128,11 @@ export default function EmployeeForm({
         <Field label="Weekly hours" hint="Hours they should work each week, Monday to Sunday. Leave empty for no target.">
           <input name="weeklyHours" type="number" min={1} max={100} value={form.weeklyHours} onChange={update} className={inputClass} placeholder="e.g. 35" />
         </Field>
+        {form.employmentType === "FULL_TIME" && (
+          <Field label="Full-time from" hint="Leave empty if always full-time. Before this date they count as an intern.">
+            <input name="fullTimeFrom" type="date" value={form.fullTimeFrom} onChange={update} className={inputClass} />
+          </Field>
+        )}
         {form.employmentType === "FULL_TIME" && (
           <Field label="Leave balance before Oct 2026" hint="Unused leave they already had. They get 1.5 more every month.">
             <input name="leaveOpening" type="number" min={0} max={60} step={0.5} value={form.leaveOpening} onChange={update} className={inputClass} />

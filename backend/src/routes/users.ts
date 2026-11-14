@@ -37,6 +37,7 @@ const profileFields = {
   timings: optionalText.refine((v) => !v || parseTimings(v), "Write timings like 11:30 to 6:00"),
   birthday: optionalDate,
   joinedOn: optionalDate,
+  fullTimeFrom: optionalDate,
   leftOn: optionalDate,
   wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
   leaveOpening: z.coerce.number().min(0, "Leave balance can't be negative").max(60).optional(),
