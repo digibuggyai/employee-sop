@@ -4,7 +4,7 @@ import EmployeeOnly from "@/components/EmployeeOnly";
 import NoticeList from "@/components/NoticeList";
 import TeamToday from "@/components/TeamToday";
 import UpcomingHolidays from "@/components/UpcomingHolidays";
-import { DashboardHeader, MonthAtGlance, ReimbursementsCard, TodayTasks } from "@/components/dashboard";
+import { DashboardHeader, DocumentsCard, MonthAtGlance, ReimbursementsCard, TodayTasks } from "@/components/dashboard";
 
 export default function Dashboard() {
   return (
@@ -20,6 +20,7 @@ export default function Dashboard() {
           <Card title="Notice board" action={{ href: "/notices", label: "All notices" }} flush>
             <NoticeList limit={3} />
           </Card>
+          <DocumentsCard />
         </div>
 
         <div className="min-w-0 space-y-4 md:space-y-6">

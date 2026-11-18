@@ -10,6 +10,7 @@ import {
   ChartPieSlice,
   ClipboardText,
   FileText,
+  FolderOpen,
   House,
   HouseLine,
   Key,
@@ -46,6 +47,7 @@ export const workspaceNav: NavItem[] = [
   { href: "/notices", label: "Notice Board", short: "Notices", icon: Megaphone, group: "Company" },
   { href: "/directory", label: "Directory", icon: AddressBook, group: "Company" },
   { href: "/sops", label: "SOPs", icon: BookOpenText, group: "Company" },
+  { href: "/documents", label: "Documents", short: "Docs", icon: FolderOpen, group: "Company" },
   { href: "/logins", label: "Logins", icon: Key, group: "Company" },
 ];
 

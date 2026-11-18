@@ -1,3 +1,5 @@
+import { getViewAs } from "./viewAs";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -8,9 +10,13 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+  const viewAs = getViewAs();
+  const headers: Record<string, string> = {};
+  if (options.body) headers["Content-Type"] = "application/json";
+  if (viewAs) headers["x-view-as"] = viewAs.id;
   const res = await fetch(path, {
     method: options.method ?? "GET",
-    headers: options.body ? { "Content-Type": "application/json" } : undefined,
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -19,6 +25,9 @@ export async function api<T>(path: string, options: { method?: string; body?: un
 }
 
 export const apiGet = <T>(path: string) => api<T>(path);
+
+export const requestTimeText = (time: string | null | undefined) =>
+  !time ? "" : time === "FIRST_HALF" ? " · first half" : time === "SECOND_HALF" ? " · second half" : ` at ${time}`;
 
 export type Role = "EMPLOYEE" | "ADMIN" | "SUPER_ADMIN";
 
@@ -371,4 +380,19 @@ export type DayNote = {
   taskId: string | null;
   createdAt: string;
   author: { id: string; name: string; photoUpdatedAt?: string | null };
+};
+
+export type DocScope = "EVERYONE" | "PERSONAL";
+
+export type DocumentItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  fileName: string | null;
+  fileType: string | null;
+  fileSize: number | null;
+  scope: DocScope;
+  createdAt: string;
+  owner: { id: string; name: string; photoUpdatedAt: string | null };
 };

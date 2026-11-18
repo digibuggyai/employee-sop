@@ -6,6 +6,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   { files: ["src/components/Avatar.tsx"], rules: { "@next/next/no-img-element": "off" } },
+  { files: ["src/lib/viewAs.ts"], rules: { "@next/next/no-location-assign-relative-destination": "off" } },
   globalIgnores([
     ".next/**",
     "out/**",

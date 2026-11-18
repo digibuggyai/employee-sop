@@ -286,7 +286,7 @@ router.post("/leaves", async (req, res) => {
       userId,
       date: toDbDate(d),
       reason: reason || null,
-      emergency,
+      emergency: emergency || d === todayString(),
       status: "APPROVED" as const,
       reviewedById: req.user!.id,
       reviewedAt: new Date(),

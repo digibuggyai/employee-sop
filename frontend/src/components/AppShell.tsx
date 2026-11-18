@@ -14,6 +14,7 @@ import Avatar from "./Avatar";
 import BackendStatus from "./BackendStatus";
 import BrandLogo from "./BrandLogo";
 import ThemeToggle from "./ThemeToggle";
+import ViewAsBanner from "./ViewAsBanner";
 import Modal from "./Modal";
 import { NotificationBell } from "./Notifications";
 
@@ -130,6 +131,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
+      <ViewAsBanner />
       <main className="pb-28 md:pb-0 md:pl-60">
         <div className="sticky top-0 z-10 hidden h-14 items-center justify-end gap-2 glass-bar border-b px-8 md:flex">
           <ThemeToggle />

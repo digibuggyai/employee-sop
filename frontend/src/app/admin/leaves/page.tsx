@@ -9,9 +9,9 @@ import { useConfirm, useToast } from "@/components/Feedback";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import { usePending } from "@/components/Pending";
 import PageHeader from "@/components/PageHeader";
-import { Button, ErrorBox, Field, IconButton, Segmented, inputBase, inputClass } from "@/components/form";
+import { Button, ErrorBox, Field, HalfPicker, IconButton, Segmented, inputBase, inputClass } from "@/components/form";
 import { Badge, EmptyState, Skeleton } from "@/components/ui";
-import { api, dayRequestLabels, type DayRequest, type Leave, type OverviewRow, type UserBrief } from "@/lib/api";
+import { api, dayRequestLabels, requestTimeText, type DayRequest, type Leave, type OverviewRow, type UserBrief } from "@/lib/api";
 import { fmtDate, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
 
 const dayName = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" });
@@ -194,7 +194,7 @@ export default function AdminLeavesPage() {
                   <p className="text-[13px] wrap-break-word text-zinc-600">
                     <span className="font-medium text-brand-700">
                       {dayRequestLabels[q.kind]}
-                      {q.time ? ` at ${q.time}` : ""} ·{" "}
+                      {requestTimeText(q.time)} ·{" "}
                     </span>
                     {q.reason}
                   </p>
@@ -261,7 +261,7 @@ export default function AdminLeavesPage() {
                   <p className="truncate text-[13px] text-zinc-600">
                     <span className="font-medium text-brand-700">
                       {dayRequestLabels[q.kind]}
-                      {q.time ? ` at ${q.time}` : ""} ·{" "}
+                      {requestTimeText(q.time)} ·{" "}
                     </span>
                     {q.reason}
                   </p>
@@ -455,7 +455,13 @@ function RecordLeaveForm({
       } else {
         await api("/api/day-requests/record", {
           method: "POST",
-          body: { userId: form.userId, kind: type, date: form.from, time: form.time || null, reason: form.reason || undefined },
+          body: {
+            userId: form.userId,
+            kind: type,
+            date: form.from,
+            time: type === "HALF_DAY" ? (form.time.includes("HALF") ? form.time : "FIRST_HALF") : form.time || null,
+            reason: form.reason || undefined,
+          },
         });
         onDone(`${recordLabels[type]} recorded for ${name} on ${fullDay(form.from)}`);
       }
@@ -497,9 +503,16 @@ function RecordLeaveForm({
             <input name="to" type="date" required min={form.from} value={form.to} onChange={update} className={inputClass} />
           </Field>
         ) : (
-          <Field label={type === "HALF_DAY" ? "Left at" : "Came in or left at"} hint="Optional">
-            <input name="time" type="time" value={form.time} onChange={update} className={inputClass} />
-          </Field>
+          type === "HALF_DAY" ? (
+            <div>
+              <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Which half?</p>
+              <HalfPicker value={form.time} onChange={(time) => setForm({ ...form, time })} />
+            </div>
+          ) : (
+            <Field label="Came in or left at" hint="Optional">
+              <input name="time" type="time" value={form.time} onChange={update} className={inputClass} />
+            </Field>
+          )
         )}
       </div>
       <Field label="Reason" hint="Optional">

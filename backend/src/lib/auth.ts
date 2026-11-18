@@ -52,6 +52,16 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     res.cookie(COOKIE_NAME, signToken(user.id), cookieOptions);
   }
 
+  const viewAs = req.get("x-view-as");
+  if (viewAs && viewAs !== user.id && isAdmin(user)) {
+    if (req.method !== "GET") return res.status(403).json({ error: "You are previewing someone else. Exit the preview to make changes." });
+    const target = await prisma.user.findUnique({ where: { id: viewAs } });
+    if (!target || !target.active) return res.status(404).json({ error: "That person was not found" });
+    if (target.role !== "EMPLOYEE" && user.role !== "SUPER_ADMIN") return res.status(403).json({ error: "Only Super admins can preview admins" });
+    req.user = target;
+    return next();
+  }
+
   req.user = user;
   next();
 }

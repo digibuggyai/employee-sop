@@ -7,7 +7,7 @@ import { todayIST } from "@/lib/format";
 import { useToast } from "./Feedback";
 import Modal from "./Modal";
 import { usePending } from "./Pending";
-import { Button, ErrorBox, Field, inputClass } from "./form";
+import { Button, ErrorBox, Field, HalfPicker, inputClass } from "./form";
 
 type Mark = "HALF_DAY" | "LATE" | "EARLY" | "SHORT_LEAVE" | "LEAVE" | "EMERGENCY";
 
@@ -21,7 +21,6 @@ const marks: { value: Mark; label: string; hint: string; icon: React.ElementType
 ];
 
 const timeLabel: Partial<Record<Mark, string>> = {
-  HALF_DAY: "Left at",
   LATE: "Came in at",
   EARLY: "Left at",
   SHORT_LEAVE: "Came in or left at",
@@ -84,7 +83,7 @@ function MarkForm({
             userId: person.id,
             kind: mark === "LATE" || mark === "EARLY" ? "LATE_EARLY" : mark,
             date,
-            time: time || null,
+            time: mark === "HALF_DAY" ? (time.includes("HALF") ? time : "FIRST_HALF") : time || null,
             reason: [prefix, reason].filter(Boolean).join(": ") || undefined,
           },
         });
@@ -126,6 +125,12 @@ function MarkForm({
         <Field label="Date">
           <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
         </Field>
+        {mark === "HALF_DAY" && (
+          <div>
+            <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Which half?</p>
+            <HalfPicker value={time} onChange={setTime} />
+          </div>
+        )}
         {timeLabel[mark] && (
           <Field label={timeLabel[mark]!} hint="Optional">
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputClass} />

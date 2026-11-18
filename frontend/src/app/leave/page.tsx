@@ -6,9 +6,9 @@ import { LeaveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import { useConfirm, useToast } from "@/components/Feedback";
 import PageHeader from "@/components/PageHeader";
-import { Button, ErrorBox, Field, Segmented, inputClass } from "@/components/form";
+import { Button, ErrorBox, Field, HalfPicker, Segmented, inputClass } from "@/components/form";
 import { EmptyState, Skeleton } from "@/components/ui";
-import { api, dayRequestLabels, type DayRequest, type DayRequestKind, type Leave } from "@/lib/api";
+import { api, dayRequestLabels, requestTimeText, type DayRequest, type DayRequestKind, type Leave } from "@/lib/api";
 import { fmtDate, todayIST } from "@/lib/format";
 
 type LeaveData = {
@@ -260,7 +260,7 @@ export default function LeavePage() {
                     <p className="line-clamp-2 text-[13px] wrap-break-word text-zinc-700">
                       <span className="font-medium text-brand-700">
                         {dayRequestLabels[q.kind]}
-                        {q.time ? ` at ${q.time}` : ""} ·{" "}
+                        {requestTimeText(q.time)} ·{" "}
                       </span>
                       {q.reason}
                     </p>
@@ -345,7 +345,7 @@ function DayRequestForm({ kind, onDone, onCancel }: { kind: DayRequestKind; onDo
     setError("");
     setLoading(true);
     try {
-      await api("/api/day-requests", { method: "POST", body: { kind, date: form.date, time: form.time || null, reason: form.reason } });
+      await api("/api/day-requests", { method: "POST", body: { kind, date: form.date, time: kind === "HALF_DAY" ? form.time || "FIRST_HALF" : form.time || null, reason: form.reason } });
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send request");
@@ -359,8 +359,14 @@ function DayRequestForm({ kind, onDone, onCancel }: { kind: DayRequestKind; onDo
         <Field label="Date">
           <input type="date" required min={todayIST()} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputClass} />
         </Field>
-        {kind !== "WFH" && (
-          <Field label={kind === "SHORT_LEAVE" ? "Coming in or leaving at" : "Leaving at"} hint="Optional">
+        {kind === "HALF_DAY" && (
+          <div>
+            <p className="mb-1.5 text-[13px] font-medium text-zinc-800">Which half?</p>
+            <HalfPicker value={form.time} onChange={(time) => setForm({ ...form, time })} />
+          </div>
+        )}
+        {kind === "SHORT_LEAVE" && (
+          <Field label="Coming in or leaving at" hint="Optional">
             <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} className={inputClass} />
           </Field>
         )}

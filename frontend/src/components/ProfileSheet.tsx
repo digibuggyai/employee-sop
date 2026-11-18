@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Cake, CalendarCheck, Clock, Flag, Mail, MapPin, Phone, UserRound } from "lucide-react";
+import { Building2, Cake, CalendarCheck, Clock, Eye, Flag, Mail, MapPin, Phone, UserRound } from "lucide-react";
+import { startViewAs } from "@/lib/viewAs";
 import { api, employmentLabels, isAdmin, roleLabels, type MonthSummary, type Place, type User } from "@/lib/api";
 import { fmtDate, fmtDuration, fmtTime } from "@/lib/format";
 import Avatar from "./Avatar";
@@ -141,6 +142,14 @@ function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; 
                 </div>
               ))}
             </div>
+          )}
+          {p.id !== user?.id && (p.role === "EMPLOYEE" || user?.role === "SUPER_ADMIN") && (
+            <button
+              onClick={() => startViewAs({ id: p.id, name: p.name })}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 hover:bg-zinc-50 sm:h-9"
+            >
+              <Eye size={15} /> Preview their dashboard
+            </button>
           )}
           <button
             onClick={onMark}

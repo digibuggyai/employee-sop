@@ -23,8 +23,14 @@ const include = {
   reviewedBy: { select: { id: true, name: true } },
 };
 
+const timeLabel = (t: string) => (t === "FIRST_HALF" ? "First half" : t === "SECOND_HALF" ? "Second half" : t);
 const dayLabel = (d: Date) => d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-const timeSchema = z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM for the time").nullable().optional();
+const timeSchema = z
+  .union([z.enum(["FIRST_HALF", "SECOND_HALF"]), z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM for the time")])
+  .nullable()
+  .optional();
+const needsHalf = (kind: string, time: string | null | undefined) =>
+  kind === "HALF_DAY" && time !== "FIRST_HALF" && time !== "SECOND_HALF";
 const monthParam = z.string().regex(/^\d{4}-\d{2}$/);
 
 router.get("/", async (req, res) => {
@@ -49,6 +55,7 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { kind, date, time, reason } = parsed.data;
   const me = req.user!;
+  if (needsHalf(kind, time)) return res.status(400).json({ error: "Choose first half or second half" });
 
   if (kind === "WFH_REPORT") {
     if (reason.length < REPORT_MIN_CHARS) return res.status(400).json({ error: "Write what you got done that day" });
@@ -79,7 +86,7 @@ router.post("/", async (req, res) => {
   await notifyAdmins(
     {
       title: kind === "WFH_REPORT" ? `${me.name} sent a missing WFH report` : `${me.name} asked for ${kindLabel[kind].toLowerCase()}`,
-      body: `${dayLabel(saved.date)}${time ? ` · ${time}` : ""} · ${reason.slice(0, 200)}`,
+      body: `${dayLabel(saved.date)}${time ? ` · ${timeLabel(time)}` : ""} · ${reason.slice(0, 200)}`,
       link: "/admin/leaves",
     },
     me.id,
@@ -128,6 +135,7 @@ router.post("/record", requireAdmin, async (req, res) => {
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { userId, kind, date, time, reason } = parsed.data;
+  if (needsHalf(kind, time)) return res.status(400).json({ error: "Choose first half or second half" });
   const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } });
   if (!person) return res.status(404).json({ error: "Employee not found" });
   if (isOffDay(date, person)) return res.status(400).json({ error: "That day is off for them" });
@@ -147,7 +155,7 @@ router.post("/record", requireAdmin, async (req, res) => {
   });
   await notify(userId, {
     title: `${kindLabel[kind]} recorded`,
-    body: `${dayLabel(saved.date)}${time ? ` · ${time}` : ""} · by ${firstName(req.user!.name)}`,
+    body: `${dayLabel(saved.date)}${time ? ` · ${timeLabel(time)}` : ""} · by ${firstName(req.user!.name)}`,
     link: "/attendance",
   });
   res.status(201).json(saved);

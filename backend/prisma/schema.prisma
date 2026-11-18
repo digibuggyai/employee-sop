@@ -56,6 +56,7 @@ model User {
   notifications       Notification[]
   taskNotes           DailyTaskNote[]
   payBonuses          PayBonus[]
+  documents           Document[]      @relation("DocumentOwner")
   dayRequests         DayRequest[]    @relation("DayRequestOwner")
   reviewedDayRequests DayRequest[]    @relation("DayRequestReviewer")
   lastSeenAt          DateTime?
@@ -406,4 +407,28 @@ model DayRequest {
 
   @@unique([userId, date, kind])
   @@index([status])
+}
+
+enum DocScope {
+  EVERYONE
+  PERSONAL
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  url         String?
+  fileName    String?
+  fileType    String?
+  fileSize    Int?
+  fileData    Bytes?
+  scope       DocScope @default(PERSONAL)
+  ownerId     String
+  owner       User     @relation("DocumentOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([scope])
+  @@index([ownerId])
 }

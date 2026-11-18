@@ -20,6 +20,7 @@ import leavesRouter from "./routes/leaves.js";
 import photosRouter from "./routes/photos.js";
 import payrollRouter from "./routes/payroll.js";
 import dayRequestsRouter from "./routes/dayRequests.js";
+import documentsRouter from "./routes/documents.js";
 import { startAutoCheckout } from "./lib/autoCheckout.js";
 import { loadHolidays, startHolidayRefresh } from "./lib/holidays.js";
 
@@ -54,6 +55,7 @@ app.use("/api/reimbursements", reimbursementsRouter);
 app.use("/api/presence", presenceRouter);
 app.use("/api/payroll", payrollRouter);
 app.use("/api/day-requests", dayRequestsRouter);
+app.use("/api/documents", documentsRouter);
 
 app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {
   if (err.type === "entity.too.large") return res.status(413).json({ error: "That file is too large" });

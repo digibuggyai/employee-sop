@@ -11,6 +11,7 @@ import { currentWeek, weekProgress } from "@/lib/weeks";
 import { useAuth } from "./AuthProvider";
 import { PriorityBadge, TaskStatusBadge } from "./Badges";
 import Card from "./Card";
+import { AddDocumentButton, DocumentList, useDocuments } from "./Documents";
 import PageHeader from "./PageHeader";
 import { buttonClass } from "./form";
 import { EmptyState, Skeleton } from "./ui";
@@ -139,6 +140,15 @@ export function TodayTasks() {
           ))}
         </ul>
       )}
+    </Card>
+  );
+}
+
+export function DocumentsCard() {
+  const { docs, reload } = useDocuments();
+  return (
+    <Card title="Documents" action={{ href: "/documents", label: "All" }} actions={<AddDocumentButton size="sm" onAdded={reload} />} flush>
+      <DocumentList docs={docs?.slice(0, 5) ?? null} onChanged={reload} />
     </Card>
   );
 }

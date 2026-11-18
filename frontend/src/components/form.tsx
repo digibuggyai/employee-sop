@@ -79,6 +79,19 @@ export function IconButton({
   );
 }
 
+export function HalfPicker({ value, onChange }: { value: string; onChange: (v: "FIRST_HALF" | "SECOND_HALF") => void }) {
+  return (
+    <Segmented
+      value={value === "SECOND_HALF" ? "SECOND_HALF" : "FIRST_HALF"}
+      onChange={onChange}
+      options={[
+        { value: "FIRST_HALF", label: "First half" },
+        { value: "SECOND_HALF", label: "Second half" },
+      ]}
+    />
+  );
+}
+
 export function Segmented<T extends string>({
   value,
   options,

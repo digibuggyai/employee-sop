@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { Download, PencilLine } from "lucide-react";
-import { dayRequestLabels, type DayRow, type MonthReport, type WeekRow } from "@/lib/api";
+import { dayRequestLabels, requestTimeText, type DayRow, type MonthReport, type WeekRow } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { fmtMinutes } from "@/lib/shift";
 import { currentWeek, weekProgress } from "@/lib/weeks";
@@ -41,7 +41,7 @@ function RequestTags({ d }: { d: DayRow }) {
   return d.requests?.map((q) => (
     <Tag key={q.kind} tone={q.status === "APPROVED" ? "green" : "amber"}>
       {dayRequestLabels[q.kind]}
-      {q.time ? ` ${q.time}` : ""} {q.status === "APPROVED" ? "approved" : "requested"}
+      {requestTimeText(q.time)} {q.status === "APPROVED" ? "approved" : "requested"}
     </Tag>
   ));
 }
