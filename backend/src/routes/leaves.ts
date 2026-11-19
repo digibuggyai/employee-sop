@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
@@ -6,12 +6,19 @@ import { toDbDate, todayString } from "../lib/dates.js";
 import { notifyAdmins } from "../lib/notify.js";
 import { EMERGENCY_LEAVES_PER_MONTH, type WorkType } from "../lib/policy.js";
 import { syncMakeUps } from "../lib/makeups.js";
+import { isAdmin } from "../lib/auth.js";
+import { FILE_TYPES, MAX_FILE_BYTES } from "./documents.js";
 import { daysOfMonth, isOffDay, monthReports, thisMonth } from "../lib/reports.js";
 
 const router = Router();
 router.use(requireAuth);
 
-export const leaveInclude = { reviewedBy: { select: { id: true, name: true } } };
+export const leaveInclude = {
+  reviewedBy: { select: { id: true, name: true } },
+  attachment: { select: { id: true, name: true, type: true, size: true } },
+};
+
+const ATTACHMENT_TYPES = [...FILE_TYPES, "image/heic", "image/heif"];
 
 export function workingDaysBetween(from: string, to: string, who?: WorkType): string[] {
   const out: string[] = [];
@@ -67,10 +74,12 @@ router.post("/", async (req, res) => {
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
   if (dates.length > 31) return res.status(400).json({ error: "Request at most a month at a time" });
 
-  const { count } = await prisma.leave.createMany({
+  const created = await prisma.leave.createManyAndReturn({
     data: dates.map((d) => ({ userId: req.user!.id, date: toDbDate(d), reason, emergency: d === today })),
     skipDuplicates: true,
+    select: { id: true },
   });
+  const count = created.length;
   if (count === 0) return res.status(409).json({ error: "You've already requested leave for those days" });
   await notifyAdmins(
     {
@@ -80,7 +89,42 @@ router.post("/", async (req, res) => {
     },
     req.user!.id,
   );
-  res.status(201).json({ created: count, skipped: dates.length - count });
+  res.status(201).json({ created: count, skipped: dates.length - count, ids: created.map((l) => l.id) });
+});
+
+router.put("/attachment", express.raw({ type: ATTACHMENT_TYPES, limit: MAX_FILE_BYTES }), async (req, res) => {
+  const ids = (req.get("X-Leave-Ids") ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 40);
+  if (!ids.length) return res.status(400).json({ error: "Choose the leave to attach this to" });
+  const leaves = await prisma.leave.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true } });
+  const owner = leaves[0]?.userId;
+  if (leaves.length !== ids.length || leaves.some((l) => l.userId !== owner) || (owner !== req.user!.id && !isAdmin(req.user!))) {
+    return res.status(404).json({ error: "Leave not found" });
+  }
+  const data = req.body as Buffer;
+  const type = req.get("Content-Type")?.split(";")[0] ?? "";
+  if (!Buffer.isBuffer(data) || !data.length || !ATTACHMENT_TYPES.includes(type)) {
+    return res.status(400).json({ error: "Attach a photo, PDF, Word, Excel or text file" });
+  }
+  let name = "document";
+  try {
+    name = decodeURIComponent(req.get("X-File-Name") ?? name).slice(0, 200);
+  } catch {}
+  const doc = await prisma.leaveDocument.create({ data: { userId: owner!, name, type, size: data.length, data: new Uint8Array(data) } });
+  await prisma.leave.updateMany({ where: { id: { in: ids } }, data: { attachmentId: doc.id } });
+  res.json({ id: doc.id, name, type, size: data.length });
+});
+
+router.get("/attachment/:id", async (req, res) => {
+  const doc = await prisma.leaveDocument.findUnique({ where: { id: String(req.params.id) } });
+  if (!doc || (doc.userId !== req.user!.id && !isAdmin(req.user!))) return res.status(404).json({ error: "File not found" });
+  const inline = doc.type.startsWith("image/") || doc.type === "application/pdf" || doc.type === "text/plain";
+  res.set({
+    "Content-Type": doc.type,
+    "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${doc.name.replace(/[^\w.\- ]/g, "_")}"`,
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
+  });
+  res.send(Buffer.from(doc.data));
 });
 
 router.delete("/:id", async (req, res) => {

@@ -10,6 +10,8 @@ import { Button, ErrorBox, Field, HalfPicker, Segmented, inputClass } from "@/co
 import { EmptyState, Skeleton } from "@/components/ui";
 import { api, dayRequestLabels, requestTimeText, type DayRequest, type DayRequestKind, type Leave } from "@/lib/api";
 import { fmtDate, todayIST } from "@/lib/format";
+import { LEAVE_ATTACHMENT_ACCEPT, uploadLeaveAttachment } from "@/lib/documents";
+import LeaveAttachment from "@/components/LeaveAttachment";
 
 type LeaveData = {
   leaves: Leave[];
@@ -219,6 +221,7 @@ export default function LeavePage() {
                       {l.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
                       {l.reason ?? "No reason given"}
                     </p>
+                    <LeaveAttachment leave={l} onChanged={() => setVersion((v) => v + 1)} />
                     <p className="text-xs text-zinc-500">
                       {l.status === "APPROVED" && (l.compensatedOn ? `Made up on ${fmtDate(l.compensatedOn, false)}` : "Not made up")}
                       {l.reviewedBy && ` · ${l.status === "REJECTED" ? "Rejected" : "Approved"} by ${l.reviewedBy.name}`}
@@ -290,7 +293,9 @@ export default function LeavePage() {
 }
 
 function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skipped: number) => void; onCancel: () => void }) {
+  const toast = useToast();
   const [form, setForm] = useState({ from: todayIST(), to: todayIST(), reason: "" });
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -301,7 +306,14 @@ function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skip
     setError("");
     setLoading(true);
     try {
-      const r = await api<{ created: number; skipped: number }>("/api/leaves", { method: "POST", body: form });
+      const r = await api<{ created: number; skipped: number; ids: string[] }>("/api/leaves", { method: "POST", body: form });
+      if (file && r.ids.length) {
+        try {
+          await uploadLeaveAttachment(r.ids, file);
+        } catch (err) {
+          toast.error(`Leave requested, but the document didn't upload: ${err instanceof Error ? err.message : "try again"}. Attach it from My leave.`);
+        }
+      }
       onDone(r.created, r.skipped);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send request");
@@ -321,6 +333,14 @@ function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skip
       </div>
       <Field label="Reason">
         <textarea name="reason" rows={3} required value={form.reason} onChange={update} className={inputClass} placeholder="A short note for your admin" />
+      </Field>
+      <Field label="Supporting document" hint="Optional. E.g. a medical certificate. Photo, PDF, Word or Excel, up to 10 MB.">
+        <input
+          type="file"
+          accept={LEAVE_ATTACHMENT_ACCEPT}
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-brand-700`}
+        />
       </Field>
       <ErrorBox message={error} />
       <div className="flex justify-end gap-2">

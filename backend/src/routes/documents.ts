@@ -7,8 +7,8 @@ import { notifyEveryone } from "../lib/notify.js";
 const router = Router();
 router.use(requireAuth);
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-const FILE_TYPES = [
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+export const FILE_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

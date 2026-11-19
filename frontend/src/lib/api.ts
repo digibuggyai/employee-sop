@@ -233,6 +233,7 @@ export type Leave = {
   emergency: boolean;
   reviewedBy: { id: string; name: string } | null;
   reviewedAt: string | null;
+  attachment?: { id: string; name: string; type: string; size: number } | null;
   user?: { id: string; name: string; photoUpdatedAt?: string | null };
 };
 

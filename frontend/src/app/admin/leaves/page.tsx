@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CalendarCheck2, CalendarOff, Check, Plus, Trash2, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import LeaveAttachment from "@/components/LeaveAttachment";
 import { LeaveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import { useConfirm, useToast } from "@/components/Feedback";
@@ -161,6 +162,7 @@ export default function AdminLeavesPage() {
                     {l.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
                     {l.reason}
                   </p>
+                  <LeaveAttachment leave={l} readOnly />
                 </div>
                 <div className="flex w-full gap-2 pl-11 sm:w-auto sm:pl-0">
                   <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={() => review(l, "REJECTED")}>
@@ -356,6 +358,7 @@ function LeaveRow({ leave, onChanged }: { leave: Leave; onChanged: () => void })
           {leave.emergency && <span className="font-medium text-violet-700">Emergency · </span>}
           {leave.reason ?? "No reason given"}
         </p>
+        <LeaveAttachment leave={leave} onChanged={onChanged} />
       </div>
       <LeaveStatusBadge status={leave.status} />
       <label className="flex items-center gap-2 text-[13px] text-zinc-500">
