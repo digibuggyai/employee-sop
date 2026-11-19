@@ -78,6 +78,23 @@ router.get("/overview", async (req, res) => {
   res.json({ date, rows });
 });
 
+router.get("/leave-documents", async (_req, res) => {
+  const docs = await prisma.leaveDocument.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      size: true,
+      createdAt: true,
+      user: { select: { id: true, name: true, photoUpdatedAt: true } },
+      leaves: { select: { date: true, status: true, emergency: true, reason: true }, orderBy: { date: "asc" } },
+      dayRequests: { select: { date: true, kind: true, status: true, reason: true }, orderBy: { date: "asc" } },
+    },
+  });
+  res.json(docs);
+});
+
 router.get("/leave-calendar", async (req, res) => {
   const month = monthParam.parse(req.query.month);
   const users = await prisma.user.findMany({

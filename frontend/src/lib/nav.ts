@@ -61,6 +61,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/reimbursements", label: "Reimbursements", short: "Expenses", icon: Receipt, group: "Manage", badge: "reimbursements" },
   { href: "/admin/wfh-plans", label: "WFH plans", icon: HouseLine, group: "Manage" },
   { href: "/admin/holidays", label: "Holidays", icon: CalendarStar, group: "Manage" },
+  { href: "/admin/documents", label: "Documents", short: "Docs", icon: FolderOpen, group: "Manage" },
   { href: "/admin/payroll", label: "Payroll", icon: Percent, group: "Manage", superAdminOnly: true },
   { href: "/admin/reports", label: "Weekly reports", short: "Reports", icon: FileText, group: "Manage" },
   { href: "/admin/employees", label: "Employees", short: "People", icon: UserGear, group: "Manage" },
