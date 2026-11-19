@@ -267,6 +267,7 @@ export default function LeavePage() {
                       </span>
                       {q.reason}
                     </p>
+                    <LeaveAttachment leave={q} request onChanged={() => setVersion((v) => v + 1)} />
                     {q.reviewedBy && (
                       <p className="text-xs text-zinc-500">
                         {q.status === "REJECTED" ? "Rejected" : "Approved"} by {q.reviewedBy.name}
@@ -356,7 +357,9 @@ function LeaveRequestForm({ onDone, onCancel }: { onDone: (created: number, skip
 }
 
 function DayRequestForm({ kind, onDone, onCancel }: { kind: DayRequestKind; onDone: () => void; onCancel: () => void }) {
+  const toast = useToast();
   const [form, setForm] = useState({ date: todayIST(), time: "", reason: "" });
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -365,7 +368,17 @@ function DayRequestForm({ kind, onDone, onCancel }: { kind: DayRequestKind; onDo
     setError("");
     setLoading(true);
     try {
-      await api("/api/day-requests", { method: "POST", body: { kind, date: form.date, time: kind === "HALF_DAY" ? form.time || "FIRST_HALF" : form.time || null, reason: form.reason } });
+      const saved = await api<DayRequest>("/api/day-requests", {
+        method: "POST",
+        body: { kind, date: form.date, time: kind === "HALF_DAY" ? form.time || "FIRST_HALF" : form.time || null, reason: form.reason },
+      });
+      if (file) {
+        try {
+          await uploadLeaveAttachment([], file, [saved.id]);
+        } catch (err) {
+          toast.error(`Request sent, but the document didn't upload: ${err instanceof Error ? err.message : "try again"}. Attach it from My requests.`);
+        }
+      }
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send request");
@@ -399,6 +412,14 @@ function DayRequestForm({ kind, onDone, onCancel }: { kind: DayRequestKind; onDo
           onChange={(e) => setForm({ ...form, reason: e.target.value })}
           className={inputClass}
           placeholder={kind === "WFH" ? "e.g. Waiting for a delivery at home" : kind === "HALF_DAY" ? "e.g. Doctor appointment in the afternoon" : "e.g. Bank work, coming in at 12"}
+        />
+      </Field>
+      <Field label="Supporting document" hint="Optional. Photo, PDF, Word or Excel, up to 10 MB.">
+        <input
+          type="file"
+          accept={LEAVE_ATTACHMENT_ACCEPT}
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-brand-700`}
         />
       </Field>
       <ErrorBox message={error} />

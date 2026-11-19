@@ -2,11 +2,22 @@
 
 import { useRef, useState } from "react";
 import { LoaderCircle, Paperclip, Upload } from "lucide-react";
-import type { Leave } from "@/lib/api";
 import { LEAVE_ATTACHMENT_ACCEPT, fmtFileSize, uploadLeaveAttachment } from "@/lib/documents";
 import { useToast } from "./Feedback";
 
-export default function LeaveAttachment({ leave, onChanged, readOnly = false }: { leave: Leave; onChanged?: () => void; readOnly?: boolean }) {
+type Attachable = { id: string; status: string; attachment?: { id: string; name: string; size: number } | null };
+
+export default function LeaveAttachment({
+  leave,
+  onChanged,
+  readOnly = false,
+  request = false,
+}: {
+  leave: Attachable;
+  onChanged?: () => void;
+  readOnly?: boolean;
+  request?: boolean;
+}) {
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -15,7 +26,7 @@ export default function LeaveAttachment({ leave, onChanged, readOnly = false }: 
     if (!file) return;
     setUploading(true);
     try {
-      await uploadLeaveAttachment([leave.id], file);
+      await (request ? uploadLeaveAttachment([], file, [leave.id]) : uploadLeaveAttachment([leave.id], file));
       toast.success("Document attached");
       onChanged?.();
     } catch (err) {

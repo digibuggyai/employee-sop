@@ -21,6 +21,7 @@ export const kindLabel = {
 const include = {
   user: { select: { id: true, name: true, photoUpdatedAt: true } },
   reviewedBy: { select: { id: true, name: true } },
+  attachment: { select: { id: true, name: true, type: true, size: true } },
 };
 
 const timeLabel = (t: string) => (t === "FIRST_HALF" ? "First half" : t === "SECOND_HALF" ? "Second half" : t);

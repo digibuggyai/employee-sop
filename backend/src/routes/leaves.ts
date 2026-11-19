@@ -93,11 +93,22 @@ router.post("/", async (req, res) => {
 });
 
 router.put("/attachment", express.raw({ type: ATTACHMENT_TYPES, limit: MAX_FILE_BYTES }), async (req, res) => {
-  const ids = (req.get("X-Leave-Ids") ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 40);
-  if (!ids.length) return res.status(400).json({ error: "Choose the leave to attach this to" });
-  const leaves = await prisma.leave.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true } });
-  const owner = leaves[0]?.userId;
-  if (leaves.length !== ids.length || leaves.some((l) => l.userId !== owner) || (owner !== req.user!.id && !isAdmin(req.user!))) {
+  const list = (header: string) => (req.get(header) ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 40);
+  const ids = list("X-Leave-Ids");
+  const requestIds = list("X-Request-Ids");
+  if (!ids.length && !requestIds.length) return res.status(400).json({ error: "Choose the leave to attach this to" });
+  const [leaves, requests] = await Promise.all([
+    prisma.leave.findMany({ where: { id: { in: ids } }, select: { userId: true } }),
+    prisma.dayRequest.findMany({ where: { id: { in: requestIds } }, select: { userId: true } }),
+  ]);
+  const owners = [...leaves, ...requests].map((x) => x.userId);
+  const owner = owners[0];
+  if (
+    leaves.length !== ids.length ||
+    requests.length !== requestIds.length ||
+    owners.some((o) => o !== owner) ||
+    (owner !== req.user!.id && !isAdmin(req.user!))
+  ) {
     return res.status(404).json({ error: "Leave not found" });
   }
   const data = req.body as Buffer;
@@ -110,7 +121,8 @@ router.put("/attachment", express.raw({ type: ATTACHMENT_TYPES, limit: MAX_FILE_
     name = decodeURIComponent(req.get("X-File-Name") ?? name).slice(0, 200);
   } catch {}
   const doc = await prisma.leaveDocument.create({ data: { userId: owner!, name, type, size: data.length, data: new Uint8Array(data) } });
-  await prisma.leave.updateMany({ where: { id: { in: ids } }, data: { attachmentId: doc.id } });
+  if (ids.length) await prisma.leave.updateMany({ where: { id: { in: ids } }, data: { attachmentId: doc.id } });
+  if (requestIds.length) await prisma.dayRequest.updateMany({ where: { id: { in: requestIds } }, data: { attachmentId: doc.id } });
   res.json({ id: doc.id, name, type, size: data.length });
 });
 

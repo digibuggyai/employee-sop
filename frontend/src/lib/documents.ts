@@ -22,12 +22,17 @@ const byExtension: Record<string, string> = {
 
 export const LEAVE_ATTACHMENT_ACCEPT = DOCUMENT_ACCEPT + ",.heic,.heif,image/*";
 
-export async function uploadLeaveAttachment(leaveIds: string[], file: File) {
+export async function uploadLeaveAttachment(leaveIds: string[], file: File, requestIds: string[] = []) {
   if (file.size > MAX_DOCUMENT_BYTES) throw new Error("The document must be 10 MB or smaller");
   const type = byExtension[file.name.split(".").pop()?.toLowerCase() ?? ""] ?? file.type;
   const res = await fetch("/api/leaves/attachment", {
     method: "PUT",
-    headers: { "Content-Type": type, "X-File-Name": encodeURIComponent(file.name), "X-Leave-Ids": leaveIds.join(",") },
+    headers: {
+      "Content-Type": type,
+      "X-File-Name": encodeURIComponent(file.name),
+      "X-Leave-Ids": leaveIds.join(","),
+      "X-Request-Ids": requestIds.join(","),
+    },
     body: file,
   });
   const data = await res.json().catch(() => ({}));

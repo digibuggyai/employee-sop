@@ -394,14 +394,16 @@ enum DayRequestKind {
 }
 
 model DayRequest {
-  id     String         @id @default(cuid())
-  userId String
-  user   User           @relation("DayRequestOwner", fields: [userId], references: [id])
-  date   DateTime       @db.Date
-  kind   DayRequestKind
-  time   String?
-  reason String
-  status LeaveStatus    @default(PENDING)
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation("DayRequestOwner", fields: [userId], references: [id])
+  date         DateTime       @db.Date
+  kind         DayRequestKind
+  time         String?
+  reason       String
+  status       LeaveStatus    @default(PENDING)
+  attachmentId String?
+  attachment   LeaveDocument? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
 
   reviewedById String?
   reviewedBy   User?     @relation("DayRequestReviewer", fields: [reviewedById], references: [id])
@@ -439,13 +441,14 @@ model Document {
 }
 
 model LeaveDocument {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  name      String
-  type      String
-  size      Int
-  data      Bytes
-  leaves    Leave[]
-  createdAt DateTime @default(now())
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  name        String
+  type        String
+  size        Int
+  data        Bytes
+  leaves      Leave[]
+  dayRequests DayRequest[]
+  createdAt   DateTime     @default(now())
 }

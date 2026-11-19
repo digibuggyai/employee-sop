@@ -200,6 +200,7 @@ export default function AdminLeavesPage() {
                     </span>
                     {q.reason}
                   </p>
+                  <LeaveAttachment leave={q} request readOnly />
                 </div>
                 <div className="flex w-full gap-2 pl-11 sm:w-auto sm:pl-0">
                   <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={() => reviewRequest(q, "REJECTED")}>
@@ -267,6 +268,7 @@ export default function AdminLeavesPage() {
                     </span>
                     {q.reason}
                   </p>
+                  <LeaveAttachment leave={q} request readOnly />
                 </div>
                 <LeaveStatusBadge status={q.status} />
                 <IconButton label="Remove" tone="danger" onClick={() => removeRequest(q)}>

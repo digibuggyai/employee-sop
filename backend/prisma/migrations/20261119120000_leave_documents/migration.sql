@@ -1,3 +1,4 @@
+ALTER TABLE "DayRequest" ADD COLUMN     "attachmentId" TEXT;
 ALTER TABLE "Leave" ADD COLUMN     "attachmentId" TEXT;
 CREATE TABLE "LeaveDocument" (
     "id" TEXT NOT NULL,
@@ -10,4 +11,5 @@ CREATE TABLE "LeaveDocument" (
     CONSTRAINT "LeaveDocument_pkey" PRIMARY KEY ("id")
 );
 ALTER TABLE "Leave" ADD CONSTRAINT "Leave_attachmentId_fkey" FOREIGN KEY ("attachmentId") REFERENCES "LeaveDocument"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DayRequest" ADD CONSTRAINT "DayRequest_attachmentId_fkey" FOREIGN KEY ("attachmentId") REFERENCES "LeaveDocument"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "LeaveDocument" ADD CONSTRAINT "LeaveDocument_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
