@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { toDbDate, todayString } from "../lib/dates.js";
 import { notifyAdmins } from "../lib/notify.js";
-import { EMERGENCY_LEAVES_PER_MONTH, type WorkType } from "../lib/policy.js";
+import { type WorkType } from "../lib/policy.js";
 import { syncMakeUps } from "../lib/makeups.js";
 import { isAdmin } from "../lib/auth.js";
 import { FILE_TYPES, MAX_FILE_BYTES } from "./documents.js";
@@ -42,7 +42,7 @@ router.get("/", async (req, res) => {
     leaves,
     wfh: { used: s.wfh, allowance: s.wfhAllowance, halfDays: extraWfh, remote: s.remote },
     balance: s.leaveBalance,
-    emergency: { used: emergencyUsed, allowed: EMERGENCY_LEAVES_PER_MONTH },
+    emergency: { used: emergencyUsed },
   });
 });
 
@@ -66,9 +66,6 @@ router.post("/", async (req, res) => {
   const today = todayString();
   if (from < today) return res.status(400).json({ error: "Leave has to be asked for in advance. For a past day, talk to your admin." });
   const emergency = from === today;
-  if (emergency && (await emergencyLeavesIn(req.user!.id, today.slice(0, 7))) >= EMERGENCY_LEAVES_PER_MONTH) {
-    return res.status(400).json({ error: "You've already used this month's emergency leave. Other leave must be asked for in advance." });
-  }
 
   const dates = workingDaysBetween(from, to, req.user!);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });

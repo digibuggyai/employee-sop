@@ -17,13 +17,13 @@ type LeaveData = {
   leaves: Leave[];
   wfh: { used: number; allowance: number; halfDays: number; remote: boolean };
   balance: number | null;
-  emergency: { used: number; allowed: number };
+  emergency: { used: number };
 };
 
 type RequestKind = "LEAVE" | "WFH" | "HALF_DAY" | "SHORT_LEAVE";
 
 const kindHints: Record<RequestKind, string> = {
-  LEAVE: "Ask in advance. Starting today counts as your emergency leave (1 a month). Weekends and holidays are skipped.",
+  LEAVE: "A leave starting today counts as emergency leave. Weekends and holidays are skipped.",
   WFH: "Your first 4 WFH days a month are free. After that, an approved WFH day still counts as a full day.",
   HALF_DAY: "An approved half day counts as half a working day.",
   SHORT_LEAVE: "Coming in late or leaving early by up to 2 hours. It uses one of your 2 free short leaves a month.",
@@ -147,10 +147,10 @@ export default function LeavePage() {
                 </div>
               )}
               <p className="text-[13px] text-zinc-600">
-                Emergency leave: {data.emergency.used} of {data.emergency.allowed} used this month.
+                Emergency leaves this month: {data.emergency.used}.
                 <span className="hidden md:inline">
                   {" "}
-                  Other leave must be asked for in advance; leave without approval counts as unauthorized (1 day salary deduction).
+                  Leave without approval counts as unauthorized (1 day salary deduction).
                 </span>
               </p>
             </Card>
