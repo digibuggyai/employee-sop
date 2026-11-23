@@ -307,7 +307,15 @@ export type Correction = {
   current?: { place: Place; checkIn: string; checkOut: string | null; note: string | null; halfDay: boolean } | null;
 };
 
-export type PendingCounts = { leaves: number; wfhReports: number; corrections: number; reimbursements: number };
+export type PendingCounts = {
+  leaves: number;
+  wfh: number;
+  halfDays: number;
+  shortLeaves: number;
+  wfhReports: number;
+  corrections: number;
+  reimbursements: number;
+};
 
 export type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "PAID";
 

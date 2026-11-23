@@ -70,7 +70,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
   const tabCount = tabItems.length + (moreItems.length ? 1 : 0);
   const tabText = tabCount > 5 ? "text-[10px] tracking-[-0.02em] min-[400px]:text-[11px] min-[400px]:tracking-normal" : "text-[11px]";
-  const totalPending = counts.leaves + counts.wfhReports + counts.corrections + counts.reimbursements;
+  const totalPending = Object.values(counts).reduce((sum, n) => sum + n, 0);
+  const moreCount = moreItems.reduce((sum, i) => sum + badgeOf(i), 0);
+  const moreGroups = [...new Set(moreItems.map((i) => i.group))];
 
   return (
     <div className="min-h-screen">
@@ -169,7 +171,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => setMoreOpen(true)}
             className={`flex min-w-0 flex-col items-center gap-0.5 pt-2 pb-1.5 ${tabText} ${moreActive ? "font-semibold text-brand-700" : "font-medium text-zinc-500"}`}
           >
-            <TabIcon active={moreActive} count={0}>
+            <TabIcon active={moreActive} count={moreCount}>
               <DotsThreeCircle size={22} weight={moreActive ? "fill" : "regular"} />
             </TabIcon>
             More
@@ -178,23 +180,41 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title="More">
-        <ul className="-mx-2 space-y-0.5">
-          {moreItems.map(({ href, label, icon: Icon }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                onClick={() => setMoreOpen(false)}
-                aria-current={isActive(href) ? "page" : undefined}
-                className={`flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium ${
-                  isActive(href) ? "bg-zinc-100 text-zinc-900" : "text-zinc-700 hover:bg-zinc-50"
-                }`}
-              >
-                <Icon size={20} weight={isActive(href) ? "fill" : "regular"} className={isActive(href) ? "text-brand-700" : "text-zinc-500"} />
-                {label}
-              </Link>
-            </li>
+        <div className="-mx-2 space-y-3">
+          {moreGroups.map((group) => (
+            <section key={group}>
+              <p className="px-3 pb-1 text-[11px] font-semibold tracking-wide text-zinc-400 uppercase">{group}</p>
+              <ul className="space-y-0.5">
+                {moreItems
+                  .filter((i) => i.group === group)
+                  .map((item) => {
+                    const { href, label, icon: Icon } = item;
+                    const count = badgeOf(item);
+                    return (
+                      <li key={href}>
+                        <Link
+                          href={href}
+                          onClick={() => setMoreOpen(false)}
+                          aria-current={isActive(href) ? "page" : undefined}
+                          className={`flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium ${
+                            isActive(href) ? "bg-zinc-100 text-zinc-900" : "text-zinc-700 hover:bg-zinc-50"
+                          }`}
+                        >
+                          <Icon size={20} weight={isActive(href) ? "fill" : "regular"} className={isActive(href) ? "text-brand-700" : "text-zinc-500"} />
+                          <span className="flex-1">{label}</span>
+                          {count > 0 && (
+                            <span className="min-w-5 rounded-full bg-red-600 px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums">
+                              {count}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
         <div className="-mx-2 mt-2 space-y-0.5 border-t border-zinc-100 pt-2">
           <ThemeToggle withLabel />
           <Link

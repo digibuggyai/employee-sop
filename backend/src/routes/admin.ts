@@ -432,14 +432,22 @@ router.delete("/leaves/:id", async (req, res) => {
 });
 
 router.get("/pending", async (_req, res) => {
-  const [leaves, dayRequests, wfhReports, corrections, reimbursements] = await Promise.all([
+  const [leaves, byKind, corrections, reimbursements] = await Promise.all([
     prisma.leave.count({ where: { status: "PENDING" } }),
-    prisma.dayRequest.count({ where: { status: "PENDING", kind: { not: "WFH_REPORT" } } }),
-    prisma.dayRequest.count({ where: { status: "PENDING", kind: "WFH_REPORT" } }),
+    prisma.dayRequest.groupBy({ by: ["kind"], where: { status: "PENDING" }, _count: true }),
     prisma.attendanceCorrection.count({ where: { status: "PENDING" } }),
     prisma.reimbursement.count({ where: { status: "PENDING" } }),
   ]);
-  res.json({ leaves: leaves + dayRequests, wfhReports, corrections, reimbursements });
+  const kind = (...kinds: string[]) => byKind.filter((k) => kinds.includes(k.kind)).reduce((n, k) => n + k._count, 0);
+  res.json({
+    leaves,
+    wfh: kind("WFH"),
+    halfDays: kind("HALF_DAY"),
+    shortLeaves: kind("SHORT_LEAVE", "LATE_EARLY"),
+    wfhReports: kind("WFH_REPORT"),
+    corrections,
+    reimbursements,
+  });
 });
 
 router.put("/attendance/:userId/day", async (req, res) => {

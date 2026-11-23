@@ -40,8 +40,8 @@ export default function AdminRequestsPage() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Requests"
-        subtitle="Attendance changes employees have asked for. Approving updates their attendance."
+        title="Attendance fixes"
+        subtitle="Changes to check-in, check-out or place, and extra work people want added. Approving updates their attendance."
         actions={pending && pending.length > 0 && <Badge tone="amber">{pending.length} waiting</Badge>}
       />
 

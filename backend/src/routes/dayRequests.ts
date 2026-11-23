@@ -24,6 +24,13 @@ const include = {
   attachment: { select: { id: true, name: true, type: true, size: true } },
 };
 
+const adminPath: Record<string, string> = {
+  WFH: "/admin/wfh-requests",
+  HALF_DAY: "/admin/half-days",
+  SHORT_LEAVE: "/admin/short-leaves",
+  LATE_EARLY: "/admin/short-leaves",
+  WFH_REPORT: "/admin/wfh-reports",
+};
 const timeLabel = (t: string) => (t === "FIRST_HALF" ? "First half" : t === "SECOND_HALF" ? "Second half" : t);
 const dayLabel = (d: Date) => d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 const timeSchema = z
@@ -88,7 +95,7 @@ router.post("/", async (req, res) => {
     {
       title: kind === "WFH_REPORT" ? `${me.name} sent a missing WFH report` : `${me.name} asked for ${kindLabel[kind].toLowerCase()}`,
       body: `${dayLabel(saved.date)}${time ? ` · ${timeLabel(time)}` : ""} · ${reason.slice(0, 200)}`,
-      link: kind === "WFH_REPORT" ? "/admin/wfh-reports" : "/admin/leaves",
+      link: adminPath[kind],
     },
     me.id,
   );
@@ -104,7 +111,7 @@ router.delete("/:id", async (req, res) => {
   }
   await prisma.dayRequest.delete({ where: { id: r.id } });
   if (r.status === "APPROVED") {
-    await notifyAdmins({ title: `${req.user!.name} withdrew a ${kindLabel[r.kind].toLowerCase()}`, body: dayLabel(r.date), link: "/admin/leaves" }, r.userId);
+    await notifyAdmins({ title: `${req.user!.name} withdrew a ${kindLabel[r.kind].toLowerCase()}`, body: dayLabel(r.date), link: adminPath[r.kind] }, r.userId);
   }
   res.json({ ok: true });
 });
