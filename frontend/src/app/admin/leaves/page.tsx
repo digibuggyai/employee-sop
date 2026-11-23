@@ -48,10 +48,10 @@ export default function AdminLeavesPage() {
       })
       .catch((err) => setError(err.message));
     api<DayRequest[]>("/api/day-requests/admin")
-      .then(setDayRequests)
+      .then((list) => setDayRequests(list.filter((q) => q.kind !== "WFH_REPORT")))
       .catch(() => {});
     api<DayRequest[]>(`/api/day-requests/admin?month=${month}`)
-      .then(setRecorded)
+      .then((list) => setRecorded(list.filter((q) => q.kind !== "WFH_REPORT")))
       .catch(() => setRecorded([]));
   }, [month, version]);
 
@@ -180,7 +180,7 @@ export default function AdminLeavesPage() {
 
       {dayRequests.length > 0 && (
         <Card
-          title="WFH, half day, short leave and missing reports"
+          title="WFH, half day and short leave"
           actions={<Badge tone="amber">{dayRequests.length}</Badge>}
           className="-mt-4 mb-8"
           flush

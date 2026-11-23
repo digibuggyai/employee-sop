@@ -70,7 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
   const tabCount = tabItems.length + (moreItems.length ? 1 : 0);
   const tabText = tabCount > 5 ? "text-[10px] tracking-[-0.02em] min-[400px]:text-[11px] min-[400px]:tracking-normal" : "text-[11px]";
-  const totalPending = counts.leaves + counts.corrections + counts.reimbursements;
+  const totalPending = counts.leaves + counts.wfhReports + counts.corrections + counts.reimbursements;
 
   return (
     <div className="min-h-screen">

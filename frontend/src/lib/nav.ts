@@ -16,6 +16,7 @@ import {
   Key,
   ListChecks,
   Megaphone,
+  Notebook,
   Percent,
   Receipt,
   ShieldCheck,
@@ -31,7 +32,7 @@ export type NavItem = {
   icon: Icon;
   group: string;
   mobile?: boolean;
-  badge?: "leaves" | "corrections" | "reimbursements";
+  badge?: "leaves" | "wfhReports" | "corrections" | "reimbursements";
   employeeOnly?: boolean;
   remoteOnly?: boolean;
   superAdminOnly?: boolean;
@@ -60,6 +61,7 @@ export const adminNav: NavItem[] = [
   { href: "/admin/leave-calendar", label: "Leave calendar", short: "Calendar", icon: CalendarBlank, group: "Manage" },
   { href: "/admin/reimbursements", label: "Reimbursements", short: "Expenses", icon: Receipt, group: "Manage", badge: "reimbursements" },
   { href: "/admin/wfh-plans", label: "WFH plans", icon: HouseLine, group: "Manage" },
+  { href: "/admin/wfh-reports", label: "WFH reports", icon: Notebook, group: "Manage", badge: "wfhReports" },
   { href: "/admin/holidays", label: "Holidays", icon: CalendarStar, group: "Manage" },
   { href: "/admin/documents", label: "Documents", short: "Docs", icon: FolderOpen, group: "Manage" },
   { href: "/admin/payroll", label: "Payroll", icon: Percent, group: "Manage", superAdminOnly: true },

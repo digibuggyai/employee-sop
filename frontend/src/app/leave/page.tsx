@@ -44,7 +44,7 @@ export default function LeavePage() {
       .then(setData)
       .catch((err) => setError(err.message));
     api<DayRequest[]>("/api/day-requests")
-      .then(setRequests)
+      .then((list) => setRequests(list.filter((q) => q.kind !== "WFH_REPORT")))
       .catch(() => setRequests([]));
   }, [version]);
 

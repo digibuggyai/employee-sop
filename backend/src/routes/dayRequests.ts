@@ -88,7 +88,7 @@ router.post("/", async (req, res) => {
     {
       title: kind === "WFH_REPORT" ? `${me.name} sent a missing WFH report` : `${me.name} asked for ${kindLabel[kind].toLowerCase()}`,
       body: `${dayLabel(saved.date)}${time ? ` · ${timeLabel(time)}` : ""} · ${reason.slice(0, 200)}`,
-      link: "/admin/leaves",
+      link: kind === "WFH_REPORT" ? "/admin/wfh-reports" : "/admin/leaves",
     },
     me.id,
   );
