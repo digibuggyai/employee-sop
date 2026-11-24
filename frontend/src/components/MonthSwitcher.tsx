@@ -3,13 +3,23 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { monthLabel, thisMonthIST } from "@/lib/format";
 
-export default function MonthSwitcher({ month, onChange }: { month: string; onChange: (m: string) => void }) {
+export default function MonthSwitcher({
+  month,
+  onChange,
+  monthsAhead = 0,
+}: {
+  month: string;
+  onChange: (m: string) => void;
+  monthsAhead?: number;
+}) {
   const shift = (delta: number) => {
     const [y, m] = month.split("-").map(Number);
     const d = new Date(Date.UTC(y, m - 1 + delta, 1));
     onChange(d.toISOString().slice(0, 7));
   };
-  const atCurrent = month >= thisMonthIST();
+  const [cy, cm] = thisMonthIST().split("-").map(Number);
+  const lastAllowed = new Date(Date.UTC(cy, cm - 1 + monthsAhead, 1)).toISOString().slice(0, 7);
+  const atCurrent = month >= lastAllowed;
   const btn = "grid size-8 place-items-center sm:size-7 rounded-md text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-transparent";
 
   return (

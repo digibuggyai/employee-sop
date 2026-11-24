@@ -171,7 +171,7 @@ export type OverviewRow = {
   workedMs: number;
   tasksTotal: number;
   tasksDone: number;
-  marks?: string[];
+  marks?: OverviewMark[];
 };
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH";
@@ -200,6 +200,8 @@ export type Task = {
 };
 
 export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type OverviewMark = { label: string; source: "leave" | "request" | null; id: string | null };
 
 export type DayRequestKind = "WFH" | "HALF_DAY" | "SHORT_LEAVE" | "LATE_EARLY" | "WFH_REPORT";
 

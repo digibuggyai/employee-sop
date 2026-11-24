@@ -42,10 +42,10 @@ router.get("/overview", async (req, res) => {
     activeUsers(),
     prisma.attendance.findMany({ where: { date: toDbDate(date) }, include: { breaks: true } }),
     prisma.task.groupBy({ by: ["userId", "status"], where: { date: toDbDate(date) }, _count: true }),
-    prisma.leave.findMany({ where: { date: toDbDate(date), status: "APPROVED" }, select: { userId: true, emergency: true } }),
+    prisma.leave.findMany({ where: { date: toDbDate(date), status: "APPROVED" }, select: { id: true, userId: true, emergency: true } }),
     prisma.dayRequest.findMany({
       where: { date: toDbDate(date), status: "APPROVED", kind: { in: ["HALF_DAY", "SHORT_LEAVE", "LATE_EARLY"] } },
-      select: { userId: true, kind: true, reason: true },
+      select: { id: true, userId: true, kind: true, reason: true },
     }),
   ]);
 
@@ -64,14 +64,27 @@ router.get("/overview", async (req, res) => {
       tasksDone: myTasks.filter((t) => t.status === "COMPLETED").reduce((n, t) => n + t._count, 0),
       marks: [
         ...(day?.place === "WFH" && day.checkOut && !day.report?.trim() && day.note?.startsWith(FORGOT_CHECKOUT_NOTE)
-          ? ["Absent: forgot to check out"]
+          ? [{ label: "Absent: forgot to check out", source: null, id: null }]
           : []),
-        ...leaves.filter((l) => l.userId === u.id).map((l) => (l.emergency ? "Emergency leave" : "Leave")),
+        ...leaves
+          .filter((l) => l.userId === u.id)
+          .map((l) => ({ label: l.emergency ? "Emergency leave" : "Leave", source: "leave" as const, id: l.id })),
         ...marks
           .filter((m) => m.userId === u.id)
-          .map((m) =>
-            m.kind === "HALF_DAY" ? "Half day" : m.kind === "SHORT_LEAVE" ? "Short leave" : m.reason.startsWith("Left early") ? "Left early" : m.reason.startsWith("Late") ? "Late" : "Late/early",
-          ),
+          .map((m) => ({
+            label:
+              m.kind === "HALF_DAY"
+                ? "Half day"
+                : m.kind === "SHORT_LEAVE"
+                  ? "Short leave"
+                  : m.reason.startsWith("Left early")
+                    ? "Left early"
+                    : m.reason.startsWith("Late")
+                      ? "Late"
+                      : "Late/early",
+            source: "request" as const,
+            id: m.id,
+          })),
       ],
     };
   });
@@ -124,6 +137,12 @@ router.get("/leave-calendar", async (req, res) => {
       else if (d.status === "ABSENT") add("ABSENT", d.absentReason ?? null);
       else if (d.halfDay) add("HALF_DAY", d.halfDay === "EXTRA_WFH" ? "Extra WFH" : d.halfDay === "OVER_2H" ? "Over 2h short" : null);
       else if (d.shortLeave) add("SHORT_LEAVE");
+      else if (d.status === "UPCOMING" && d.requests?.length) {
+        for (const q of d.requests) {
+          if (q.kind === "HALF_DAY") add(q.status === "APPROVED" ? "HALF_DAY" : "PENDING", "Half day");
+          else if (q.kind === "SHORT_LEAVE" || q.kind === "LATE_EARLY") add(q.status === "APPROVED" ? "SHORT_LEAVE" : "PENDING", "Short leave");
+        }
+      }
     }
   }
   const holidays = holidayList()

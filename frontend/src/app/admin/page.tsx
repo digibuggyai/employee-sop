@@ -2,19 +2,21 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Flag, Users } from "lucide-react";
+import { Flag, Users, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { BirthdayBanner } from "@/components/Birthdays";
 import MarkDayDialog from "@/components/MarkDay";
 import { Tag } from "@/components/Badges";
+import { useConfirm, useToast } from "@/components/Feedback";
+import { usePending } from "@/components/Pending";
 import { LiveStatusBadge } from "@/components/Badges";
 import Card from "@/components/Card";
 import PageHeader from "@/components/PageHeader";
 import { lastSeenText, usePresence } from "@/components/Presence";
 import { Button, inputBase } from "@/components/form";
 import { EmptyState, Skeleton, table } from "@/components/ui";
-import { api, type LiveStatus, type OverviewRow } from "@/lib/api";
-import { fmtDuration, fmtTime, todayIST } from "@/lib/format";
+import { api, type LiveStatus, type OverviewMark, type OverviewRow } from "@/lib/api";
+import { fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 
 type Filter = "ALL" | LiveStatus;
 const filters: { value: Filter; label: string; dot?: string }[] = [
@@ -121,7 +123,7 @@ export default function AdminOverviewPage() {
                       ? `${fmtTime(r.checkIn)}${r.checkOut ? ` – ${fmtTime(r.checkOut)}` : ""} · ${r.place === "WFH" ? "WFH" : "In-office"}`
                       : (r.user.designation ?? r.user.team ?? "")}
                   </p>
-                  <Marks marks={r.marks} />
+                  <Marks marks={r.marks} name={r.user.name} date={date} onChanged={() => setVersion((v) => v + 1)} />
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <LiveStatusBadge status={r.status} />
@@ -157,7 +159,7 @@ export default function AdminOverviewPage() {
                         <div className="min-w-0">
                           <p className="font-medium text-zinc-900">{r.user.name}</p>
                           <p className="truncate text-xs text-zinc-500">{r.user.designation ?? r.user.team ?? ""}</p>
-                          <Marks marks={r.marks} />
+                          <Marks marks={r.marks} name={r.user.name} date={date} onChanged={() => setVersion((v) => v + 1)} />
                         </div>
                       </div>
                     </td>
@@ -208,14 +210,51 @@ export default function AdminOverviewPage() {
   );
 }
 
-function Marks({ marks }: { marks?: string[] }) {
+function Marks({ marks, name, date, onChanged }: { marks?: OverviewMark[]; name: string; date: string; onChanged: () => void }) {
+  const confirm = useConfirm();
+  const toast = useToast();
+  const { refresh } = usePending();
   if (!marks?.length) return null;
+
+  async function revoke(m: OverviewMark) {
+    if (!m.id || !m.source) return;
+    const ok = await confirm({
+      title: `Remove this ${m.label.toLowerCase()}?`,
+      description: `${name}'s ${m.label.toLowerCase()} on ${fmtDate(date, false)} will be removed, as if it was never marked.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api(m.source === "leave" ? `/api/admin/leaves/${m.id}` : `/api/day-requests/${m.id}/admin`, { method: "DELETE" });
+      toast.success(`Removed ${name}'s ${m.label.toLowerCase()}`);
+      refresh();
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove");
+    }
+  }
+
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {marks.map((m) => (
-        <Tag key={m} tone={m.startsWith("Absent") ? "red" : m.includes("leave") || m === "Leave" ? "violet" : "amber"}>
-          {m}
-        </Tag>
+        <span key={m.id ?? m.label} className="inline-flex items-center">
+          <Tag tone={m.label.startsWith("Absent") ? "red" : m.label.toLowerCase().includes("leave") ? "violet" : "amber"}>
+            <span className="inline-flex items-center gap-1">
+              {m.label}
+              {m.id && (
+                <button
+                  onClick={() => revoke(m)}
+                  aria-label={`Remove ${name}'s ${m.label.toLowerCase()}`}
+                  title="Remove this mark"
+                  className="-mr-1 grid size-5 place-items-center rounded-full opacity-70 hover:bg-black/10 hover:opacity-100"
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </span>
+          </Tag>
+        </span>
       ))}
     </div>
   );

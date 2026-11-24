@@ -86,7 +86,7 @@ export default function LeaveCalendarPage() {
     <>
       <PageHeader
         title="Leave calendar"
-        subtitle="Who took time off, day by day."
+        subtitle="Who took time off, day by day. Look ahead up to a year for holidays and planned leave."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <select value={person} onChange={(e) => setPerson(e.target.value)} aria-label="Person" className={`${inputBase} min-w-40`}>
@@ -98,6 +98,7 @@ export default function LeaveCalendarPage() {
               ))}
             </select>
             <MonthSwitcher
+              monthsAhead={12}
               month={month}
               onChange={(next) => {
                 setData(null);
