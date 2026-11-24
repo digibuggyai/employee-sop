@@ -95,6 +95,15 @@ router.get("/leave-documents", async (_req, res) => {
   res.json(docs);
 });
 
+router.get("/birthdays", async (_req, res) => {
+  const people = await prisma.user.findMany({
+    where: { active: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, photoUpdatedAt: true, designation: true, team: true, birthday: true },
+  });
+  res.json(people.map(({ birthday, ...p }) => ({ ...p, birthday: birthday ? birthday.toISOString().slice(5, 10) : null })));
+});
+
 router.get("/leave-calendar", async (req, res) => {
   const month = monthParam.parse(req.query.month);
   const users = await prisma.user.findMany({
