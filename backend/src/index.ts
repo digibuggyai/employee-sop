@@ -22,6 +22,7 @@ import payrollRouter from "./routes/payroll.js";
 import dayRequestsRouter from "./routes/dayRequests.js";
 import documentsRouter from "./routes/documents.js";
 import { startAutoCheckout } from "./lib/autoCheckout.js";
+import { startBirthdayWishes } from "./lib/birthdays.js";
 import { loadHolidays, startHolidayRefresh } from "./lib/holidays.js";
 
 const app = express();
@@ -69,4 +70,5 @@ startHolidayRefresh();
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
   startAutoCheckout();
+  startBirthdayWishes();
 });

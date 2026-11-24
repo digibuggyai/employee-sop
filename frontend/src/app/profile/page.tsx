@@ -1,27 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { KeyRound, LogOut } from "lucide-react";
+import { KeyRound, LogOut, Pencil } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
 import PhotoUploader from "@/components/PhotoUploader";
-import { Button, buttonClass } from "@/components/form";
+import { useToast } from "@/components/Feedback";
+import { Button, ErrorBox, Field, buttonClass, inputClass } from "@/components/form";
 import { Badge } from "@/components/ui";
-import { employmentLabels, roleLabels } from "@/lib/api";
-import { fmtDate } from "@/lib/format";
+import { api, employmentLabels, roleLabels, type User } from "@/lib/api";
+import { fmtDate, toDateInput, todayIST } from "@/lib/format";
 
 export default function ProfilePage() {
   const { user, setUser, logout } = useAuth();
+  const [editing, setEditing] = useState(false);
   if (!user) return null;
 
   const sections: { title: string; rows: [string, string][] }[] = [
     {
       title: "Contact",
-      rows: [
-        ["Email", user.email],
-        ["Phone", user.phone ?? "—"],
-      ],
+      rows: [["Email", user.email]],
     },
     {
       title: "Work",
@@ -35,7 +35,6 @@ export default function ProfilePage() {
         ["Joined", fmtDate(user.joinedOn)],
       ],
     },
-    { title: "Personal", rows: [["Birthday", fmtDate(user.birthday, false)]] },
   ];
 
   return (
@@ -63,6 +62,34 @@ export default function ProfilePage() {
         <PhotoUploader user={user} onChange={setUser} />
       </Card>
 
+      <Card
+        title="Phone and birthday"
+        description="You can change these yourself."
+        actions={
+          !editing && (
+            <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+              <Pencil size={14} /> Edit
+            </Button>
+          )
+        }
+      >
+        {editing ? (
+          <SelfEditForm user={user} onSaved={(u) => { setUser(u); setEditing(false); }} onCancel={() => setEditing(false)} />
+        ) : (
+          <dl>
+            {[
+              ["Phone", user.phone ?? "Not added"],
+              ["Birthday", user.birthday ? fmtDate(user.birthday, false) : "Not added"],
+            ].map(([label, value]) => (
+              <div key={label} className="grid grid-cols-3 gap-4 py-1.5 text-sm">
+                <dt className="text-zinc-500">{label}</dt>
+                <dd className="col-span-2 wrap-break-word text-zinc-900">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </Card>
+
       <Card flush>
         {sections.map((s) => (
           <section key={s.title} className="border-b border-zinc-100 px-5 py-4 last:border-0">
@@ -78,7 +105,51 @@ export default function ProfilePage() {
           </section>
         ))}
       </Card>
-      <p className="text-[13px] text-zinc-500">Something out of date? Ask an admin to update your profile.</p>
+      <p className="text-[13px] text-zinc-500">Anything else out of date? Ask an admin to update it.</p>
     </div>
+  );
+}
+
+function SelfEditForm({ user, onSaved, onCancel }: { user: User; onSaved: (user: User) => void; onCancel: () => void }) {
+  const toast = useToast();
+  const [phone, setPhone] = useState(user.phone ?? "");
+  const [birthday, setBirthday] = useState(toDateInput(user.birthday));
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const saved = await api<User>("/api/auth/me", { method: "PATCH", body: { phone, birthday } });
+      toast.success("Profile updated");
+      onSaved(saved);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Phone">
+          <input type="tel" inputMode="tel" maxLength={20} value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} placeholder="+91 98765 43210" />
+        </Field>
+        <Field label="Birthday">
+          <input type="date" max={todayIST()} value={birthday} onChange={(e) => setBirthday(e.target.value)} className={inputClass} />
+        </Field>
+      </div>
+      <ErrorBox message={error} />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={loading}>
+          Save
+        </Button>
+      </div>
+    </form>
   );
 }

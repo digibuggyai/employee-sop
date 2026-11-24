@@ -27,6 +27,26 @@ router.get("/", requireAuth, async (_req, res) => {
   res.json(people);
 });
 
+router.get("/birthdays", requireAuth, async (_req, res) => {
+  const people = await prisma.user.findMany({
+    where: { active: true, birthday: { not: null } },
+    select: { id: true, name: true, photoUpdatedAt: true, designation: true, birthday: true },
+  });
+  const today = todayString();
+  const year = Number(today.slice(0, 4));
+  const rows = people
+    .map(({ birthday, ...person }) => {
+      const md = birthday!.toISOString().slice(5, 10);
+      let next = `${year}-${md}`;
+      if (next < today) next = `${year + 1}-${md}`;
+      const daysAway = Math.round((Date.parse(`${next}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 864e5);
+      return { person, date: next, daysAway };
+    })
+    .filter((r) => r.daysAway <= 14)
+    .sort((a, b) => a.daysAway - b.daysAway || a.person.name.localeCompare(b.person.name));
+  res.json({ today: rows.filter((r) => r.daysAway === 0), upcoming: rows.filter((r) => r.daysAway > 0) });
+});
+
 router.get("/today", requireAuth, async (_req, res) => {
   const date = toDbDate(todayString());
   const [people, attendance, leaves] = await Promise.all([

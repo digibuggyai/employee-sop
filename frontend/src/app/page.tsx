@@ -1,3 +1,4 @@
+import { BirthdayBanner, UpcomingBirthdays } from "@/components/Birthdays";
 import Card from "@/components/Card";
 import CheckInCard from "@/components/CheckInCard";
 import EmployeeOnly from "@/components/EmployeeOnly";
@@ -10,6 +11,7 @@ export default function Dashboard() {
   return (
     <>
       <DashboardHeader />
+      <BirthdayBanner />
 
       <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-4 md:space-y-6 lg:col-span-2">
@@ -25,6 +27,7 @@ export default function Dashboard() {
 
         <div className="min-w-0 space-y-4 md:space-y-6">
           <TeamToday />
+          <UpcomingBirthdays />
           <EmployeeOnly>
             <MonthAtGlance />
           </EmployeeOnly>
