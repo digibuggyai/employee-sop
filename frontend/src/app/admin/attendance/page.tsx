@@ -137,7 +137,7 @@ export default function AdminAttendancePage() {
                       {r.user.leftOn && <Badge>Left {fmtDate(r.user.leftOn, false)}</Badge>}
                     </p>
                     <p className="text-xs text-zinc-500 tabular-nums">
-                      {r.present} present{r.halfDays > 0 && ` (${r.halfDays} half)`} · WFH {r.remote ? `${r.wfh} remote` : `${r.wfh}/${r.wfhAllowance}`} · {r.leaves} leave
+                      {r.present} present ({r.inOffice} office · {r.wfh} WFH){r.halfDays > 0 && ` · ${r.halfDays} half`} · WFH {r.remote ? `${r.wfh} remote` : `${r.wfh}/${r.wfhAllowance}`} · {r.leaves} leave
                       {r.shortLeaves > 0 && ` · ${r.shortLeaves} late`}
                       {r.absent + r.latePenaltyDays > 0 && <span className="text-red-600"> · {r.absent + r.latePenaltyDays} unauthorized</span>}
                     </p>
@@ -171,8 +171,9 @@ export default function AdminAttendancePage() {
                     </td>
                     <td className={`${table.td} tabular-nums`}>
                       {r.present}
-                      <span className="text-xs text-zinc-500">
-                        {r.halfDays > 0 ? ` (${r.halfDays} half)` : ` (${r.inOffice} office)`}
+                      {r.halfDays > 0 && <span className="text-xs text-zinc-500"> ({r.halfDays} half)</span>}
+                      <span className="block text-xs text-zinc-500">
+                        {r.inOffice} office · {r.wfh} WFH
                       </span>
                     </td>
                     <td className={`${table.td} tabular-nums`}>

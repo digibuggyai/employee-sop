@@ -53,7 +53,7 @@ export function MonthAtGlance() {
           fmtDuration(week?.workedMs),
           s.weeklyHours && week ? `of ${s.weeklyHours}h · ${weekProgress(week, s.weeklyHours, todayIST())!.text.toLowerCase()}` : undefined,
         ],
-        ["Days present", s.present, s.halfDays ? `${s.daysWorked} counting half days` : `${s.inOffice} in-office`],
+        ["Days present", s.present, `${s.inOffice} in-office · ${s.wfh} WFH${s.halfDays ? ` · ${s.daysWorked} with half days` : ""}`],
         [
           "WFH used",
           <span key="wfh" className={!s.remote && s.wfh > s.wfhAllowance ? "text-red-600" : undefined}>

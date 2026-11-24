@@ -191,7 +191,21 @@ export default function MonthSheet({
         <Stat
           label="Days present"
           value={summary.present}
-          hint={summary.halfDays ? `${summary.daysWorked} counting half days` : `${summary.inOffice} in-office`}
+          hint={
+            <>
+              <span className="flex flex-wrap gap-x-2.5 gap-y-0.5">
+                <span className="inline-flex items-center gap-1">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <span className="font-medium text-zinc-700 tabular-nums">{summary.inOffice}</span> in-office
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="size-1.5 rounded-full bg-sky-500" />
+                  <span className="font-medium text-zinc-700 tabular-nums">{summary.wfh}</span> WFH
+                </span>
+              </span>
+              {summary.halfDays > 0 && <span className="mt-0.5 block">{summary.daysWorked} counting half days</span>}
+            </>
+          }
         />
         <Stat
           label="WFH used"
