@@ -80,7 +80,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
   const intern = user?.employmentType === "INTERN" || user?.employmentType === "REMOTE_INTERN";
   const needsNotes = intern && (day ? day.place : place) === "WFH";
-  const needsReport = (day ? day.place : place) === "WFH";
+  const needsReport = (day ? day.place : place) === "WFH" && user?.employmentType !== "PART_TIME";
 
   async function checkOut(halfDay: boolean) {
     if (needsReport) return setReportFor({ halfDay });

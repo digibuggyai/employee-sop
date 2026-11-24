@@ -3,7 +3,7 @@ import { TIMEZONE, toDbDate, todayString } from "./dates.js";
 import { holidayList, holidayOn } from "./holidays.js";
 import {
   FREE_SHORT_LEAVES, GRACE_MIN, LATES_PER_ABSENCE, LEAVE_PER_MONTH, LEAVE_POLICY_START, SHORT_LEAVE_MAX_MIN, parseTimings,
-  worksSaturdays, typeOn, type WorkType, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM, FORGOT_CHECKOUT_NOTE,
+  worksSaturdays, typeOn, noTimingRules, type WorkType, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM, FORGOT_CHECKOUT_NOTE,
 } from "./policy.js";
 import type { Attendance, Break } from "../generated/prisma/client.js";
 
@@ -192,7 +192,8 @@ export async function monthReports(userIds: string[], month: string) {
           date >= WFH_REPORT_FROM &&
           !att.report?.trim() &&
           (!!att.checkOut || date < today) &&
-          !isOffDay(date, person);
+          !isOffDay(date, person) &&
+          !noTimingRules(person?.employmentType);
         if (noReport) {
           summary.absent++;
           return {
@@ -271,7 +272,7 @@ export async function monthReports(userIds: string[], month: string) {
     });
 
     const autoShort = new Set<string>();
-    const shift = parseTimings(person?.timings);
+    const shift = noTimingRules(person?.employmentType) ? null : parseTimings(person?.timings);
     if (shift) {
       const shiftLength = shift.end - shift.start;
       for (const d of days) {
@@ -338,7 +339,7 @@ export async function monthReports(userIds: string[], month: string) {
     }
 
     days
-      .filter((d) => d.place === "WFH" && !summary.remote && !d.extraDay && !d.noReport)
+      .filter((d) => d.place === "WFH" && !summary.remote && !noTimingRules(person?.employmentType) && !d.extraDay && !d.noReport)
       .slice(summary.wfhAllowance)
       .forEach((d) => {
         if (d.halfDay || d.wfhFullDay) return;

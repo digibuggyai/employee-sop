@@ -55,7 +55,7 @@ export function BirthdayBanner() {
         </span>
       ))}
       <div className="relative flex items-center gap-4">
-        <span className="float-emoji grid size-14 shrink-0 place-items-center rounded-2xl bg-white/80 text-3xl shadow-sm ring-1 ring-brand-500/20" aria-hidden>
+        <span className="float-emoji grid size-12 shrink-0 place-items-center rounded-2xl bg-white/80 text-2xl shadow-sm ring-1 ring-brand-500/20 sm:size-14 sm:text-3xl" aria-hidden>
           🎂
         </span>
         <div className="min-w-0 flex-1">
@@ -76,7 +76,7 @@ export function BirthdayBanner() {
             </>
           )}
         </div>
-        <div className="relative flex shrink-0 -space-x-2">
+        <div className="relative hidden shrink-0 -space-x-2 sm:flex">
           {data.today.slice(0, 4).map((r) => (
             <span key={r.person.id} className="flex flex-col items-center gap-1">
               <span className="rounded-full ring-2 ring-brand-500/40 ring-offset-2 ring-offset-transparent">

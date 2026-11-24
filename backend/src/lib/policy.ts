@@ -31,6 +31,8 @@ export const worksSaturdays = (who: WorkType, date: string) => typeOn(who, date)
 export const PLAN_MIN_CHARS = 10;
 export const REPORT_MIN_CHARS = 20;
 
+export const noTimingRules = (employmentType: string | null | undefined) => employmentType === "PART_TIME";
+
 export const isIntern = (employmentType: string) => employmentType === "INTERN" || employmentType === "REMOTE_INTERN";
 
 export function parseTimings(text: string | null | undefined): { start: number; end: number } | null {

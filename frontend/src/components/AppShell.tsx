@@ -113,7 +113,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {onTab || !pageTitle ? (
           <Logo compact={isAdmin} />
         ) : (
-          <div className="-ml-2 flex min-w-0 items-center gap-0.5">
+          <div className="-ml-2 flex min-w-0 flex-1 items-center gap-0.5">
             <button
               onClick={goBack}
               aria-label="Back"
@@ -121,10 +121,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             >
               <CaretLeft size={22} weight="bold" />
             </button>
-            <span className="truncate text-[17px] font-semibold tracking-tight text-zinc-900">{pageTitle}</span>
+            <span className="hidden truncate text-[17px] font-semibold tracking-tight text-zinc-900 min-[360px]:block">{pageTitle}</span>
           </div>
         )}
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {isAdmin ? <AreaSwitch inAdmin={inAdmin} pending={totalPending} compact /> : <ThemeToggle />}
           <NotificationBell />
           <Link href="/profile" aria-label="Profile">

@@ -384,7 +384,6 @@ body::before {
 }
 
 .float-emoji {
-  display: inline-block;
   animation: float-up 3.2s ease-in-out infinite;
 }
 

@@ -1,6 +1,6 @@
 import { prisma } from "./prisma.js";
 import { TIMEZONE, istDateTime, toDbDate, todayString } from "./dates.js";
-import { AUTO_CHECKOUT_AT, parseTimings } from "./policy.js";
+import { AUTO_CHECKOUT_AT, noTimingRules, parseTimings } from "./policy.js";
 import { syncMakeUps } from "./makeups.js";
 import { notify } from "./notify.js";
 import { FORGOT_CHECKOUT_NOTE } from "./policy.js";
@@ -14,9 +14,12 @@ export async function autoCheckout() {
     const open = await prisma.attendance.findMany({
       where: {
         checkOut: null,
-        OR: [{ date: { lt: toDbDate(today) } }, ...(Date.now() >= cutoff.getTime() ? [{ date: toDbDate(today), checkIn: { lt: cutoff } }] : [])],
+        OR: [
+          { date: { lt: toDbDate(today) } },
+          ...(Date.now() >= cutoff.getTime() ? [{ date: toDbDate(today), checkIn: { lt: cutoff }, user: { employmentType: { not: "PART_TIME" as const } } }] : []),
+        ],
       },
-      include: { breaks: true, user: { select: { timings: true } } },
+      include: { breaks: true, user: { select: { timings: true, employmentType: true } } },
     });
 
     for (const day of open) {
@@ -24,6 +27,7 @@ export async function autoCheckout() {
       const shift = parseTimings(day.user.timings);
       const planned = istDateTime(date, shift ? hhmm(shift.end) : AUTO_CHECKOUT_AT);
       if (planned <= day.checkIn && Date.now() - day.checkIn.getTime() < 12 * 3600_000) continue;
+      if (noTimingRules(day.user.employmentType) && Date.now() < istDateTime(date, AUTO_CHECKOUT_AT).getTime() + 864e5) continue;
       const checkOut = planned > day.checkIn ? planned : day.checkIn;
 
       const { count } = await prisma.attendance.updateMany({

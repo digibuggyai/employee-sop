@@ -7,7 +7,7 @@ import { isSunday, monthReports, thisMonth } from "../lib/reports.js";
 import { syncMakeUps } from "../lib/makeups.js";
 import { checkDayChange, dayChangeSchema, toDayChange } from "../lib/attendanceEdit.js";
 import { notifyAdmins } from "../lib/notify.js";
-import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern } from "../lib/policy.js";
+import { PLAN_MIN_CHARS, REPORT_MIN_CHARS, isIntern, noTimingRules } from "../lib/policy.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -38,7 +38,7 @@ router.get("/month", async (req, res) => {
 });
 
 const needsPlan = (user: { employmentType: string }, place: string) => place === "WFH" && isIntern(user.employmentType);
-const needsReport = (place: string) => place === "WFH";
+const needsReport = (user: { employmentType: string }, place: string) => place === "WFH" && !noTimingRules(user.employmentType);
 
 router.post("/check-in", async (req, res) => {
   const parsed = z
@@ -95,7 +95,7 @@ router.post("/check-out", async (req, res) => {
   const day = await findToday(req.user!.id);
   if (!day) return res.status(400).json({ error: "Check in first" });
   if (day.checkOut) return res.status(400).json({ error: "You've already checked out" });
-  if (needsReport(day.place) && report.length < REPORT_MIN_CHARS) {
+  if (needsReport(req.user!, day.place) && report.length < REPORT_MIN_CHARS) {
     return res.status(400).json({ error: "Write your work report before checking out (WFH policy)" });
   }
 
