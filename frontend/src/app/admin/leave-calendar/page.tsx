@@ -38,6 +38,7 @@ export default function LeaveCalendarPage() {
   const [error, setError] = useState("");
   const [person, setPerson] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<Kind | null>(null);
 
   useEffect(() => {
     api<Data>(`/api/admin/leave-calendar?month=${month}`)
@@ -45,7 +46,12 @@ export default function LeaveCalendarPage() {
       .catch((err) => setError(err.message));
   }, [month]);
 
-  const entries = useMemo(() => (data?.entries ?? []).filter((e) => !person || e.user.id === person), [data, person]);
+  const personEntries = useMemo(() => (data?.entries ?? []).filter((e) => !person || e.user.id === person), [data, person]);
+  const entries = useMemo(() => personEntries.filter((e) => !kindFilter || e.kind === kindFilter), [personEntries, kindFilter]);
+  const totals = order.map((k) => {
+    const list = personEntries.filter((e) => e.kind === k);
+    return { kind: k, days: list.length, people: new Set(list.map((e) => e.user.id)).size };
+  });
   const people = useMemo(() => {
     const map = new Map<string, Entry["user"]>();
     data?.entries.forEach((e) => map.set(e.user.id, e.user));
@@ -64,10 +70,17 @@ export default function LeaveCalendarPage() {
   const summary = people
     .filter((p) => !person || p.id === person)
     .map((p) => {
-      const mine = entries.filter((e) => e.user.id === p.id);
+      const mine = personEntries.filter((e) => e.user.id === p.id);
       const count = (k: Kind) => mine.filter((e) => e.kind === k).length;
-      return { user: p, counts: Object.fromEntries(order.map((k) => [k, count(k)])) as Record<Kind, number>, madeUp: mine.filter((e) => e.madeUp).length };
-    });
+      return {
+        user: p,
+        counts: Object.fromEntries(order.map((k) => [k, count(k)])) as Record<Kind, number>,
+        total: mine.length,
+        madeUp: mine.filter((e) => e.madeUp).length,
+      };
+    })
+    .filter((row) => row.total > 0)
+    .sort((a, b) => b.total - a.total || a.user.name.localeCompare(b.user.name));
 
   return (
     <>
@@ -96,14 +109,36 @@ export default function LeaveCalendarPage() {
         }
       />
 
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5">
-        {order.map((k) => (
-          <span key={k} className="flex items-center gap-1.5 text-xs text-zinc-600">
-            <span className={`size-2 rounded-full ${kinds[k].dot}`} />
-            {kinds[k].label}
-          </span>
-        ))}
+      <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:mb-6 lg:grid-cols-6">
+        {totals.map(({ kind, days, people: count }) => {
+          const active = kindFilter === kind;
+          return (
+            <button
+              key={kind}
+              onClick={() => setKindFilter(active ? null : kind)}
+              aria-pressed={active}
+              className={`glass rounded-xl px-3.5 py-3 text-left transition ${active ? "ring-2 ring-brand-600" : ""}`}
+            >
+              <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                <span className={`size-2 rounded-full ${kinds[kind].dot}`} />
+                {kinds[kind].label}
+              </span>
+              <span className="mt-1 block text-2xl font-semibold tracking-tight text-zinc-900 tabular-nums">{data ? days : "–"}</span>
+              <span className="text-[11px] text-zinc-500">
+                {data ? (days ? `day${days === 1 ? "" : "s"} · ${count} ${count === 1 ? "person" : "people"}` : "none") : ""}
+              </span>
+            </button>
+          );
+        })}
       </div>
+      {kindFilter && (
+        <p className="-mt-2 mb-4 text-[13px] text-zinc-600">
+          Showing only <span className="font-medium text-zinc-900">{kinds[kindFilter].label}</span> on the calendar.{" "}
+          <button onClick={() => setKindFilter(null)} className="font-medium text-brand-700 hover:underline">
+            Show all
+          </button>
+        </p>
+      )}
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
       {!data && !error ? (
@@ -111,6 +146,74 @@ export default function LeaveCalendarPage() {
       ) : (
         data && (
           <div className="space-y-4 md:space-y-6">
+            <Card title="Who took what" description={`${monthLabel(month)} · most time off first`} flush>
+              {summary.length === 0 ? (
+                <EmptyState compact icon={CalendarOff} title="No time off this month" />
+              ) : (
+                <>
+                  <ul className="divide-y divide-zinc-100 md:hidden">
+                    {summary.map((row) => (
+                      <li key={row.user.id} className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar person={row.user} size="sm" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">{row.user.name}</span>
+                          <span className="text-sm font-semibold text-zinc-900 tabular-nums">{row.total}</span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5 pl-10">
+                          {order
+                            .filter((k) => row.counts[k])
+                            .map((k) => (
+                              <span key={k} className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${kinds[k].pill}`}>
+                                {kinds[k].label} {row.counts[k]}
+                              </span>
+                            ))}
+                          {row.madeUp > 0 && <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800">Made up {row.madeUp}</span>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className={`${table.wrap} hidden md:block`}>
+                    <table className={table.table}>
+                      <thead className={table.thead}>
+                        <tr>
+                          {["Name", ...order.map((k) => kinds[k].label), "Made up", "Total"].map((h) => (
+                            <th key={h} className={table.th}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className={table.tbody}>
+                        {summary.map((row) => (
+                          <tr key={row.user.id} className={table.tr}>
+                            <td className={table.td}>
+                              <div className="flex items-center gap-2.5">
+                                <Avatar person={row.user} size="xs" />
+                                <span className="font-medium text-zinc-900">{row.user.name}</span>
+                              </div>
+                            </td>
+                            {order.map((k) => (
+                              <td key={k} className={table.td}>
+                                {row.counts[k] ? (
+                                  <span className={`inline-block min-w-7 rounded-md px-1.5 py-0.5 text-center text-xs font-semibold tabular-nums ${kinds[k].pill}`}>
+                                    {row.counts[k]}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-300">—</span>
+                                )}
+                              </td>
+                            ))}
+                            <td className={`${table.td} tabular-nums ${row.madeUp ? "font-medium text-emerald-700" : "text-zinc-300"}`}>{row.madeUp || "—"}</td>
+                            <td className={`${table.td} font-semibold text-zinc-900 tabular-nums`}>{row.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </Card>
+
             <Card flush>
               <div className="grid grid-cols-7 border-b border-zinc-100">
                 {weekdays.map((w) => (
@@ -186,44 +289,6 @@ export default function LeaveCalendarPage() {
                     </li>
                   ))}
                 </ul>
-              )}
-            </Card>
-
-            <Card title={`${monthLabel(month)} by person`} flush>
-              {summary.length === 0 ? (
-                <EmptyState compact icon={CalendarOff} title="No time off this month" />
-              ) : (
-                <div className={table.wrap}>
-                  <table className={table.table}>
-                    <thead className={table.thead}>
-                      <tr>
-                        {["Name", ...order.map((k) => kinds[k].label), "Made up"].map((h) => (
-                          <th key={h} className={table.th}>
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className={table.tbody}>
-                      {summary.map((s) => (
-                        <tr key={s.user.id} className={table.tr}>
-                          <td className={table.td}>
-                            <div className="flex items-center gap-2.5">
-                              <Avatar person={s.user} size="xs" />
-                              <span className="font-medium text-zinc-900">{s.user.name}</span>
-                            </div>
-                          </td>
-                          {order.map((k) => (
-                            <td key={k} className={`${table.td} tabular-nums ${s.counts[k] ? "font-medium text-zinc-900" : "text-zinc-300"}`}>
-                              {s.counts[k] || "—"}
-                            </td>
-                          ))}
-                          <td className={`${table.td} tabular-nums ${s.madeUp ? "text-emerald-700" : "text-zinc-300"}`}>{s.madeUp || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               )}
             </Card>
           </div>
