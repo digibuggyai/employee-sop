@@ -108,7 +108,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
   const [badgeLabel, badgeTone] = stateBadge[state];
 
   return (
-    <section className="flex flex-col glass rounded-3xl sm:rounded-2xl">
+    <section className="flex flex-col glass rounded-2xl sm:rounded-xl">
       <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3.5">
         <h2 className="text-sm font-semibold text-zinc-900">Today</h2>
         {loaded && (

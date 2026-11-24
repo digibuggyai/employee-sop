@@ -7,14 +7,12 @@ import { usePresence } from "./Presence";
 import { useOpenProfile } from "./profileContext";
 
 const palettes = [
-  "bg-rose-100 text-rose-800",
-  "bg-amber-100 text-amber-800",
-  "bg-emerald-100 text-emerald-800",
-  "bg-sky-100 text-sky-800",
-  "bg-violet-100 text-violet-800",
-  "bg-teal-100 text-teal-800",
-  "bg-orange-100 text-orange-800",
-  "bg-indigo-100 text-indigo-800",
+  "bg-zinc-200 text-zinc-800",
+  "bg-zinc-800 text-zinc-50",
+  "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200 ring-inset",
+  "bg-zinc-300 text-zinc-900",
+  "bg-zinc-700 text-zinc-50",
+  "bg-zinc-900 text-zinc-100",
 ];
 
 const dotSizes = { xs: "size-2", sm: "size-2.5", md: "size-2.5", lg: "size-3.5", xl: "size-5 ring-[3px]" };

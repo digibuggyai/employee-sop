@@ -71,7 +71,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
           e.preventDefault();
           close(false);
         }}
-        className="m-auto w-[calc(100%-2rem)] max-w-md glass-sheet rounded-3xl p-0"
+        className="m-auto w-[calc(100%-2rem)] max-w-md glass-sheet rounded-2xl p-0"
       >
         {dialog && (
           <div className="p-5">

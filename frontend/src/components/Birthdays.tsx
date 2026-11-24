@@ -34,12 +34,10 @@ export function BirthdayBanner() {
   const others = data.today.filter((r) => r.person.id !== user?.id);
 
   return (
-    <section className="relative mb-4 overflow-hidden rounded-3xl border border-amber-200/70 bg-gradient-to-r from-amber-50 via-rose-50 to-violet-50 p-4 shadow-xs md:mb-6 md:rounded-2xl md:p-5">
-      <div className="pointer-events-none absolute -top-10 -right-8 size-40 rounded-full bg-amber-200/40 blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-12 left-1/3 size-40 rounded-full bg-rose-200/40 blur-2xl" />
-      <div className="relative flex items-center gap-4">
-        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/80 text-rose-600 shadow-sm">
-          <Cake size={24} />
+    <section className="glass mb-4 rounded-2xl p-4 md:mb-6 md:rounded-xl md:p-5">
+      <div className="flex items-center gap-4">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-zinc-900 text-zinc-50">
+          <Cake size={21} />
         </span>
         <div className="min-w-0 flex-1">
           {mine ? (
@@ -85,7 +83,7 @@ export function UpcomingBirthdays() {
             </div>
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                r.daysAway === 0 ? "bg-rose-100 text-rose-700" : r.daysAway === 1 ? "bg-amber-100 text-amber-800" : "text-zinc-500"
+                r.daysAway === 0 ? "bg-zinc-900 text-zinc-50" : r.daysAway === 1 ? "bg-zinc-100 text-zinc-800" : "text-zinc-500"
               }`}
             >
               {r.daysAway === 0 ? "Today" : r.daysAway === 1 ? "Tomorrow" : `in ${r.daysAway} days`}

@@ -9,6 +9,7 @@ import { NotificationsProvider } from "@/components/Notifications";
 import { PresenceProvider } from "@/components/Presence";
 import { ProfileProvider } from "@/components/ProfileSheet";
 import { themeScript } from "@/components/ThemeToggle";
+import GlassPointer from "@/components/GlassPointer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <PresenceProvider>
                   <ProfileProvider>
                     <AppShell>{children}</AppShell>
+                    <GlassPointer />
                   </ProfileProvider>
                 </PresenceProvider>
               </NotificationsProvider>

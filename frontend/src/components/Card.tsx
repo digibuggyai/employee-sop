@@ -20,7 +20,7 @@ export default function Card({
 }) {
   const hasHeader = title || actions || action;
   return (
-    <section className={`overflow-hidden glass rounded-3xl sm:rounded-2xl ${className}`}>
+    <section className={`overflow-hidden glass rounded-2xl sm:rounded-xl ${className}`}>
       {hasHeader && (
         <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 sm:gap-4 sm:px-5 sm:py-3.5">
           <div className="min-w-0">

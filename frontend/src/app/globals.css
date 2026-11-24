@@ -1,16 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #f1f4fa;
-  --color-brand-100: #e1e8f4;
-  --color-brand-200: #c3d0e8;
-  --color-brand-500: #2d4c8c;
-  --color-brand-600: #1e3a73;
-  --color-brand-700: #12254b;  --color-brand-800: #0d1c3a;
-  --color-brand-900: #08122a;
+  --color-brand-50: oklch(97% 0 0);
+  --color-brand-100: oklch(92.2% 0 0);
+  --color-brand-200: oklch(87% 0 0);
+  --color-brand-500: oklch(43.9% 0 0);
+  --color-brand-600: oklch(26.9% 0 0);
+  --color-brand-700: oklch(14.5% 0 0);
+  --color-brand-800: oklch(26.9% 0 0);
+  --color-brand-900: oklch(0% 0 0);
+  --color-zinc-50: oklch(98.5% 0 0);
+  --color-zinc-100: oklch(97% 0 0);
+  --color-zinc-200: oklch(92.2% 0 0);
+  --color-zinc-300: oklch(87% 0 0);
+  --color-zinc-400: oklch(70.8% 0 0);
+  --color-zinc-500: oklch(55.6% 0 0);
+  --color-zinc-600: oklch(43.9% 0 0);
+  --color-zinc-700: oklch(37.1% 0 0);
+  --color-zinc-800: oklch(26.9% 0 0);
+  --color-zinc-900: oklch(20.5% 0 0);
+  --color-zinc-950: oklch(14.5% 0 0);
 
-  --color-canvas: #fafafa;
-  --color-ink: #09090b;
+  --color-canvas: oklch(97.5% 0 0);
+  --color-ink: oklch(14.5% 0 0);
 }
 
 @theme inline {
@@ -19,7 +31,7 @@
 }
 
 body {
-  background: #eef1f7;
+  background: var(--color-canvas);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
@@ -41,68 +53,78 @@ body {
   }
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(42rem 32rem at 8% 0%, rgb(186 205 245 / 0.75), transparent 70%),
-    radial-gradient(36rem 28rem at 100% 8%, rgb(221 207 250 / 0.6), transparent 70%),
-    radial-gradient(40rem 30rem at 85% 100%, rgb(190 232 222 / 0.55), transparent 70%),
-    radial-gradient(34rem 26rem at 0% 95%, rgb(250 222 205 / 0.45), transparent 70%),
-    linear-gradient(180deg, #f3f5fa, #eaeef6);
-}
-
 @utility glass {
-  background: rgb(255 255 255 / 0.58);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgb(255 255 255 / 0.75);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.9),
-    0 1px 2px rgb(15 23 42 / 0.04),
-    0 10px 30px -14px rgb(15 23 42 / 0.18);
+  position: relative;
+  background: rgb(255 255 255 / 0.9);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgb(0 0 0 / 0.08);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 @utility glass-bar {
-  background: rgb(255 255 255 / 0.55);
-  -webkit-backdrop-filter: blur(26px) saturate(190%);
-  backdrop-filter: blur(26px) saturate(190%);
-  border-color: rgb(255 255 255 / 0.7);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.85);
+  background: rgb(255 255 255 / 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border-color: rgb(0 0 0 / 0.08);
 }
 
 @utility glass-sheet {
-  background: rgb(255 255 255 / 0.78);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgb(255 255 255 / 0.8);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.95),
-    0 24px 60px -20px rgb(15 23 42 / 0.35);
+  background: rgb(255 255 255 / 0.92);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgb(0 0 0 / 0.08);
+  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.3);
 }
 
 @utility glass-control {
-  background: rgb(255 255 255 / 0.78);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  backdrop-filter: blur(12px) saturate(160%);
-  border-color: rgb(15 23 42 / 0.1);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.9),
-    0 1px 2px rgb(15 23 42 / 0.06);
+  background: rgb(255 255 255 / 0.85);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-color: rgb(0 0 0 / 0.12);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04);
 }
 
 @utility glass-pop {
-  background: rgb(255 255 255 / 0.97);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgb(15 23 42 / 0.08);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.9),
-    0 16px 40px -12px rgb(15 23 42 / 0.28),
-    0 2px 6px rgb(15 23 42 / 0.06);
+  background: rgb(255 255 255 / 0.98);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.25);
+}
+
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(280px circle at var(--mx, 50%) var(--my, -40%), var(--edge-light), transparent 65%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glass:hover {
+  border-color: rgb(0 0 0 / 0.14);
+  box-shadow: 0 6px 24px -12px rgb(0 0 0 / 0.18);
+}
+
+.glass:hover::after {
+  opacity: 1;
+}
+
+:root {
+  --edge-light: rgb(0 0 0 / 0.55);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -111,7 +133,7 @@ body::before {
   .glass-sheet,
   .glass-pop,
   .glass-control {
-    background: rgb(255 255 255 / 0.96);
+    background: #fff;
   }
 }
 
@@ -119,6 +141,7 @@ body::before {
   .glass,
   .glass-bar,
   .glass-sheet,
+  .glass-pop,
   .glass-control {
     background: #fff;
     -webkit-backdrop-filter: none;
@@ -126,31 +149,38 @@ body::before {
   }
 }
 
+@media (hover: none) {
+  .glass::after {
+    display: none;
+  }
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-white: oklch(18% 0.01 270);
+  --edge-light: rgb(255 255 255 / 0.6);
+  --color-white: oklch(17% 0 0);
   --color-black: #fff;
-  --color-canvas: oklch(15% 0.01 270);
-  --color-ink: oklch(96% 0.005 270);
-  --color-brand-50: oklch(24% 0.05 265);
-  --color-brand-100: oklch(28% 0.06 265);
-  --color-brand-200: oklch(36% 0.08 265);
-  --color-brand-500: oklch(70% 0.12 265);
-  --color-brand-600: oklch(74% 0.12 265);
-  --color-brand-700: oklch(78% 0.11 265);
-  --color-brand-800: oklch(84% 0.09 265);
-  --color-brand-900: oklch(90% 0.06 265);
-  --color-zinc-50: oklch(20.5% 0.008 275);
-  --color-zinc-100: oklch(24% 0.008 275);
-  --color-zinc-200: oklch(30% 0.008 275);
-  --color-zinc-300: oklch(38% 0.008 275);
-  --color-zinc-400: oklch(55% 0.008 275);
-  --color-zinc-500: oklch(64% 0.008 275);
-  --color-zinc-600: oklch(72% 0.008 275);
-  --color-zinc-700: oklch(82% 0.008 275);
-  --color-zinc-800: oklch(90% 0.008 275);
-  --color-zinc-900: oklch(95% 0.008 275);
-  --color-zinc-950: oklch(98% 0.008 275);
+  --color-canvas: oklch(11% 0 0);
+  --color-ink: oklch(97% 0 0);
+  --color-brand-50: oklch(22% 0 0);
+  --color-brand-100: oklch(26% 0 0);
+  --color-brand-200: oklch(34% 0 0);
+  --color-brand-500: oklch(72% 0 0);
+  --color-brand-600: oklch(85% 0 0);
+  --color-brand-700: oklch(97% 0 0);
+  --color-brand-800: oklch(88% 0 0);
+  --color-brand-900: oklch(100% 0 0);
+  --color-zinc-50: oklch(19% 0 0);
+  --color-zinc-100: oklch(23% 0 0);
+  --color-zinc-200: oklch(29% 0 0);
+  --color-zinc-300: oklch(37% 0 0);
+  --color-zinc-400: oklch(54% 0 0);
+  --color-zinc-500: oklch(63% 0 0);
+  --color-zinc-600: oklch(72% 0 0);
+  --color-zinc-700: oklch(82% 0 0);
+  --color-zinc-800: oklch(90% 0 0);
+  --color-zinc-900: oklch(95% 0 0);
+  --color-zinc-950: oklch(98% 0 0);
   --color-amber-50: oklch(27.9% 0.077 45.635);
   --color-amber-950: oklch(98.7% 0.022 95.277);
   --color-amber-100: oklch(41.4% 0.112 45.904);
@@ -263,69 +293,47 @@ body::before {
   --color-violet-600: oklch(70.2% 0.183 293.541);
 }
 
-:root[data-theme="dark"] body {
-  background: oklch(14% 0.012 270);
-}
-
-:root[data-theme="dark"] body::before {
-  background:
-    radial-gradient(42rem 32rem at 8% 0%, rgb(56 80 150 / 0.45), transparent 70%),
-    radial-gradient(36rem 28rem at 100% 8%, rgb(110 70 170 / 0.35), transparent 70%),
-    radial-gradient(40rem 30rem at 85% 100%, rgb(30 120 110 / 0.3), transparent 70%),
-    radial-gradient(34rem 26rem at 0% 95%, rgb(150 80 50 / 0.22), transparent 70%),
-    linear-gradient(180deg, #0f121a, #0a0c12);
-}
-
 :root[data-theme="dark"] .glass {
-  background: rgb(30 34 46 / 0.55);
-  border-color: rgb(255 255 255 / 0.09);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 10px 30px -14px rgb(0 0 0 / 0.6);
+  background: rgb(23 23 23 / 0.86);
+  border-color: rgb(255 255 255 / 0.08);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+:root[data-theme="dark"] .glass:hover {
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: 0 8px 28px -14px rgb(0 0 0 / 0.8);
 }
 
 :root[data-theme="dark"] .glass-bar {
-  background: rgb(22 25 34 / 0.6);
+  background: rgb(14 14 14 / 0.82);
   border-color: rgb(255 255 255 / 0.08);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
 }
 
 :root[data-theme="dark"] .glass-sheet {
-  background: rgb(28 32 44 / 0.82);
+  background: rgb(22 22 22 / 0.94);
   border-color: rgb(255 255 255 / 0.1);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.07),
-    0 24px 60px -20px rgb(0 0 0 / 0.7);
+  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8);
 }
 
 :root[data-theme="dark"] .glass-pop {
-  background: rgb(26 30 41 / 0.98);
-  border-color: rgb(255 255 255 / 0.1);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 16px 40px -12px rgb(0 0 0 / 0.7);
+  background: rgb(22 22 22 / 0.98);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.8);
 }
 
 :root[data-theme="dark"] .glass-control {
-  background: rgb(40 45 60 / 0.6);
-  border-color: rgb(255 255 255 / 0.1);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  background: rgb(32 32 32 / 0.85);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow: none;
 }
 
 @media (prefers-reduced-transparency: reduce) {
   :root[data-theme="dark"] .glass,
   :root[data-theme="dark"] .glass-bar,
   :root[data-theme="dark"] .glass-sheet,
-  :root[data-theme="dark"] .glass-pop {
-  background: rgb(26 30 41 / 0.98);
-  border-color: rgb(255 255 255 / 0.1);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 16px 40px -12px rgb(0 0 0 / 0.7);
-}
-
-:root[data-theme="dark"] .glass-control {
-    background: oklch(20% 0.01 270);
+  :root[data-theme="dark"] .glass-pop,
+  :root[data-theme="dark"] .glass-control {
+    background: oklch(17% 0 0);
   }
 }
 
@@ -334,25 +342,19 @@ body::before {
   display: none;
 }
 
-:root[data-theme="dark"] .logo-on-dark {
-  filter: drop-shadow(0 0 3px rgb(170 196 255 / 0.75)) drop-shadow(0 0 12px rgb(110 150 255 / 0.55))
-    drop-shadow(0 0 26px rgb(90 120 255 / 0.35));
-}
-
 :root[data-theme="dark"] .logo-on-dark.logo-invert {
-  filter: brightness(0) invert(1) drop-shadow(0 0 3px rgb(170 196 255 / 0.75)) drop-shadow(0 0 12px rgb(110 150 255 / 0.55))
-    drop-shadow(0 0 26px rgb(90 120 255 / 0.35));
+  filter: brightness(0) invert(1);
 }
 
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--color-brand-700);
     outline-offset: 2px;
   }
 }
 
 dialog::backdrop {
-  background: rgb(15 23 42 / 0.28);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: rgb(0 0 0 / 0.4);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }

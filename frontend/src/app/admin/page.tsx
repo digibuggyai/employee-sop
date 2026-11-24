@@ -220,7 +220,7 @@ function Marks({ marks }: { marks?: string[] }) {
 
 function Kpi({ label, value, hint }: { label: string; value: React.ReactNode | null; hint?: string }) {
   return (
-    <div className="glass rounded-3xl p-3.5 sm:rounded-2xl sm:p-4">
+    <div className="glass rounded-2xl p-3.5 sm:rounded-xl sm:p-4">
       <p className="text-[13px] font-medium text-zinc-500">{label}</p>
       {value === null ? (
         <Skeleton className="mt-2 h-8 w-20" />
