@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Flag, Users } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import { BirthdayBanner } from "@/components/Birthdays";
 import MarkDayDialog from "@/components/MarkDay";
 import { Tag } from "@/components/Badges";
 import { LiveStatusBadge } from "@/components/Badges";
@@ -69,6 +70,8 @@ export default function AdminOverviewPage() {
           />
         }
       />
+
+      <BirthdayBanner />
 
       <div className="mb-4 md:mb-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         <Kpi label="Present" value={rows ? `${present} / ${rows.length}` : null} hint={rows ? `${wfh} working from home` : undefined} />
