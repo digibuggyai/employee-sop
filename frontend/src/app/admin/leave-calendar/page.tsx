@@ -5,6 +5,7 @@ import { CalendarOff } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
 import MonthSwitcher from "@/components/MonthSwitcher";
+import PaySummary, { type LedgerRow } from "@/components/PaySummary";
 import PageHeader from "@/components/PageHeader";
 import { inputBase } from "@/components/form";
 import { EmptyState, Skeleton, table } from "@/components/ui";
@@ -19,7 +20,7 @@ type Entry = {
   reason: string | null;
   madeUp: boolean;
 };
-type Data = { month: string; holidays: { date: string; name: string }[]; entries: Entry[] };
+type Data = { month: string; holidays: { date: string; name: string }[]; entries: Entry[]; ledger: LedgerRow[] };
 
 const kinds: Record<Kind, { label: string; pill: string; dot: string }> = {
   LEAVE: { label: "Leave", pill: "bg-violet-100 text-violet-800", dot: "bg-violet-500" },
@@ -74,6 +75,8 @@ export default function LeaveCalendarPage() {
       .filter((e) => e.date === date && (kindFilter || !everyday.includes(e.kind)))
       .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
 
+  const ledgerOf = (id: string) => data?.ledger?.find((l) => l.userId === id);
+  const fmtDays = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
   const summary = people
     .filter((p) => !person || p.id === person)
     .map((p) => {
@@ -155,6 +158,8 @@ export default function LeaveCalendarPage() {
       ) : (
         data && (
           <div className="space-y-4 md:space-y-6">
+            <PaySummary title={monthLabel(month)} rows={(data.ledger ?? []).filter((r) => !person || r.userId === person)} />
+
             <Card title="Who took what" description={`${monthLabel(month)} · Days off = leave + emergency + absent + half days × ½`} flush>
               {summary.length === 0 ? (
                 <EmptyState compact icon={CalendarOff} title="No time off this month" />
@@ -169,6 +174,11 @@ export default function LeaveCalendarPage() {
                           <span className="text-right">
                             <span className="block text-sm font-semibold text-zinc-900 tabular-nums">{row.total}</span>
                             <span className="block text-[10px] text-zinc-400">days off</span>
+                            {ledgerOf(row.user.id) && (
+                              <span className="block text-[11px] font-medium text-brand-700 tabular-nums">
+                                {fmtDays(ledgerOf(row.user.id)!.workedDays)}/{ledgerOf(row.user.id)!.employedDays} worked
+                              </span>
+                            )}
                           </span>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1.5 pl-10">
@@ -188,7 +198,7 @@ export default function LeaveCalendarPage() {
                     <table className={table.table}>
                       <thead className={table.thead}>
                         <tr>
-                          {["Name", ...order.map((k) => kinds[k].label), "Made up", "Days off"].map((h) => (
+                          {["Name", ...order.map((k) => kinds[k].label), "Made up", "Days off", "Worked / working"].map((h) => (
                             <th key={h} className={table.th}>
                               {h}
                             </th>
@@ -217,6 +227,29 @@ export default function LeaveCalendarPage() {
                             ))}
                             <td className={`${table.td} tabular-nums ${row.madeUp ? "font-medium text-emerald-700" : "text-zinc-300"}`}>{row.madeUp || "—"}</td>
                             <td className={`${table.td} font-semibold text-zinc-900 tabular-nums`}>{row.total}</td>
+                            <td className={table.td}>
+                              {ledgerOf(row.user.id) ? (
+                                <>
+                                  <span className="text-base font-semibold text-zinc-900 tabular-nums">
+                                    {fmtDays(ledgerOf(row.user.id)!.workedDays)}
+                                    <span className="font-normal text-zinc-400"> / {ledgerOf(row.user.id)!.employedDays}</span>
+                                  </span>
+                                  {(ledgerOf(row.user.id)!.employedLeft > 0 || ledgerOf(row.user.id)!.offDaysWorked > 0 || ledgerOf(row.user.id)!.employedDays < ledgerOf(row.user.id)!.workingDays) && (
+                                    <span className="block text-xs text-zinc-500">
+                                      {[
+                                        ledgerOf(row.user.id)!.employedLeft > 0 && `${ledgerOf(row.user.id)!.employedLeft} to go`,
+                                        ledgerOf(row.user.id)!.employedDays < ledgerOf(row.user.id)!.workingDays && `of ${ledgerOf(row.user.id)!.workingDays} in the month`,
+                                        ledgerOf(row.user.id)!.offDaysWorked > 0 && `+${ledgerOf(row.user.id)!.offDaysWorked} extra`,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(" · ")}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-zinc-300">—</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

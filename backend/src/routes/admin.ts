@@ -12,6 +12,7 @@ import { adminDayChangeSchema, applyDayChange, checkDayChange, toDayChange } fro
 import { sameMonth, syncMakeUps } from "../lib/makeups.js";
 import { FORGOT_CHECKOUT_NOTE, GRACE_MIN } from "../lib/policy.js";
 import { holidayList } from "../lib/holidays.js";
+import { payFigures } from "../lib/payroll.js";
 
 const router = Router();
 
@@ -118,18 +119,30 @@ router.get("/birthdays", async (_req, res) => {
 });
 
 router.get("/leave-calendar", async (req, res) => {
+  const superAdmin = req.user!.role === "SUPER_ADMIN";
   const month = monthParam.parse(req.query.month);
   const users = await prisma.user.findMany({
     where: { isEmployee: true, OR: [{ active: true }, { leftOn: { gte: toDbDate(`${month}-01`) } }] },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, photoUpdatedAt: true, designation: true },
+    select: { id: true, name: true, photoUpdatedAt: true, designation: true, employmentType: true, fullTimeFrom: true },
   });
   const reports = await monthReports(
     users.map((u) => u.id),
     month,
   );
-  const entries: { date: string; user: (typeof users)[number]; kind: string; reason: string | null; madeUp: boolean }[] = [];
-  for (const user of users) {
+  const entries: { date: string; user: { id: string; name: string; photoUpdatedAt: Date | null; designation: string | null }; kind: string; reason: string | null; madeUp: boolean }[] = [];
+  const today = todayString();
+  const ledger = users.map((person) => {
+    const { payPercent, ...figures } = payFigures(person, reports.get(person.id)!, today);
+    return {
+      userId: person.id,
+      user: { id: person.id, name: person.name, photoUpdatedAt: person.photoUpdatedAt },
+      employmentType: person.employmentType,
+      ...figures,
+      ...(superAdmin && { payPercent }),
+    };
+  });
+  for (const { employmentType: _type, fullTimeFrom: _from, ...user } of users) {
     for (const d of reports.get(user.id)!.days) {
       const add = (kind: string, reason: string | null = null, madeUp = false) => entries.push({ date: d.date, user, kind, reason, madeUp });
       if (d.status === "LEAVE") add(d.leave?.emergency ? "EMERGENCY" : "LEAVE", d.leave?.reason ?? null, !!d.leave?.compensatedOn);
@@ -151,7 +164,7 @@ router.get("/leave-calendar", async (req, res) => {
   const holidays = holidayList()
     .filter((h) => h.date.startsWith(month))
     .map((h) => ({ date: h.date, name: h.name }));
-  res.json({ month, holidays, entries });
+  res.json({ month, holidays, entries, ledger });
 });
 
 router.get("/attendance/summary", async (req, res) => {
