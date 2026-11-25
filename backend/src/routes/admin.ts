@@ -10,7 +10,7 @@ import { leaveInclude, workingDaysBetween } from "./leaves.js";
 import { firstName, notify } from "../lib/notify.js";
 import { adminDayChangeSchema, applyDayChange, checkDayChange, toDayChange } from "../lib/attendanceEdit.js";
 import { sameMonth, syncMakeUps } from "../lib/makeups.js";
-import { FORGOT_CHECKOUT_NOTE } from "../lib/policy.js";
+import { FORGOT_CHECKOUT_NOTE, GRACE_MIN } from "../lib/policy.js";
 import { holidayList } from "../lib/holidays.js";
 
 const router = Router();
@@ -135,9 +135,12 @@ router.get("/leave-calendar", async (req, res) => {
       if (d.status === "LEAVE") add(d.leave?.emergency ? "EMERGENCY" : "LEAVE", d.leave?.reason ?? null, !!d.leave?.compensatedOn);
       else if (d.status === "LEAVE_PENDING") add("PENDING", d.leave?.reason ?? null);
       else if (d.status === "ABSENT") add("ABSENT", d.absentReason ?? null);
-      else if (d.halfDay) add("HALF_DAY", d.halfDay === "EXTRA_WFH" ? "Extra WFH" : d.halfDay === "OVER_2H" ? "Over 2h short" : null);
-      else if (d.shortLeave) add("SHORT_LEAVE");
-      else if (d.status === "UPCOMING" && d.requests?.length) {
+      else if (d.status === "PRESENT" || d.status === "WORKING") {
+        if (d.place === "WFH") add("WFH");
+        if (d.halfDay) add("HALF_DAY", d.halfDay === "EXTRA_WFH" ? "WFH over the monthly allowance" : d.halfDay === "OVER_2H" ? "More than 2h short" : null);
+        if (d.lateMin) add("LATE", `${d.lateMin + GRACE_MIN} min late`);
+        if (d.shortLeave) add("SHORT_LEAVE");
+      } else if (d.status === "UPCOMING" && d.requests?.length) {
         for (const q of d.requests) {
           if (q.kind === "HALF_DAY") add(q.status === "APPROVED" ? "HALF_DAY" : "PENDING", "Half day");
           else if (q.kind === "SHORT_LEAVE" || q.kind === "LATE_EARLY") add(q.status === "APPROVED" ? "SHORT_LEAVE" : "PENDING", "Short leave");
