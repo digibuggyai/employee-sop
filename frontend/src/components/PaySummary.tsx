@@ -24,6 +24,7 @@ export type LedgerRow = {
   lateCounted: number;
   shortLeaves: number;
   halfDays: number;
+  wfhHalfDays: number;
   leavesTaken: number;
   emergencyLeaves: number;
   paidLeaves: number;
@@ -59,7 +60,8 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                 r.fullTime && r.paidLeaves ? [`Paid leave ${num(r.paidLeaves)}`, "bg-emerald-100 text-emerald-800"] : null,
                 r.unpaidLeaves ? [`Unpaid leave ${num(r.unpaidLeaves)}`, "bg-red-100 text-red-800"] : null,
                 r.emergencyLeaves ? [`Emergency ${r.emergencyLeaves}`, "bg-rose-100 text-rose-800"] : null,
-                r.halfDays ? [`Half day ${r.halfDays}`, "bg-sky-100 text-sky-800"] : null,
+                r.halfDays - r.wfhHalfDays ? [`Half day ${r.halfDays - r.wfhHalfDays}`, "bg-sky-100 text-sky-800"] : null,
+                r.wfhHalfDays ? [`WFH over limit ${r.wfhHalfDays}`, "bg-indigo-100 text-indigo-800"] : null,
                 r.absent ? [`Absent ${r.absent}`, "bg-red-100 text-red-800"] : null,
                 r.lateDays ? [`Late ${r.lateDays}${r.lateCounted ? ` (−${Math.floor(r.lateCounted / 3)})` : ""}`, "bg-orange-100 text-orange-800"] : null,
                 r.shortLeaves ? [`Short leave ${r.shortLeaves}`, "bg-teal-100 text-teal-800"] : null,
@@ -106,6 +108,7 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                     "Unpaid leave",
                     "Emergency",
                     "Half days",
+                    "WFH over limit",
                     "Absent",
                     "Late",
                     "Short leave",
@@ -149,7 +152,8 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                       </td>
                       <td className={table.td}>{cell(r.unpaidLeaves, "text-red-600")}</td>
                       <td className={table.td}>{cell(r.emergencyLeaves)}</td>
-                      <td className={table.td}>{cell(r.halfDays)}</td>
+                      <td className={table.td}>{cell(r.halfDays - r.wfhHalfDays)}</td>
+                      <td className={table.td}>{cell(r.wfhHalfDays)}</td>
                       <td className={table.td}>{cell(r.absent, "text-red-600")}</td>
                       <td className={table.td}>
                         {cell(r.lateDays)}
@@ -164,7 +168,8 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                               r.absent && `${r.absent} absent`,
                               r.latePenaltyDays && `${r.latePenaltyDays} lates`,
                               r.unpaidLeaves && `${num(r.unpaidLeaves)} unpaid`,
-                              r.halfDays && `${num(r.halfDays / 2)} half days`,
+                              r.halfDays - r.wfhHalfDays && `${num((r.halfDays - r.wfhHalfDays) / 2)} half days`,
+                              r.wfhHalfDays && `${num(r.wfhHalfDays / 2)} WFH over limit`,
                               r.pendingLeaves && `${r.pendingLeaves} pending`,
                               r.notEmployed && `${r.notEmployed} not joined`,
                             ]

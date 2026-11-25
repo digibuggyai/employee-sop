@@ -150,7 +150,8 @@ router.get("/leave-calendar", async (req, res) => {
       else if (d.status === "ABSENT") add("ABSENT", d.absentReason ?? null);
       else if (d.status === "PRESENT" || d.status === "WORKING") {
         if (d.place === "WFH") add("WFH");
-        if (d.halfDay) add("HALF_DAY", d.halfDay === "EXTRA_WFH" ? "WFH over the monthly allowance" : d.halfDay === "OVER_2H" ? "More than 2h short" : null);
+        if (d.halfDay === "EXTRA_WFH") add("WFH_HALF", "WFH beyond the monthly allowance, counts as half a day");
+        else if (d.halfDay) add("HALF_DAY", d.halfDay === "OVER_2H" ? "More than 2h short" : null);
         if (d.lateMin) add("LATE", `${d.lateMin + GRACE_MIN} min late`);
         if (d.shortLeave) add("SHORT_LEAVE");
       } else if (d.status === "UPCOMING" && d.requests?.length) {
