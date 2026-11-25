@@ -5,6 +5,7 @@ import { Download, PencilLine } from "lucide-react";
 import { dayRequestLabels, requestTimeText, type DayRow, type MonthReport, type WeekRow } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { fmtMinutes } from "@/lib/shift";
+import { fmtDays, workedDays } from "@/lib/workdays";
 import { currentWeek, weekProgress } from "@/lib/weeks";
 import { DayStatusBadge, Tag } from "./Badges";
 import Card from "./Card";
@@ -141,6 +142,7 @@ export default function MonthSheet({
   const overWfh = !summary.remote && summary.wfh > summary.wfhAllowance;
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
   const extraDays = days.filter((d) => d.extraDay).length;
+  const daysWorked = workedDays(days);
   const emergencyLeaves = days.filter((d) => d.status === "LEAVE" && d.leave?.emergency).length;
   const working = days.filter((d) => d.status !== "WEEKEND" && d.status !== "HOLIDAY" && d.status !== "NOT_JOINED" && d.status !== "LEFT");
   const workingDays = working.length;
@@ -184,9 +186,14 @@ export default function MonthSheet({
     <div className="space-y-4 md:space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 xl:grid-cols-5">
         <Stat
-          label="Hours worked"
-          value={fmtDuration(summary.workedMs)}
-          hint={`avg ${fmtDuration(summary.avgMs)} a day`}
+          label="Days worked"
+          value={
+            <>
+              {fmtDays(daysWorked.worked)}
+              <span className="text-base font-medium text-zinc-400"> / {daysWorked.official}</span>
+            </>
+          }
+          hint={[daysWorked.toGo > 0 && `${daysWorked.toGo} to go`, daysWorked.extra > 0 && `+${daysWorked.extra} extra`, "official working days"].filter(Boolean).join(" · ")}
         />
         <Stat
           label={thisWeek ? "This week" : "Avg per week"}

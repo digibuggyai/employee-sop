@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ListTodo, Plus, ReceiptIndianRupee } from "lucide-react";
 import { api, type MonthReport, type Reimbursement, type Task } from "@/lib/api";
 import { fmtDuration, fmtRupees, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
+import { fmtDays, workedDays } from "@/lib/workdays";
 import { sumPaise } from "@/lib/reimbursements";
 import { useNow } from "@/lib/useNow";
 import { currentWeek, weekProgress } from "@/lib/weeks";
@@ -43,11 +44,16 @@ export function MonthAtGlance() {
   }, [month]);
 
   const s = report?.summary;
+  const worked = report ? workedDays(report.days) : null;
   const extraWfh = report?.days.filter((d) => d.halfDay === "EXTRA_WFH").length ?? 0;
   const week = report && currentWeek(report.weeks, todayIST());
   const rows: [string, React.ReactNode, string?][] = s
     ? [
-        ["Hours worked", fmtDuration(s.workedMs), `avg ${fmtDuration(s.avgMs)} a day` + (s.extraMs ? ` · +${fmtDuration(s.extraMs)} extra` : "")],
+        [
+          "Days worked",
+          `${fmtDays(worked!.worked)} / ${worked!.official}`,
+          [worked!.toGo > 0 && `${worked!.toGo} to go`, worked!.extra > 0 && `+${worked!.extra} extra`, "official working days"].filter(Boolean).join(" · "),
+        ],
         [
           "This week",
           fmtDuration(week?.workedMs),
