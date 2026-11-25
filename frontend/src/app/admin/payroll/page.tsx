@@ -61,12 +61,14 @@ export default function PayrollPage() {
   function exportCsv() {
     if (!rows) return;
     downloadCsv(`payroll-${month}.csv`, [
-      ["Name", "Type", "Working days", "Deductions (days)", "Extra days", "Payable days", "Pay %", "Bonus %", "Total %", "Reimbursement (Rs)", "Reimbursement still to pay (Rs)", "Details"],
+      ["Name", "Type", "Working days", "Deductions (days)", "Late days", "Short leaves counted", "Extra days", "Payable days", "Pay %", "Bonus %", "Total %", "Reimbursement (Rs)", "Reimbursement still to pay (Rs)", "Details"],
       ...rows.map((r) => [
         r.user.name,
         employmentLabels[r.user.employmentType],
         r.workingDays,
         r.deductions,
+        r.lateDays,
+        r.shortLeaves,
         r.extraDays + r.extraHourDays,
         r.payableDays,
         r.payPercent,
@@ -127,7 +129,7 @@ export default function PayrollPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-zinc-900">{r.user.name}</p>
                         <p className="text-xs text-zinc-500 tabular-nums">
-                          {r.payableDays} of {r.workingDays} days{r.daysLeft ? ` · ${r.daysLeft} to go` : ""} · {employmentLabels[r.user.employmentType]}
+                          {r.payableDays} of {r.workingDays} days{r.daysLeft ? ` · ${r.daysLeft} to go` : ""}{r.lateDays ? ` · ${r.lateDays} late` : ""} · {employmentLabels[r.user.employmentType]}
                         </p>
                       </div>
                       <p className="text-lg font-semibold text-zinc-900 tabular-nums">{pct(r.totalPercent)}</p>
@@ -147,7 +149,7 @@ export default function PayrollPage() {
                 <table className={table.table}>
                   <thead className={table.thead}>
                     <tr>
-                      {["Name", "Working days", "Deductions", "Extra", "Pay %", "Bonus", "Total %", "Reimbursement"].map((h) => (
+                      {["Name", "Working days", "Deductions", "Late", "Extra", "Pay %", "Bonus", "Total %", "Reimbursement"].map((h) => (
                         <th key={h} className={table.th}>
                           {h}
                         </th>
@@ -178,6 +180,19 @@ export default function PayrollPage() {
                             </>
                           ) : (
                             <span className="text-zinc-400">None</span>
+                          )}
+                        </td>
+                        <td className={table.td}>
+                          {r.lateDays ? (
+                            <>
+                              <p className="font-medium text-zinc-900 tabular-nums">{r.lateDays}</p>
+                              <p className="text-xs text-zinc-500">
+                                {r.shortLeaves ? `${r.shortLeaves} counted` : "none counted"}
+                                {r.latePenaltyDays ? ` · −${r.latePenaltyDays} day` : r.shortLeaves ? ` · ${Math.min(r.shortLeaves, 2)} free` : ""}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="text-zinc-400">—</span>
                           )}
                         </td>
                         <td className={`${table.td} w-56 min-w-44`}>

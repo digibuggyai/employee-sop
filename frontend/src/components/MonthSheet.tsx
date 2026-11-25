@@ -139,6 +139,10 @@ export default function MonthSheet({
   const overWfh = !summary.remote && summary.wfh > summary.wfhAllowance;
   const extraWfh = days.filter((d) => d.halfDay === "EXTRA_WFH").length;
   const extraDays = days.filter((d) => d.extraDay).length;
+  const emergencyLeaves = days.filter((d) => d.status === "LEAVE" && d.leave?.emergency).length;
+  const working = days.filter((d) => d.status !== "WEEKEND" && d.status !== "HOLIDAY" && d.status !== "NOT_JOINED" && d.status !== "LEFT");
+  const workingDays = working.length;
+  const daysLeft = working.filter((d) => d.date > today || (d.date === today && !d.checkIn)).length;
   const extraBy = (place: "IN_OFFICE" | "WFH") => {
     const list = days.filter((d) => d.extraMin && d.place === place);
     const ms = list.reduce((sum, d) => sum + d.extraMin! * 60000, 0);
@@ -176,7 +180,7 @@ export default function MonthSheet({
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 xl:grid-cols-5">
         <Stat
           label="Hours worked"
           value={fmtDuration(summary.workedMs)}
@@ -225,6 +229,17 @@ export default function MonthSheet({
                 ? `${summary.leavesPending} pending`
                 : "None taken") + (summary.leaveBalance !== null ? ` · ${summary.leaveBalance} left` : "")
           }
+        />
+        <Stat
+          label="Emergency leaves"
+          value={emergencyLeaves}
+          hint={summary.leaves ? `of ${summary.leaves} leave${summary.leaves === 1 ? "" : "s"}` : "None taken"}
+          emphasis={emergencyLeaves ? "warning" : undefined}
+        />
+        <Stat
+          label="Total days"
+          value={workingDays}
+          hint={daysLeft ? `${workingDays - daysLeft} so far · ${daysLeft} to go` : "Working days this month"}
         />
         <Stat
           label="Late / early"

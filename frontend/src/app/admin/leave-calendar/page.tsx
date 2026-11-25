@@ -11,7 +11,7 @@ import { EmptyState, Skeleton, table } from "@/components/ui";
 import { api } from "@/lib/api";
 import { fmtDate, monthLabel, thisMonthIST, todayIST } from "@/lib/format";
 
-type Kind = "LEAVE" | "EMERGENCY" | "PENDING" | "HALF_DAY" | "SHORT_LEAVE" | "ABSENT";
+type Kind = "LEAVE" | "EMERGENCY" | "PENDING" | "HALF_DAY" | "WFH" | "LATE" | "SHORT_LEAVE" | "ABSENT";
 type Entry = {
   date: string;
   user: { id: string; name: string; photoUpdatedAt: string | null; designation: string | null };
@@ -28,8 +28,12 @@ const kinds: Record<Kind, { label: string; pill: string; dot: string }> = {
   HALF_DAY: { label: "Half day", pill: "bg-sky-100 text-sky-800", dot: "bg-sky-500" },
   SHORT_LEAVE: { label: "Short leave", pill: "bg-teal-100 text-teal-800", dot: "bg-teal-500" },
   ABSENT: { label: "Absent", pill: "bg-red-100 text-red-800", dot: "bg-red-600" },
+  WFH: { label: "WFH", pill: "bg-blue-100 text-blue-800", dot: "bg-blue-500" },
+  LATE: { label: "Late", pill: "bg-orange-100 text-orange-800", dot: "bg-orange-500" },
 };
-const order: Kind[] = ["LEAVE", "EMERGENCY", "PENDING", "HALF_DAY", "SHORT_LEAVE", "ABSENT"];
+const order: Kind[] = ["LEAVE", "EMERGENCY", "HALF_DAY", "ABSENT", "PENDING", "WFH", "LATE", "SHORT_LEAVE"];
+const everyday: Kind[] = ["WFH", "LATE"];
+const daysOff = (c: Record<Kind, number>) => c.LEAVE + c.EMERGENCY + c.ABSENT + c.HALF_DAY / 2;
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function LeaveCalendarPage() {
@@ -65,7 +69,10 @@ export default function LeaveCalendarPage() {
   const today = todayIST();
   const selected = picked && picked.startsWith(month) ? picked : today.startsWith(month) ? today : null;
   const holidayOf = (date: string) => data?.holidays.find((h) => h.date === date)?.name;
-  const onDay = (date: string) => entries.filter((e) => e.date === date).sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+  const onDay = (date: string) =>
+    entries
+      .filter((e) => e.date === date && (kindFilter || !everyday.includes(e.kind)))
+      .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
 
   const summary = people
     .filter((p) => !person || p.id === person)
@@ -75,11 +82,12 @@ export default function LeaveCalendarPage() {
       return {
         user: p,
         counts: Object.fromEntries(order.map((k) => [k, count(k)])) as Record<Kind, number>,
-        total: mine.length,
+        total: 0,
         madeUp: mine.filter((e) => e.madeUp).length,
       };
     })
-    .filter((row) => row.total > 0)
+    .map((row) => ({ ...row, total: daysOff(row.counts) }))
+    .filter((row) => order.some((k) => row.counts[k] > 0))
     .sort((a, b) => b.total - a.total || a.user.name.localeCompare(b.user.name));
 
   return (
@@ -110,7 +118,7 @@ export default function LeaveCalendarPage() {
         }
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:mb-6 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 md:mb-6">
         {totals.map(({ kind, days, people: count }) => {
           const active = kindFilter === kind;
           return (
@@ -147,7 +155,7 @@ export default function LeaveCalendarPage() {
       ) : (
         data && (
           <div className="space-y-4 md:space-y-6">
-            <Card title="Who took what" description={`${monthLabel(month)} · most time off first`} flush>
+            <Card title="Who took what" description={`${monthLabel(month)} · Days off = leave + emergency + absent + half days × ½`} flush>
               {summary.length === 0 ? (
                 <EmptyState compact icon={CalendarOff} title="No time off this month" />
               ) : (
@@ -158,7 +166,10 @@ export default function LeaveCalendarPage() {
                         <div className="flex items-center gap-2.5">
                           <Avatar person={row.user} size="sm" />
                           <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">{row.user.name}</span>
-                          <span className="text-sm font-semibold text-zinc-900 tabular-nums">{row.total}</span>
+                          <span className="text-right">
+                            <span className="block text-sm font-semibold text-zinc-900 tabular-nums">{row.total}</span>
+                            <span className="block text-[10px] text-zinc-400">days off</span>
+                          </span>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1.5 pl-10">
                           {order
@@ -177,7 +188,7 @@ export default function LeaveCalendarPage() {
                     <table className={table.table}>
                       <thead className={table.thead}>
                         <tr>
-                          {["Name", ...order.map((k) => kinds[k].label), "Made up", "Total"].map((h) => (
+                          {["Name", ...order.map((k) => kinds[k].label), "Made up", "Days off"].map((h) => (
                             <th key={h} className={table.th}>
                               {h}
                             </th>

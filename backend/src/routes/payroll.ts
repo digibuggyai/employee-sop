@@ -67,6 +67,8 @@ router.get("/", async (req, res) => {
       notEmployed,
       absent: summary.absent,
       latePenaltyDays: summary.latePenaltyDays,
+      lateDays: passed.filter((d) => d.lateMin).length,
+      shortLeaves: summary.shortLeaves,
       halfDays: summary.halfDays,
       paidLeaves,
       unpaidLeaves,

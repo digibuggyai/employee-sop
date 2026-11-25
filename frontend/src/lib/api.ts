@@ -254,6 +254,8 @@ export type PayrollRow = {
   notEmployed: number;
   absent: number;
   latePenaltyDays: number;
+  lateDays: number;
+  shortLeaves: number;
   halfDays: number;
   paidLeaves: number;
   unpaidLeaves: number;
