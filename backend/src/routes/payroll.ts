@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
   const users = await prisma.user.findMany({
     where: { isEmployee: true, OR: [{ active: true }, { leftOn: { gte: toDbDate(`${month}-01`) } }] },
     orderBy: [{ active: "desc" }, { name: "asc" }],
-    select: { id: true, name: true, designation: true, employmentType: true, fullTimeFrom: true, photoUpdatedAt: true },
+    select: { id: true, name: true, designation: true, employmentType: true, fullTimeFrom: true, sixDayWeek: true, photoUpdatedAt: true },
   });
   const [y, m] = month.split("-").map(Number);
   const monthRange = { gte: toDbDate(`${month}-01`), lte: new Date(Date.UTC(y, m, 0)) };

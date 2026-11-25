@@ -68,6 +68,7 @@ export type User = {
   weeklyHours: number | null;
   leaveOpening: number;
   fullTimeFrom?: string | null;
+  sixDayWeek?: boolean;
   photoUpdatedAt: string | null;
   createdAt: string;
   updatedAt: string;

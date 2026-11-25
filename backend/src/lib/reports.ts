@@ -120,7 +120,7 @@ export async function monthReports(userIds: string[], month: string) {
     where: { id: { in: userIds } },
     select: {
       id: true, joinedOn: true, leftOn: true, createdAt: true, wfhAllowance: true, weeklyHours: true,
-      timings: true, employmentType: true, fullTimeFrom: true, leaveOpening: true,
+      timings: true, employmentType: true, fullTimeFrom: true, sixDayWeek: true, leaveOpening: true,
     },
   });
   const personOf = new Map(people.map((p) => [p.id, p]));

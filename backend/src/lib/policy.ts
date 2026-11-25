@@ -17,7 +17,7 @@ export const EARLY_SHORT_LEAVE_MIN = 15;
 export const WFH_REPORT_FROM = "2026-11-07";
 export const FORGOT_CHECKOUT_NOTE = "Forgot to check out";
 
-export type WorkType = string | null | undefined | { employmentType: string; fullTimeFrom?: Date | null };
+export type WorkType = string | null | undefined | { employmentType: string; fullTimeFrom?: Date | null; sixDayWeek?: boolean };
 
 export function typeOn(who: WorkType, date: string) {
   if (!who || typeof who === "string") return who ?? null;
@@ -28,7 +28,8 @@ export function typeOn(who: WorkType, date: string) {
 
 export const worksSaturdays = (who: WorkType, date: string) => {
   const type = typeOn(who, date);
-  return (type === "FULL_TIME" || type === "PART_TIME") && date >= SIX_DAY_WEEK_FROM;
+  const extra = !!who && typeof who !== "string" && !!who.sixDayWeek;
+  return (type === "FULL_TIME" || extra) && date >= SIX_DAY_WEEK_FROM;
 };
 
 export const PLAN_MIN_CHARS = 10;

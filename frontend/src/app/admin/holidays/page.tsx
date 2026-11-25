@@ -177,7 +177,7 @@ export default function HolidaysPage() {
                 <span className="text-xl font-semibold tabular-nums">{workingDays(month, holidays, false)}</span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="text-sm text-zinc-700">Full-time &amp; part-time (Mon to Sat)</span>
+                <span className="text-sm text-zinc-700">Full-time (Mon to Sat)</span>
                 <span className="text-xl font-semibold tabular-nums">{workingDays(month, holidays, true)}</span>
               </div>
               <p className="text-xs text-zinc-500">Sundays and pinned holidays are off for everyone.</p>

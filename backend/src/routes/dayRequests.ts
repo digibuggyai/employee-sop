@@ -144,7 +144,7 @@ router.post("/record", requireAdmin, async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { userId, kind, date, time, reason } = parsed.data;
   if (needsHalf(kind, time)) return res.status(400).json({ error: "Choose first half or second half" });
-  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } });
+  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true, sixDayWeek: true } });
   if (!person) return res.status(404).json({ error: "Employee not found" });
   if (isOffDay(date, person)) return res.status(400).json({ error: "That day is off for them" });
 

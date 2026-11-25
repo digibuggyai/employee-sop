@@ -124,7 +124,7 @@ router.get("/leave-calendar", async (req, res) => {
   const users = await prisma.user.findMany({
     where: { isEmployee: true, OR: [{ active: true }, { leftOn: { gte: toDbDate(`${month}-01`) } }] },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, photoUpdatedAt: true, designation: true, employmentType: true, fullTimeFrom: true },
+    select: { id: true, name: true, photoUpdatedAt: true, designation: true, employmentType: true, fullTimeFrom: true, sixDayWeek: true },
   });
   const reports = await monthReports(
     users.map((u) => u.id),
@@ -142,7 +142,7 @@ router.get("/leave-calendar", async (req, res) => {
       ...(superAdmin && { payPercent }),
     };
   });
-  for (const { employmentType: _type, fullTimeFrom: _from, ...user } of users) {
+  for (const { employmentType: _type, fullTimeFrom: _from, sixDayWeek: _six, ...user } of users) {
     for (const d of reports.get(user.id)!.days) {
       const add = (kind: string, reason: string | null = null, madeUp = false) => entries.push({ date: d.date, user, kind, reason, madeUp });
       if (d.status === "LEAVE") add(d.leave?.emergency ? "EMERGENCY" : "LEAVE", d.leave?.reason ?? null, !!d.leave?.compensatedOn);
@@ -339,7 +339,7 @@ router.post("/leaves", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { userId, from, to, reason, emergency = false } = parsed.data;
 
-  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } });
+  const person = await prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true, sixDayWeek: true } });
   if (!person) return res.status(404).json({ error: "Employee not found" });
   const dates = workingDaysBetween(from, to, person);
   if (dates.length === 0) return res.status(400).json({ error: "Those dates are all weekends or holidays" });
@@ -363,7 +363,7 @@ router.get("/leaves/make-up-options", async (req, res) => {
   const userId = String(req.query.userId ?? "");
   const month = monthParam.parse(req.query.month);
   const [person, worked, used] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { employmentType: true, fullTimeFrom: true, sixDayWeek: true } }),
     prisma.attendance.findMany({
       where: { userId, date: { gte: toDbDate(`${month}-01`), lte: toDbDate(`${month}${lastDay(month)}`) }, checkOut: { not: null } },
       select: { date: true, place: true },
@@ -388,7 +388,7 @@ router.patch("/leaves/:id", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { status, compensatedOn } = parsed.data;
 
-  const leave = await prisma.leave.findUnique({ where: { id: req.params.id }, include: { user: { select: { employmentType: true, fullTimeFrom: true } } } });
+  const leave = await prisma.leave.findUnique({ where: { id: req.params.id }, include: { user: { select: { employmentType: true, fullTimeFrom: true, sixDayWeek: true } } } });
   if (!leave) return res.status(404).json({ error: "Leave not found" });
   const finalStatus = status ?? leave.status;
 

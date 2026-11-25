@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN     "sixDayWeek" BOOLEAN NOT NULL DEFAULT false;

@@ -41,6 +41,7 @@ export default function EmployeeForm({
     birthday: toDateInput(existing?.birthday ?? null),
     joinedOn: toDateInput(existing?.joinedOn ?? null),
     fullTimeFrom: toDateInput(existing?.fullTimeFrom ?? null),
+    sixDayWeek: existing?.sixDayWeek ?? false,
     leftOn: toDateInput(existing?.leftOn ?? null),
     wfhAllowance: String(existing?.wfhAllowance ?? 4),
     weeklyHours: existing?.weeklyHours ? String(existing.weeklyHours) : "",
@@ -166,6 +167,16 @@ export default function EmployeeForm({
             <span className="block text-[13px] text-zinc-500">
               Sends {form.email || "their email"} {isEdit ? "the new temporary password" : "their email, temporary password and a link to log in"}.
             </span>
+          </span>
+        </label>
+      )}
+
+      {form.employmentType !== "FULL_TIME" && (
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200 p-3">
+          <input name="sixDayWeek" type="checkbox" checked={form.sixDayWeek} onChange={update} className="mt-0.5 size-4 accent-brand-700" />
+          <span>
+            <span className="block text-sm font-medium text-zinc-900">Works Saturdays</span>
+            <span className="block text-[13px] text-zinc-500">Mon to Sat from Nov 2026, like full-time. Saturdays count as working days for them only.</span>
           </span>
         </label>
       )}

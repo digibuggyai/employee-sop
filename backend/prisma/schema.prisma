@@ -31,6 +31,7 @@ model User {
   designation    String?
   employmentType EmploymentType @default(INTERN)
   fullTimeFrom   DateTime?      @db.Date
+  sixDayWeek     Boolean        @default(false)
   team           String?
   office         String?
   timings        String?

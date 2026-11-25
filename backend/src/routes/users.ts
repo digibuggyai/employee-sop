@@ -38,6 +38,7 @@ const profileFields = {
   birthday: optionalDate,
   joinedOn: optionalDate,
   fullTimeFrom: optionalDate,
+  sixDayWeek: z.boolean().optional(),
   leftOn: optionalDate,
   wfhAllowance: z.coerce.number().int().min(0, "WFH days can't be negative").max(31),
   leaveOpening: z.coerce.number().min(0, "Leave balance can't be negative").max(60).optional(),
