@@ -45,7 +45,8 @@ router.post("/check-in", async (req, res) => {
     .object({ place: z.enum(["IN_OFFICE", "WFH"]), plan: z.string().trim().max(3000).optional() })
     .safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Choose In-office or WFH" });
-  const { place, plan } = parsed.data;
+  const { plan } = parsed.data;
+  const place = noTimingRules(req.user!.employmentType) ? "WFH" : parsed.data.place;
   if (needsPlan(req.user!, place) && (plan ?? "").length < PLAN_MIN_CHARS) {
     return res.status(400).json({ error: "Write today's to-do plan before you start (WFH policy)" });
   }

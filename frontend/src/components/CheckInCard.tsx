@@ -80,6 +80,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
   const intern = user?.employmentType === "INTERN" || user?.employmentType === "REMOTE_INTERN";
   const needsNotes = intern && (day ? day.place : place) === "WFH";
+  const partTime = user?.employmentType === "PART_TIME";
   const needsReport = (day ? day.place : place) === "WFH" && user?.employmentType !== "PART_TIME";
 
   async function checkOut(halfDay: boolean) {
@@ -186,14 +187,20 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-4">
           {state === "out" ? (
-            !sunday && <Segmented
-              value={place}
-              onChange={setPlace}
-              options={[
-                { value: "IN_OFFICE", label: "In-office", icon: <Building2 size={14} /> },
-                { value: "WFH", label: "WFH", icon: <House size={14} /> },
-              ]}
-            />
+            sunday ? null : partTime ? (
+              <span className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500">
+                <House size={14} /> WFH
+              </span>
+            ) : (
+              <Segmented
+                value={place}
+                onChange={setPlace}
+                options={[
+                  { value: "IN_OFFICE", label: "In-office", icon: <Building2 size={14} /> },
+                  { value: "WFH", label: "WFH", icon: <House size={14} /> },
+                ]}
+              />
+            )
           ) : (
             day && (
               <span className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500">
@@ -206,7 +213,7 @@ export default function CheckInCard({ onChange }: { onChange?: () => void }) {
           <div className="flex flex-wrap gap-2">
             {loaded && state === "out" && sunday && <p className="text-[13px] text-zinc-500">Enjoy your Sunday.</p>}
             {loaded && state === "out" && !sunday && (
-              <Button loading={busy} onClick={() => act("check-in", { place, ...(needsNotes && { plan }) })}>
+              <Button loading={busy} onClick={() => act("check-in", { place: partTime ? "WFH" : place, ...(needsNotes && { plan }) })}>
                 <LogIn size={16} /> Check in
               </Button>
             )}

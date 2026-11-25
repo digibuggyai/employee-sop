@@ -26,7 +26,10 @@ export function typeOn(who: WorkType, date: string) {
   return who.employmentType;
 }
 
-export const worksSaturdays = (who: WorkType, date: string) => typeOn(who, date) === "FULL_TIME" && date >= SIX_DAY_WEEK_FROM;
+export const worksSaturdays = (who: WorkType, date: string) => {
+  const type = typeOn(who, date);
+  return (type === "FULL_TIME" || type === "PART_TIME") && date >= SIX_DAY_WEEK_FROM;
+};
 
 export const PLAN_MIN_CHARS = 10;
 export const REPORT_MIN_CHARS = 20;
