@@ -113,6 +113,7 @@ export type DayRow = {
   earlyMin?: number;
   shortMin?: number;
   madeUp?: boolean;
+  lateCounts?: boolean;
   extraMin?: number;
   extraDay?: boolean;
   wfhFullDay?: boolean;
@@ -145,6 +146,9 @@ export type MonthSummary = {
   shortLeaves: number;
   extraMs: number;
   latePenaltyDays: number;
+  lateDays: number;
+  lateCounted: number;
+  unpaidLeaves: number;
   leaveBalance: number | null;
   workedMs: number;
   avgMs: number;

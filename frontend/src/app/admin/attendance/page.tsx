@@ -138,8 +138,8 @@ export default function AdminAttendancePage() {
                     </p>
                     <p className="text-xs text-zinc-500 tabular-nums">
                       {r.present} present ({r.inOffice} office · {r.wfh} WFH){r.halfDays > 0 && ` · ${r.halfDays} half`} · WFH {r.remote ? `${r.wfh} remote` : `${r.wfh}/${r.wfhAllowance}`} · {r.leaves} leave
-                      {r.shortLeaves > 0 && ` · ${r.shortLeaves} late`}
-                      {r.absent + r.latePenaltyDays > 0 && <span className="text-red-600"> · {r.absent + r.latePenaltyDays} unauthorized</span>}
+                      {r.lateDays > 0 && ` · ${r.lateDays} late`}
+                      {r.absent + r.latePenaltyDays + r.unpaidLeaves > 0 && <span className="text-red-600"> · {r.absent + r.latePenaltyDays + r.unpaidLeaves} deducted</span>}
                     </p>
                   </div>
                   <span className="text-sm font-medium text-zinc-900 tabular-nums">{fmtDuration(r.workedMs)}</span>
@@ -152,7 +152,7 @@ export default function AdminAttendancePage() {
             <table className={table.table}>
               <thead className={table.thead}>
                 <tr>
-                  {["Employee", "Present", "WFH", "Leaves", "Late / early", "Unauthorized", "Hours", "Avg / day", ""].map((h) => (
+                  {["Employee", "Present", "WFH", "Leaves", "Late", "Deducted", "Hours", "Avg / day", ""].map((h) => (
                     <th key={h} className={table.th}>
                       {h}
                     </th>
@@ -187,12 +187,17 @@ export default function AdminAttendancePage() {
                       {r.leaves > 0 && <span className="text-xs text-zinc-500"> ({r.leavesCompensated} made up)</span>}
                       {r.leavesPending > 0 && <span className="text-xs text-amber-700"> +{r.leavesPending} pending</span>}
                     </td>
-                    <td className={`${table.td} tabular-nums ${r.shortLeaves ? "" : "text-zinc-400"}`}>
-                      {r.shortLeaves}
-                      {r.latePenaltyDays > 0 && <span className="text-xs text-amber-700"> ({r.latePenaltyDays} day absent)</span>}
+                    <td className={`${table.td} tabular-nums ${r.lateDays ? "" : "text-zinc-400"}`}>
+                      {r.lateDays}
+                      {r.lateCounted > 0 && <span className="block text-xs text-amber-700">{r.lateCounted} counted · 3 = 1 day</span>}
                     </td>
-                    <td className={`${table.td} tabular-nums ${r.absent + r.latePenaltyDays ? "font-medium text-red-600" : "text-zinc-400"}`}>
-                      {r.absent + r.latePenaltyDays}
+                    <td className={`${table.td} tabular-nums ${r.absent + r.latePenaltyDays + r.unpaidLeaves ? "font-medium text-red-600" : "text-zinc-400"}`}>
+                      {r.absent + r.latePenaltyDays + r.unpaidLeaves}
+                      {r.absent + r.latePenaltyDays + r.unpaidLeaves > 0 && (
+                        <span className="block text-xs font-normal text-zinc-500">
+                          {[r.absent && `${r.absent} absent`, r.latePenaltyDays && `${r.latePenaltyDays} lates`, r.unpaidLeaves && `${r.unpaidLeaves} unpaid`].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
                     </td>
                     <td className={`${table.td} font-medium text-zinc-900 tabular-nums`}>{fmtDuration(r.workedMs)}</td>
                     <td className={`${table.td} text-zinc-600 tabular-nums`}>{fmtDuration(r.avgMs)}</td>

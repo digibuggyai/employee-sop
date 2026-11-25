@@ -25,6 +25,7 @@ function lateTag(d: DayRow): { text: string; tone: "zinc" | "amber" | "green" } 
   ]
     .filter(Boolean)
     .join(", ");
+  if (d.lateCounts && !d.shortLeave) return { text: `${parts} · counts`, tone: "amber" };
   if (d.madeUp) return { text: `${parts} · made up`, tone: "green" };
   const short = d.shortMin && (!parts || d.shortMin !== (d.lateMin ?? 0) + (d.earlyMin ?? 0)) ? `${mins(d.shortMin)} short` : "";
   const text = [parts, short].filter(Boolean).join(" · ");
@@ -127,7 +128,8 @@ export default function MonthSheet({
       ["Days present", summary.present, "In-office", summary.inOffice, "WFH", summary.remote ? `${summary.wfh} (remote)` : `${summary.wfh} of ${summary.wfhAllowance}`],
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
-      ["Late / early (short leaves)", summary.shortLeaves, "Absence days from lates", summary.latePenaltyDays],
+      ["Late arrivals", summary.lateDays, "Lates counted (full-time)", summary.lateCounted, "Short leaves", summary.shortLeaves],
+      ["Days deducted", summary.absent + summary.latePenaltyDays + summary.unpaidLeaves, "Absent", summary.absent, "From lates", summary.latePenaltyDays, "Unpaid leave", summary.unpaidLeaves],
       ...(summary.leaveBalance !== null ? [["Leave balance", summary.leaveBalance]] : []),
       [],
       ["Week (Mon–Sun)", "Hours", "Target"],
@@ -242,13 +244,23 @@ export default function MonthSheet({
           hint={daysLeft ? `${workingDays - daysLeft} so far · ${daysLeft} to go` : "Working days this month"}
         />
         <Stat
-          label="Late / early"
-          value={summary.shortLeaves}
+          label="Late"
+          value={summary.lateDays}
           hint={
-            summary.shortLeaves
-              ? `${Math.min(summary.shortLeaves, 2)} free` +
-                (summary.latePenaltyDays ? ` · ${summary.latePenaltyDays} day absent` : summary.shortLeaves > 2 ? " · 3 = 1 day absent" : "")
-              : "On time"
+            <>
+              <span className="block">
+                {summary.lateCounted
+                  ? `${summary.lateCounted} counted · 3 late = 1 day${Math.floor(summary.lateCounted / 3) ? ` · −${Math.floor(summary.lateCounted / 3)} day${Math.floor(summary.lateCounted / 3) === 1 ? "" : "s"}` : ""}`
+                  : summary.lateDays
+                    ? "More than 15 min after the start time"
+                    : "On time all month"}
+              </span>
+              {summary.shortLeaves > 0 && (
+                <span className="block">
+                  {summary.shortLeaves} short leave{summary.shortLeaves === 1 ? "" : "s"} · {Math.min(summary.shortLeaves, 2)} free
+                </span>
+              )}
+            </>
           }
           emphasis={summary.latePenaltyDays ? "warning" : undefined}
         />
@@ -264,14 +276,20 @@ export default function MonthSheet({
           emphasis={summary.extraMs ? "positive" : undefined}
         />
         <Stat
-          label="Unauthorized"
-          value={summary.absent + summary.latePenaltyDays}
+          label="Days deducted"
+          value={summary.absent + summary.latePenaltyDays + summary.unpaidLeaves}
           hint={
-            summary.latePenaltyDays
-              ? `${summary.absent} absent + ${summary.latePenaltyDays} from lates`
-              : "Absent without leave · 1 day deduction each"
+            summary.absent + summary.latePenaltyDays + summary.unpaidLeaves
+              ? [
+                  summary.absent && `${summary.absent} absent`,
+                  summary.latePenaltyDays && `${summary.latePenaltyDays} from lates`,
+                  summary.unpaidLeaves && `${summary.unpaidLeaves} unpaid leave`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "Absent without leave, lates or leave beyond balance"
           }
-          emphasis={summary.absent + summary.latePenaltyDays ? "danger" : undefined}
+          emphasis={summary.absent + summary.latePenaltyDays + summary.unpaidLeaves ? "danger" : undefined}
         />
       </div>
 

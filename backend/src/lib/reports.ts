@@ -57,6 +57,7 @@ export type DayRow = {
   earlyMin?: number;
   shortMin?: number;
   madeUp?: boolean;
+  lateCounts?: boolean;
   extraMin?: number;
   extraDay?: boolean;
   wfhFullDay?: boolean;
@@ -89,6 +90,9 @@ export type MonthSummary = {
   shortLeaves: number;
   extraMs: number;
   latePenaltyDays: number;
+  lateDays: number;
+  lateCounted: number;
+  unpaidLeaves: number;
   leaveBalance: number | null;
   workedMs: number;
   avgMs: number;
@@ -169,7 +173,7 @@ export async function monthReports(userIds: string[], month: string) {
     const summary: MonthSummary = {
       present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
       leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0, daysWorked: 0,
-      weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, leaveBalance: null, extraMs: 0,
+      weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, lateDays: 0, lateCounted: 0, unpaidLeaves: 0, leaveBalance: null, extraMs: 0,
       remote: person?.employmentType === "REMOTE_INTERN",
     };
 
@@ -289,9 +293,15 @@ export async function monthReports(userIds: string[], month: string) {
         }
         const flexible = d.place === "WFH";
         const late = minuteOf(d.checkIn) - shift.start;
+        const strictLate = typeOn(person, d.date) === "FULL_TIME" && d.date >= SHORT_LEAVE_RULE_FROM;
         if (!flexible && late > GRACE_MIN) {
           d.lateMin = late - GRACE_MIN;
           d.lateAfter = shift.start + GRACE_MIN;
+          summary.lateDays++;
+          if (strictLate) {
+            d.lateCounts = true;
+            summary.lateCounted++;
+          }
         }
         if (!d.checkOut) continue;
         const early = shift.end - minuteOf(d.checkOut);
@@ -316,10 +326,10 @@ export async function monthReports(userIds: string[], month: string) {
         if (counted > 0) d.shortMin = counted;
         const triggered =
           d.date >= SHORT_LEAVE_RULE_FROM
-            ? !flexible && (late > LATE_SHORT_LEAVE_MIN || early > EARLY_SHORT_LEAVE_MIN)
+            ? !flexible && ((!strictLate && late > LATE_SHORT_LEAVE_MIN) || early > EARLY_SHORT_LEAVE_MIN)
             : counted > 0;
         if (triggered) autoShort.add(d.date);
-        else if (d.lateMin || d.earlyMin) d.madeUp = counted <= 0;
+        else if (d.lateMin || d.earlyMin) d.madeUp = !d.lateCounts && counted <= 0;
       }
     }
     for (const d of days) {
@@ -329,13 +339,16 @@ export async function monthReports(userIds: string[], month: string) {
       summary.shortLeaves++;
       d.shortLeave = summary.shortLeaves <= FREE_SHORT_LEAVES ? "FREE" : "COUNTED";
     }
-    summary.latePenaltyDays = Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE);
+    summary.latePenaltyDays =
+      Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE) + Math.floor(summary.lateCounted / LATES_PER_ABSENCE);
 
     if (person && typeOn(person, dates.at(-1)!) === "FULL_TIME") {
       const from = [start.slice(0, 7), LEAVE_POLICY_START, person.fullTimeFrom?.toISOString().slice(0, 7) ?? ""].sort().at(-1)!;
       const months = month < from ? 0 : monthsBetween(from, month) + 1;
       const used = leavesUsed.filter((l) => l.userId === userId && dayKey(l.date) >= `${from}-01`).length;
       summary.leaveBalance = person.leaveOpening + months * LEAVE_PER_MONTH - used;
+      const notMadeUp = days.filter((d) => d.status === "LEAVE" && !d.leave?.compensatedOn).length;
+      summary.unpaidLeaves = Math.min(notMadeUp, Math.max(0, -summary.leaveBalance));
     }
 
     days
