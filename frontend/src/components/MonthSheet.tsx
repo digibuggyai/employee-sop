@@ -5,7 +5,7 @@ import { Download, PencilLine } from "lucide-react";
 import { dayRequestLabels, requestTimeText, type DayRow, type MonthReport, type WeekRow } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { fmtMinutes } from "@/lib/shift";
-import { fmtDays, workedDays } from "@/lib/workdays";
+import { fmtDays, workedDays, workedHint } from "@/lib/workdays";
 import { currentWeek, weekProgress } from "@/lib/weeks";
 import { DayStatusBadge, Tag } from "./Badges";
 import Card from "./Card";
@@ -193,7 +193,7 @@ export default function MonthSheet({
               <span className="text-base font-medium text-zinc-400"> / {daysWorked.official}</span>
             </>
           }
-          hint={[daysWorked.toGo > 0 && `${daysWorked.toGo} to go`, daysWorked.extra > 0 && `+${daysWorked.extra} extra`, "official working days"].filter(Boolean).join(" · ")}
+          hint={workedHint(daysWorked) || undefined}
         />
         <Stat
           label={thisWeek ? "This week" : "Avg per week"}
