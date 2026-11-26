@@ -28,9 +28,22 @@ import { loadHolidays, startHolidayRefresh } from "./lib/holidays.js";
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.disable("x-powered-by");
 
-app.use(express.json());
+app.use((_req, res, next) => {
+  res.set({
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  });
+  next();
+});
+
+app.use(cors({ origin: process.env.FRONTEND_URL || false, credentials: true }));
+
+app.use(express.json({ limit: "200kb" }));
 
 app.use(cookieParser());
 
