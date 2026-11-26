@@ -3,12 +3,14 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import {
   COOKIE_NAME,
+  burnPasswordCheck,
   checkPassword,
   cookieOptions,
   hashPassword,
   requireAuth,
   signToken,
 } from "../lib/auth.js";
+import { clientIp, limiter } from "../lib/rateLimit.js";
 
 const router = Router();
 
@@ -17,18 +19,25 @@ const loginSchema = z.object({
   password: z.string().min(1, "Enter your password"),
 });
 
-router.post("/login", async (req, res) => {
+const tooMany = "Too many failed attempts. Wait 15 minutes and try again.";
+const byEmail = limiter({ windowMs: 15 * 60_000, max: 5, key: (req) => String(req.body?.email ?? "").trim().toLowerCase(), message: tooMany });
+const passwordTries = limiter({ windowMs: 15 * 60_000, max: 5, key: (req) => req.user?.id ?? clientIp(req), message: tooMany });
+
+router.post("/login", byEmail.middleware, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { email, password } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { email }, omit: { passwordHash: false } });
+  const ok = user ? await checkPassword(password, user.passwordHash) : await burnPasswordCheck(password);
 
-  if (!user || !user.active || !(await checkPassword(password, user.passwordHash))) {
+  if (!user || !user.active || !ok) {
+    byEmail.fail(req);
     return res.status(401).json({ error: "Invalid email or password" });
   }
+  byEmail.reset(req);
 
-  res.cookie(COOKIE_NAME, signToken(user.id), cookieOptions);
+  res.cookie(COOKIE_NAME, signToken(user.id, user.passwordHash), cookieOptions);
   const { passwordHash: _, ...safeUser } = user;
   res.json(safeUser);
 });
@@ -72,7 +81,7 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
-router.post("/change-password", requireAuth, async (req, res) => {
+router.post("/change-password", requireAuth, passwordTries.middleware, async (req, res) => {
   const parsed = changePasswordSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { currentPassword, newPassword } = parsed.data;
@@ -82,13 +91,16 @@ router.post("/change-password", requireAuth, async (req, res) => {
     omit: { passwordHash: false },
   });
   if (!(await checkPassword(currentPassword, user.passwordHash))) {
+    passwordTries.fail(req);
     return res.status(400).json({ error: "Current password is wrong" });
   }
 
+  const passwordHash = await hashPassword(newPassword);
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
+    data: { passwordHash, mustChangePassword: false },
   });
+  res.cookie(COOKIE_NAME, signToken(user.id, passwordHash), cookieOptions);
   res.json(updated);
 });
 

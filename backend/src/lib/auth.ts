@@ -1,4 +1,5 @@
 import type { CookieOptions, NextFunction, Request, Response } from "express";
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "./prisma.js";
@@ -15,7 +16,10 @@ declare global {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error("JWT_SECRET is not set (locally: backend/.env, on Railway: the service's Variables tab)");
+if (!JWT_SECRET || JWT_SECRET === "change-me") {
+  throw new Error("JWT_SECRET is not set (locally: backend/.env, on Railway: the service's Variables tab)");
+}
+if (JWT_SECRET.length < 32) console.warn("JWT_SECRET is short. Use at least 32 random characters.");
 
 export const COOKIE_NAME = "token";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -23,7 +27,13 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 export const hashPassword = (plain: string) => bcrypt.hash(plain, 10);
 export const checkPassword = (plain: string, hash: string) => bcrypt.compare(plain, hash);
 
-export const signToken = (userId: string) => jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: "7d" });
+const passwordStamp = (passwordHash: string) => crypto.createHmac("sha256", JWT_SECRET).update(passwordHash).digest("base64url").slice(0, 16);
+
+export const signToken = (userId: string, passwordHash: string) =>
+  jwt.sign({ sub: userId, pv: passwordStamp(passwordHash) }, JWT_SECRET, { expiresIn: "7d", algorithm: "HS256" });
+
+const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
+export const burnPasswordCheck = (plain: string) => bcrypt.compare(plain, DUMMY_HASH);
 
 export const cookieOptions: CookieOptions = {
   httpOnly: true,
@@ -39,17 +49,22 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   let payload: jwt.JwtPayload;
   try {
-    payload = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
+    payload = jwt.verify(token, JWT_SECRET!, { algorithms: ["HS256"] }) as jwt.JwtPayload;
   } catch {
     return res.status(401).json({ error: "Session expired, please log in again" });
   }
   const userId = payload.sub!;
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || !user.active) return res.status(401).json({ error: "Account not active" });
+  const found = await prisma.user.findUnique({ where: { id: userId }, omit: { passwordHash: false } });
+  if (!found || !found.active) return res.status(401).json({ error: "Account not active" });
+  if (payload.pv !== passwordStamp(found.passwordHash)) {
+    res.clearCookie(COOKIE_NAME, { path: "/" });
+    return res.status(401).json({ error: "Session expired, please log in again" });
+  }
+  const { passwordHash, ...user } = found;
 
   if (Date.now() / 1000 - (payload.iat ?? 0) > 24 * 60 * 60) {
-    res.cookie(COOKIE_NAME, signToken(user.id), cookieOptions);
+    res.cookie(COOKIE_NAME, signToken(user.id, passwordHash), cookieOptions);
   }
 
   const viewAs = req.get("x-view-as");
