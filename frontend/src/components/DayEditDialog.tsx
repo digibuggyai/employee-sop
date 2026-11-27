@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, House, Trash2 } from "lucide-react";
+import { Building2, Flag, House, Trash2 } from "lucide-react";
 import { api, type DayRow, type Place } from "@/lib/api";
 import { fmtDate, toTimeInput, todayIST } from "@/lib/format";
 import { useConfirm, useToast } from "./Feedback";
@@ -14,12 +14,14 @@ export default function DayEditDialog({
   userId,
   onClose,
   onSaved,
+  onMark,
 }: {
   day: DayRow | null;
   mode: "admin" | "request";
   userId?: string;
   onClose: () => void;
   onSaved: () => void;
+  onMark?: (date: string) => void;
 }) {
   const title = day
     ? `${mode === "admin" ? "Edit" : "Request a change for"} ${new Date(day.date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}`
@@ -35,6 +37,15 @@ export default function DayEditDialog({
           : "Changes apply immediately."
       }
     >
+      {day && mode === "admin" && onMark && (
+        <button
+          type="button"
+          onClick={() => onMark(day.date)}
+          className="mb-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600/30 bg-brand-50 text-sm font-medium text-brand-700 hover:bg-brand-100 sm:h-9"
+        >
+          <Flag size={15} /> Mark absent, half day, leave, short leave or late
+        </button>
+      )}
       {day && <DayForm key={day.date} day={day} mode={mode} userId={userId} onClose={onClose} onSaved={onSaved} />}
     </Modal>
   );

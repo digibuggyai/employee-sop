@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlarmClock, CalendarOff, DoorOpen, Hourglass, Siren, SunMedium } from "lucide-react";
+import { AlarmClock, CalendarOff, DoorOpen, Hourglass, Siren, SunMedium, UserX } from "lucide-react";
 import { api } from "@/lib/api";
 import { todayIST } from "@/lib/format";
 import { useToast } from "./Feedback";
@@ -9,7 +9,7 @@ import Modal from "./Modal";
 import { usePending } from "./Pending";
 import { Button, ErrorBox, Field, HalfPicker, inputClass } from "./form";
 
-type Mark = "HALF_DAY" | "LATE" | "EARLY" | "SHORT_LEAVE" | "LEAVE" | "EMERGENCY";
+type Mark = "HALF_DAY" | "LATE" | "EARLY" | "SHORT_LEAVE" | "LEAVE" | "EMERGENCY" | "ABSENT";
 
 const marks: { value: Mark; label: string; hint: string; icon: React.ElementType }[] = [
   { value: "HALF_DAY", label: "Half day", hint: "Counts as 0.5 day", icon: SunMedium },
@@ -18,6 +18,7 @@ const marks: { value: Mark; label: string; hint: string; icon: React.ElementType
   { value: "SHORT_LEAVE", label: "Short leave", hint: "Uses a free short leave", icon: Hourglass },
   { value: "LEAVE", label: "Leave", hint: "Full day off", icon: CalendarOff },
   { value: "EMERGENCY", label: "Emergency leave", hint: "Full day, emergency", icon: Siren },
+  { value: "ABSENT", label: "Absent", hint: "Removes the check-in, counts as 1 day cut", icon: UserX },
 ];
 
 const timeLabel: Partial<Record<Mark, string>> = {
@@ -70,7 +71,11 @@ function MarkForm({
     setError("");
     setLoading(true);
     try {
-      if (mark === "LEAVE" || mark === "EMERGENCY") {
+      if (mark === "ABSENT") {
+        await api(`/api/admin/attendance/${person.id}/${date}`, { method: "DELETE" }).catch((err: Error) => {
+          if (!/No attendance/.test(err.message)) throw err;
+        });
+      } else if (mark === "LEAVE" || mark === "EMERGENCY") {
         await api("/api/admin/leaves", {
           method: "POST",
           body: { userId: person.id, from: date, to: date, reason: reason || undefined, emergency: mark === "EMERGENCY" },

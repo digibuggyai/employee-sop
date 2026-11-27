@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import Card from "@/components/Card";
 import DayEditDialog from "@/components/DayEditDialog";
+import MarkDayDialog from "@/components/MarkDay";
 import MonthSheet from "@/components/MonthSheet";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
@@ -23,6 +24,7 @@ export default function AdminAttendancePage() {
   const [report, setReport] = useState<MonthReport | null>(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<DayRow | null>(null);
+  const [markDate, setMarkDate] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -226,6 +228,16 @@ export default function AdminAttendancePage() {
         mode="admin"
         userId={selected?.id}
         onClose={() => setEditing(null)}
+        onSaved={() => setVersion((v) => v + 1)}
+        onMark={(date) => {
+          setEditing(null);
+          setMarkDate(date);
+        }}
+      />
+      <MarkDayDialog
+        person={markDate && selected ? selected : null}
+        date={markDate ?? undefined}
+        onClose={() => setMarkDate(null)}
         onSaved={() => setVersion((v) => v + 1)}
       />
     </>
