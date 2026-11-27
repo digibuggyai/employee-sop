@@ -22,7 +22,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const user = await api<User>("/api/auth/login", { method: "POST", body: { email, password } });
+      const user = await api<User>("/api/auth/login", {
+        method: "POST",
+        body: { email, password },
+      });
       setUser(user);
       router.replace(user.mustChangePassword ? "/change-password" : "/");
     } catch (err) {
@@ -32,57 +35,72 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 min-h-screen lg:grid-cols-2">
-      <aside className="hidden flex-col items-start justify-between gap-8 bg-[#00214a] p-12 text-[#fff] lg:flex">
-        <BrandLogo tone="light" className="h-7 w-auto" priority />
-        <LoginArt className="mx-auto w-full max-w-lg" />
-        <div className="max-w-sm">
-          <p className="text-lg leading-relaxed text-[#fff]/85">
-            Attendance, leave and daily tasks for the Digibuggy team.
-          </p>
-          <p className="mt-4 text-xs text-[#fff]/55">Digibuggy Global Technologies LLP</p>
-        </div>
-      </aside>
-
-      <main className="flex items-center justify-center px-4 py-12 sm:px-6">
-        <div className="glass w-full max-w-sm rounded-xl p-6 sm:p-8">
-          <div className="mb-8 lg:hidden">
-            <BrandLogo className="h-6 w-auto" priority />
+    <div className="flex min-h-dvh items-center justify-center px-4 py-4 sm:px-6 lg:h-dvh lg:overflow-hidden">
+      <div className="glass grid w-full max-w-sm overflow-hidden rounded-2xl max-h-full lg:max-w-5xl lg:grid-cols-[1.15fr_1fr]">
+        <aside className="hidden flex-col items-start justify-between gap-6 bg-[#00214a] p-8 xl:p-10 text-[#fff] lg:flex">
+          <BrandLogo tone="light" className="h-7 w-auto" priority />
+          <LoginArt className="mx-auto max-h-[38dvh] w-full max-w-md" />
+          <div>
+            <p className="text-base leading-relaxed text-[#fff]/85">
+              Attendance, leave and daily tasks for the Digibuggy team.
+            </p>
+            <p className="mt-3 text-xs text-[#fff]/55">
+              Digibuggy Global Technologies LLP
+            </p>
           </div>
+        </aside>
 
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Log in</h1>
-          <p className="mt-1.5 text-sm text-zinc-500">Use the email your admin registered for you.</p>
+        <main className="flex items-center justify-center">
+          <div className="w-full max-w-sm p-6 sm:p-10">
+            <div className="mb-8 lg:hidden">
+              <BrandLogo className="h-6 w-auto" priority />
+            </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <Field label="Email">
-              <input
-                type="email"
-                autoComplete="email"
-                required
-                autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-                placeholder="you@digibuggy.com"
-              />
-            </Field>
-            <Field label="Password">
-              <PasswordInput
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </Field>
-            <ErrorBox message={error} />
-            <Button type="submit" size="lg" loading={loading} className="w-full">
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
               Log in
-            </Button>
-          </form>
+            </h1>
+            <p className="mt-1.5 text-sm text-zinc-500">
+              Use the email your admin registered for you.
+            </p>
 
-          <p className="mt-6 text-[13px] text-zinc-500">Forgot your password? Ask an admin to reset it.</p>
-        </div>
-      </main>
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              <Field label="Email">
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  autoFocus
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="you@digibuggy.com"
+                />
+              </Field>
+              <Field label="Password">
+                <PasswordInput
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Field>
+              <ErrorBox message={error} />
+              <Button
+                type="submit"
+                size="lg"
+                loading={loading}
+                className="w-full"
+              >
+                Log in
+              </Button>
+            </form>
+
+            <p className="mt-6 text-[13px] text-zinc-500">
+              Forgot your password? Ask an admin to reset it.
+            </p>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
