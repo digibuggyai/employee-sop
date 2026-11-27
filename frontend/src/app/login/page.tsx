@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import BrandLogo from "@/components/BrandLogo";
+import LoginArt from "@/components/LoginArt";
 import PasswordInput from "@/components/PasswordInput";
 import { Button, ErrorBox, Field, inputClass } from "@/components/form";
 import { api, type User } from "@/lib/api";
@@ -32,18 +33,19 @@ export default function LoginPage() {
 
   return (
     <div className="grid grid-cols-1 min-h-screen lg:grid-cols-2">
-      <aside className="hidden flex-col items-start justify-between bg-[#14306f] p-12 text-[#fff] lg:flex">
+      <aside className="hidden flex-col items-start justify-between gap-8 bg-[#00214a] p-12 text-[#fff] lg:flex">
         <BrandLogo tone="light" className="h-7 w-auto" priority />
+        <LoginArt className="mx-auto w-full max-w-lg" />
         <div className="max-w-sm">
           <p className="text-lg leading-relaxed text-[#fff]/85">
             Attendance, leave and daily tasks for the Digibuggy team.
           </p>
-          <p className="mt-6 text-xs text-[#fff]/55">Digibuggy Global Technologies LLP</p>
+          <p className="mt-4 text-xs text-[#fff]/55">Digibuggy Global Technologies LLP</p>
         </div>
       </aside>
 
-      <main className="flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm">
+      <main className="flex items-center justify-center px-4 py-12 sm:px-6">
+        <div className="glass w-full max-w-sm rounded-xl p-6 sm:p-8">
           <div className="mb-8 lg:hidden">
             <BrandLogo className="h-6 w-auto" priority />
           </div>
