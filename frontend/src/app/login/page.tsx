@@ -35,71 +35,68 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-4 sm:px-6 lg:h-dvh lg:overflow-hidden">
-      <div className="glass grid w-full max-w-sm overflow-hidden rounded-2xl max-h-full lg:max-w-5xl lg:grid-cols-[1.15fr_1fr]">
-        <aside className="hidden flex-col items-start justify-between gap-6 bg-[#00214a] p-8 xl:p-10 text-[#fff] lg:flex">
-          <BrandLogo tone="light" className="h-7 w-auto" priority />
-          <LoginArt className="mx-auto max-h-[38dvh] w-full max-w-md" />
-          <div>
-            <p className="text-base leading-relaxed text-[#fff]/85">
-              Attendance, leave and daily tasks for the Digibuggy team.
-            </p>
-            <p className="mt-3 text-xs text-[#fff]/55">
-              Digibuggy Global Technologies LLP
-            </p>
-          </div>
-        </aside>
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#00214a] px-4 py-6 sm:px-6 lg:h-dvh lg:justify-end lg:px-[7vw]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-[64%] items-center pl-[4vw] lg:flex"
+      >
+        <LoginArt className="max-h-[78dvh] w-full" />
+      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[18%] bg-[#04275a] lg:block"
+      />
 
-        <main className="flex items-center justify-center">
-          <div className="w-full max-w-sm p-6 sm:p-10">
-            <div className="mb-8 lg:hidden">
-              <BrandLogo className="h-6 w-auto" priority />
-            </div>
+      <div className="relative z-[2] w-full max-w-sm">
+        <div className="glass rounded-xl p-6 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)] sm:p-8">
+          <BrandLogo className="mb-7 h-6 w-auto" priority />
 
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Log in
+          </h1>
+          <p className="mt-1.5 text-sm text-zinc-500">
+            Use the email your admin registered for you.
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <Field label="Email">
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+                placeholder="you@digibuggy.com"
+              />
+            </Field>
+            <Field label="Password">
+              <PasswordInput
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Field>
+            <ErrorBox message={error} />
+            <Button
+              type="submit"
+              size="lg"
+              loading={loading}
+              className="w-full"
+            >
               Log in
-            </h1>
-            <p className="mt-1.5 text-sm text-zinc-500">
-              Use the email your admin registered for you.
-            </p>
+            </Button>
+          </form>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              <Field label="Email">
-                <input
-                  type="email"
-                  autoComplete="email"
-                  required
-                  autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                  placeholder="you@digibuggy.com"
-                />
-              </Field>
-              <Field label="Password">
-                <PasswordInput
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Field>
-              <ErrorBox message={error} />
-              <Button
-                type="submit"
-                size="lg"
-                loading={loading}
-                className="w-full"
-              >
-                Log in
-              </Button>
-            </form>
-
-            <p className="mt-6 text-[13px] text-zinc-500">
-              Forgot your password? Ask an admin to reset it.
-            </p>
-          </div>
-        </main>
+          <p className="mt-6 text-[13px] text-zinc-500">
+            Forgot your password? Ask an admin to reset it.
+          </p>
+        </div>
+        <p className="mt-4 text-center text-xs text-[#fff]/55">
+          Digibuggy Global Technologies LLP
+        </p>
       </div>
     </div>
   );
