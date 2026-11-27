@@ -7,6 +7,8 @@ export const LEAVE_PER_MONTH = 1.5;
 export const LEAVE_POLICY_START = "2026-10";
 
 export const AUTO_CHECKOUT_AT = "23:00";
+export const AUTO_CHECKOUT_AFTER = "20:00";
+export const AUTO_CHECKOUT_TIME = "18:00";
 
 export const SIX_DAY_WEEK_FROM = "2026-11-01";
 export const EXTRA_HOURS_PER_DAY = 6;

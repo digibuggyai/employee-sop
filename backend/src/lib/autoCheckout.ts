@@ -1,6 +1,6 @@
 import { prisma } from "./prisma.js";
 import { TIMEZONE, istDateTime, toDbDate, todayString } from "./dates.js";
-import { AUTO_CHECKOUT_AT, noTimingRules, parseTimings } from "./policy.js";
+import { AUTO_CHECKOUT_AFTER, AUTO_CHECKOUT_AT, AUTO_CHECKOUT_TIME, noTimingRules, parseTimings } from "./policy.js";
 import { syncMakeUps } from "./makeups.js";
 import { notify } from "./notify.js";
 import { FORGOT_CHECKOUT_NOTE } from "./policy.js";
@@ -10,22 +10,21 @@ const hhmm = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2
 export async function autoCheckout() {
   try {
     const today = todayString();
-    const cutoff = istDateTime(today, AUTO_CHECKOUT_AT);
     const open = await prisma.attendance.findMany({
-      where: {
-        checkOut: null,
-        OR: [
-          { date: { lt: toDbDate(today) } },
-          ...(Date.now() >= cutoff.getTime() ? [{ date: toDbDate(today), checkIn: { lt: cutoff }, user: { employmentType: { not: "PART_TIME" as const } } }] : []),
-        ],
-      },
+      where: { checkOut: null, date: { lte: toDbDate(today) } },
       include: { breaks: true, user: { select: { timings: true, employmentType: true } } },
     });
 
     for (const day of open) {
       const date = day.date.toISOString().slice(0, 10);
+      const partTime = noTimingRules(day.user.employmentType);
+      if (date === today) {
+        if (partTime) continue;
+        const cutoff = istDateTime(today, AUTO_CHECKOUT_AFTER);
+        if (Date.now() < cutoff.getTime() || day.checkIn >= cutoff) continue;
+      }
       const shift = parseTimings(day.user.timings);
-      const planned = istDateTime(date, shift ? hhmm(shift.end) : AUTO_CHECKOUT_AT);
+      const planned = istDateTime(date, !partTime ? AUTO_CHECKOUT_TIME : shift ? hhmm(shift.end) : AUTO_CHECKOUT_AT);
       if (planned <= day.checkIn && Date.now() - day.checkIn.getTime() < 12 * 3600_000) continue;
       if (noTimingRules(day.user.employmentType) && Date.now() < istDateTime(date, AUTO_CHECKOUT_AT).getTime() + 864e5) continue;
       const checkOut = planned > day.checkIn ? planned : day.checkIn;

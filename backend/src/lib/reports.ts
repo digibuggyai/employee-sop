@@ -315,7 +315,9 @@ export async function monthReports(userIds: string[], month: string) {
         }
         if (d.halfDay) continue;
 
-        const short = shiftLength - (minuteOf(d.checkOut) - minuteOf(d.checkIn));
+        const short = internHours(d.date)
+          ? INTERN_DAY_MIN - Math.floor((d.workedMs ?? 0) / 60000)
+          : shiftLength - (minuteOf(d.checkOut) - minuteOf(d.checkIn));
         if (-short >= GRACE_MIN && !internHours(d.date)) {
           d.extraMin = -short;
           summary.extraMs += -short * 60000;

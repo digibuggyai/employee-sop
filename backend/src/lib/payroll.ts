@@ -37,7 +37,8 @@ export function payFigures(person: Exclude<WorkType, string | null | undefined>,
   const hoursRule = hoursTargetMin > 0;
   const hoursCovered = summary.hoursCovered;
   const cuts = summary.absent + summary.latePenaltyDays + halfDayCut + unpaidLeaves + pendingLeaves;
-  const waived = hoursCovered ? round2(cuts) : 0;
+  const wfhOverLimitCut = days.filter((d) => d.halfDay === "EXTRA_WFH").length * 0.5;
+  const waived = hoursCovered ? round2(cuts - wfhOverLimitCut) : 0;
   const deductions = notEmployed + cuts - waived;
   const payableDays = round2(workingDays - daysLeft - deductions + extraDays + extraHourDays);
   const payPercent = workingDays ? round2((payableDays / workingDays) * 100) : 0;
