@@ -60,7 +60,7 @@ export function DocumentList({ docs, onChanged, empty }: { docs: DocumentItem[] 
         const mine = d.owner.id === user?.id;
         return (
           <li key={d.id} className="flex items-start gap-3 px-4 py-3 sm:px-5">
-            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
               {d.fileName ? <FileText size={17} /> : <Link2 size={17} />}
             </span>
             <div className="min-w-0 flex-1">

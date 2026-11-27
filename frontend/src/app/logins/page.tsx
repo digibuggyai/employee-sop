@@ -555,7 +555,7 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
         <button
           type="button"
           onClick={() => pick(p.id)}
-          className={`flex h-full w-full flex-col items-center gap-1.5 rounded-xl border px-1.5 py-3 text-center transition hover:border-brand-500 hover:bg-brand-50 ${
+          className={`flex h-full w-full flex-col items-center gap-1.5 rounded-lg border px-1.5 py-3 text-center transition hover:border-brand-500 hover:bg-brand-50 ${
             n ? "border-emerald-300 bg-emerald-50/50" : "border-zinc-200"
           }`}
         >
@@ -601,7 +601,7 @@ function PersonAccess({ items, onDone }: { items: VaultItem[]; onDone: () => voi
           </div>
         </>
       ) : (
-        <div className="flex items-center gap-3 rounded-xl border border-brand-500 bg-brand-50 p-3">
+        <div className="flex items-center gap-3 rounded-lg border border-brand-500 bg-brand-50 p-3">
           <span className="relative">
             <Avatar person={person} />
             <span className="absolute -right-1 -bottom-1 grid size-5 place-items-center rounded-full bg-brand-700 text-white ring-2 ring-white">

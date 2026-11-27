@@ -104,7 +104,7 @@ function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; 
         </div>
       </div>
 
-      <dl className="divide-y divide-zinc-100 rounded-xl border border-zinc-200">
+      <dl className="divide-y divide-zinc-100 rounded-lg border border-zinc-200">
         {rows.map(([Icon, label, value]) => (
           <div key={label} className="flex items-center gap-3 px-3.5 py-2.5 text-sm">
             <Icon size={15} className="shrink-0 text-zinc-400" />
@@ -116,7 +116,7 @@ function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; 
 
       {admin && p.isEmployee && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-xl bg-zinc-50 px-3.5 py-2.5 text-sm">
+          <div className="flex items-center justify-between rounded-lg bg-zinc-50 px-3.5 py-2.5 text-sm">
             <span className="text-zinc-500">Today</span>
             <span className="font-medium text-zinc-900 tabular-nums">
               {p.today
@@ -136,7 +136,7 @@ function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; 
                   ["Absent", m.absent + m.latePenaltyDays],
                 ] as [string, React.ReactNode][]
               ).map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-zinc-200 px-2 py-2.5">
+                <div key={label} className="rounded-lg border border-zinc-200 px-2 py-2.5">
                   <p className="text-base font-semibold text-zinc-900 tabular-nums">{value}</p>
                   <p className="text-[11px] text-zinc-500">{label}</p>
                 </div>
@@ -166,7 +166,7 @@ function ProfileBody({ p, onClose, onMark }: { p: Profile; onClose: () => void; 
               }}
               className="flex h-11 flex-1 items-center justify-center rounded-lg bg-brand-700 text-sm font-medium text-white hover:bg-brand-800 sm:h-9"
             >
-              View attendance
+              View and edit attendance
             </Link>
             {canEdit && (
             <Link

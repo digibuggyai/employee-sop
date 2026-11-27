@@ -2,22 +2,20 @@ import type { LucideIcon } from "lucide-react";
 
 export type Tone = "zinc" | "green" | "amber" | "red" | "blue" | "violet" | "brand";
 
-const tones: Record<Tone, string> = {
-  zinc: "bg-zinc-50 text-zinc-600 ring-zinc-500/15",
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  amber: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  red: "bg-red-50 text-red-700 ring-red-600/15",
-  blue: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  violet: "bg-violet-50 text-violet-700 ring-violet-600/20",
-  brand: "bg-brand-50 text-brand-700 ring-brand-700/15",
+const dots: Record<Tone, string> = {
+  zinc: "bg-zinc-400",
+  green: "bg-emerald-500",
+  amber: "bg-amber-500",
+  red: "bg-red-500",
+  blue: "bg-sky-500",
+  violet: "bg-violet-500",
+  brand: "bg-brand-600",
 };
 
-export function Badge({ tone = "zinc", dot = false, children }: { tone?: Tone; dot?: boolean; children: React.ReactNode }) {
+export function Badge({ tone = "zinc", children }: { tone?: Tone; dot?: boolean; children: React.ReactNode }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset ${tones[tone]}`}
-    >
-      {dot && <span className="size-1.5 rounded-full bg-current" />}
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap ${tone === "red" ? "text-red-700" : "text-zinc-700"}`}>
+      <span className={`size-1.5 shrink-0 rounded-full ${dots[tone]}`} />
       {children}
     </span>
   );
@@ -37,7 +35,7 @@ export function Stat({
   emphasis?: "warning" | "danger" | "positive";
 }) {
   return (
-    <div className="glass rounded-2xl p-3.5 sm:rounded-xl sm:p-4">
+    <div className="glass rounded-lg p-3.5 sm:p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-medium text-zinc-500">{label}</p>
         {Icon && <Icon size={16} className="text-zinc-400" />}

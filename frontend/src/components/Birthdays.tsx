@@ -41,9 +41,7 @@ export function BirthdayBanner() {
   const others = data.today.filter((r) => r.person.id !== user?.id);
 
   return (
-    <section className="glass relative mb-4 overflow-hidden rounded-2xl p-4 md:mb-6 md:rounded-xl md:p-5">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-brand-600/15 via-brand-500/10 to-sky-400/10" />
-      <div className="pointer-events-none absolute -top-16 -left-10 size-48 rounded-full bg-brand-500/20 blur-3xl" />
+    <section className="relative mb-4 overflow-hidden rounded-lg border border-brand-200 bg-brand-50 p-4 md:mb-6 md:p-5">
       {confetti.map((c) => (
         <span
           key={c.emoji}
@@ -55,7 +53,7 @@ export function BirthdayBanner() {
         </span>
       ))}
       <div className="relative flex items-center gap-4">
-        <span className="float-emoji grid size-12 shrink-0 place-items-center rounded-2xl bg-white/80 text-2xl shadow-sm ring-1 ring-brand-500/20 sm:size-14 sm:text-3xl" aria-hidden>
+        <span className="float-emoji grid size-12 shrink-0 place-items-center rounded-lg bg-white text-2xl ring-1 ring-brand-200 sm:size-14 sm:text-3xl" aria-hidden>
           🎂
         </span>
         <div className="min-w-0 flex-1">

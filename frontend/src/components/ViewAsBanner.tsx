@@ -22,7 +22,13 @@ export default function ViewAsBanner() {
         <span className="min-w-0 truncate text-zinc-800">
           Previewing <span className="font-semibold">{person.name}</span>&apos;s app · read-only
         </span>
-        <button onClick={stopViewAs} className="h-9 shrink-0 rounded-full bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800">
+        <button
+          onClick={() => stopViewAs(`/admin/attendance?user=${person.id}`)}
+          className="hidden h-9 shrink-0 rounded-full border border-zinc-200 px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 sm:block"
+        >
+          Edit attendance
+        </button>
+        <button onClick={() => stopViewAs()} className="h-9 shrink-0 rounded-full bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800">
           Exit
         </button>
       </div>

@@ -21,7 +21,7 @@
   --color-zinc-900: oklch(20.5% 0 0);
   --color-zinc-950: oklch(14.5% 0 0);
 
-  --color-canvas: #f3f6fb;
+  --color-canvas: #f6f6f4;
   --color-ink: oklch(14.5% 0 0);
 }
 
@@ -53,137 +53,58 @@ body {
   }
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(60rem 30rem at 50% -10%, rgb(59 130 246 / 0.16), transparent 70%),
-    radial-gradient(30rem 24rem at 100% 100%, rgb(37 99 235 / 0.08), transparent 70%);
+:root {
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --line: oklch(91% 0.003 90);
+  --line-strong: oklch(85% 0.003 90);
 }
 
 @utility glass {
   position: relative;
-  background: rgb(255 255 255 / 0.66);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgb(255 255 255 / 0.8);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.9),
-    0 0 0 1px rgb(37 99 235 / 0.06),
-    0 4px 16px -8px rgb(30 58 138 / 0.12);
-  transition:
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
 }
 
 @utility glass-bar {
-  background: rgb(255 255 255 / 0.7);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
-  border-color: rgb(0 0 0 / 0.08);
+  background: var(--surface);
+  border-color: var(--line);
 }
 
 @utility glass-sheet {
-  background: rgb(255 255 255 / 0.92);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  backdrop-filter: blur(24px) saturate(140%);
-  border: 1px solid rgb(0 0 0 / 0.08);
-  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.18);
 }
 
 @utility glass-control {
-  background: rgb(255 255 255 / 0.75);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-color: rgb(0 0 0 / 0.12);
-  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04);
+  background: var(--surface);
+  border-color: var(--line-strong);
 }
 
 @utility glass-pop {
-  background: rgb(255 255 255 / 0.98);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgb(0 0 0 / 0.1);
-  box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.25);
-}
-
-.glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  padding: 1px;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(280px circle at var(--mx, 50%) var(--my, -40%), var(--edge-light), transparent 65%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.glass:hover {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.9),
-    0 0 0 1px rgb(37 99 235 / 0.14),
-    0 10px 30px -12px rgb(30 58 138 / 0.22);
-}
-
-.glass:hover::after {
-  opacity: 1;
-}
-
-:root {
-  --edge-light: rgb(37 99 235 / 0.75);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass,
-  .glass-bar,
-  .glass-sheet,
-  .glass-pop,
-  .glass-control {
-    background: #fff;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .glass,
-  .glass-bar,
-  .glass-sheet,
-  .glass-pop,
-  .glass-control {
-    background: #fff;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-@media (hover: none) {
-  .glass::after {
-    display: none;
-  }
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.16);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --edge-light: rgb(96 165 250 / 0.85);
-  --color-white: oklch(17% 0 0);
+  --surface: #17181b;
+  --surface-raised: #1d1e22;
+  --line: #26272c;
+  --line-strong: #33343a;
+  --color-white: #17181b;
   --color-black: #fff;
-  --color-canvas: #070a12;
+  --color-canvas: #0f1012;
   --color-ink: oklch(97% 0 0);
-  --color-brand-50: oklch(25% 0.06 262);
-  --color-brand-100: oklch(30% 0.09 262);
-  --color-brand-200: oklch(38% 0.13 262);
-  --color-brand-500: oklch(62% 0.19 262);
-  --color-brand-600: oklch(68% 0.17 262);
-  --color-brand-700: oklch(72% 0.16 258);
+  --color-brand-50: oklch(24% 0.04 262);
+  --color-brand-100: oklch(29% 0.06 262);
+  --color-brand-200: oklch(36% 0.09 262);
+  --color-brand-500: oklch(60% 0.14 262);
+  --color-brand-600: oklch(66% 0.13 262);
+  --color-brand-700: oklch(70% 0.12 258);
   --color-brand-800: oklch(80% 0.11 258);
   --color-brand-900: oklch(88% 0.06 258);
   --color-zinc-50: oklch(19% 0 0);
@@ -309,61 +230,6 @@ body::before {
   --color-violet-600: oklch(70.2% 0.183 293.541);
 }
 
-:root[data-theme="dark"] body::before {
-  background:
-    radial-gradient(60rem 30rem at 50% -10%, rgb(37 99 235 / 0.22), transparent 70%),
-    radial-gradient(30rem 24rem at 100% 100%, rgb(29 78 216 / 0.14), transparent 70%);
-}
-
-:root[data-theme="dark"] .glass {
-  background: rgb(17 24 39 / 0.55);
-  border-color: rgb(255 255 255 / 0.08);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.05),
-    0 0 0 1px rgb(59 130 246 / 0.08),
-    0 4px 20px -10px rgb(0 0 0 / 0.6);
-}
-
-:root[data-theme="dark"] .glass:hover {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 0 0 1px rgb(96 165 250 / 0.22),
-    0 12px 32px -14px rgb(37 99 235 / 0.35);
-}
-
-:root[data-theme="dark"] .glass-bar {
-  background: rgb(8 12 22 / 0.78);
-  border-color: rgb(255 255 255 / 0.08);
-}
-
-:root[data-theme="dark"] .glass-sheet {
-  background: rgb(15 21 35 / 0.92);
-  border-color: rgb(255 255 255 / 0.1);
-  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.8);
-}
-
-:root[data-theme="dark"] .glass-pop {
-  background: rgb(15 21 35 / 0.98);
-  border-color: rgb(255 255 255 / 0.12);
-  box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.8);
-}
-
-:root[data-theme="dark"] .glass-control {
-  background: rgb(23 32 52 / 0.7);
-  border-color: rgb(255 255 255 / 0.12);
-  box-shadow: none;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  :root[data-theme="dark"] .glass,
-  :root[data-theme="dark"] .glass-bar,
-  :root[data-theme="dark"] .glass-sheet,
-  :root[data-theme="dark"] .glass-pop,
-  :root[data-theme="dark"] .glass-control {
-    background: oklch(17% 0 0);
-  }
-}
-
 :root:not([data-theme="dark"]) .logo-on-dark,
 :root[data-theme="dark"] .logo-on-light {
   display: none;
@@ -401,7 +267,5 @@ body::before {
 }
 
 dialog::backdrop {
-  background: rgb(0 0 0 / 0.4);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  background: rgb(0 0 0 / 0.45);
 }

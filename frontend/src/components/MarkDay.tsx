@@ -109,8 +109,8 @@ function MarkForm({
               type="button"
               onClick={() => setMark(value)}
               aria-pressed={active}
-              className={`flex min-h-16 flex-col items-start gap-1 rounded-2xl border p-3 text-left transition ${
-                active ? "border-brand-600 bg-brand-50/80 ring-2 ring-brand-600/20" : "glass-control hover:bg-white/90"
+              className={`flex min-h-16 flex-col items-start gap-1 rounded-lg border p-3 text-left transition ${
+                active ? "border-brand-600 bg-brand-50/80 ring-2 ring-brand-600/20" : "glass-control hover:bg-zinc-50"
               }`}
             >
               <Icon size={18} className={active ? "text-brand-700" : "text-zinc-500"} />

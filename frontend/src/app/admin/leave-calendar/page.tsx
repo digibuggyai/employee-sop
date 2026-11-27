@@ -148,7 +148,7 @@ export default function LeaveCalendarPage() {
               key={kind}
               onClick={() => setKindFilter(active ? null : kind)}
               aria-pressed={active}
-              className={`glass rounded-xl px-3.5 py-3 text-left transition ${active ? "ring-2 ring-brand-600" : ""}`}
+              className={`glass rounded-lg px-3.5 py-3 text-left transition ${active ? "ring-2 ring-brand-600" : ""}`}
             >
               <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                 <span className={`size-2 rounded-full ${kinds[kind].dot}`} />

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -9,16 +9,17 @@ import { NotificationsProvider } from "@/components/Notifications";
 import { PresenceProvider } from "@/components/Presence";
 import { ProfileProvider } from "@/components/ProfileSheet";
 import { themeScript } from "@/components/ThemeToggle";
-import GlassPointer from "@/components/GlassPointer";
 
-const geistSans = Geist({
+const geistSans = IBM_Plex_Sans({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = IBM_Plex_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +53,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <PresenceProvider>
                   <ProfileProvider>
                     <AppShell>{children}</AppShell>
-                    <GlassPointer />
                   </ProfileProvider>
                 </PresenceProvider>
               </NotificationsProvider>

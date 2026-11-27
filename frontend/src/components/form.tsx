@@ -1,7 +1,7 @@
 import { AlertCircle, LoaderCircle } from "lucide-react";
 
 export const inputBase =
-  "glass-control rounded-xl border px-3 py-[7px] text-base text-ink sm:text-sm outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-600 focus:ring-3 focus:ring-brand-600/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500";
+  "glass-control rounded-lg border px-3 py-[7px] text-base text-ink sm:text-sm outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-600 focus:ring-3 focus:ring-brand-600/15 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500";
 export const inputClass = `w-full ${inputBase}`;
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -29,7 +29,7 @@ type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
   primary: "bg-brand-700 text-white shadow-xs hover:bg-brand-800",
-  secondary: "glass-control border text-zinc-800 hover:bg-white/90",
+  secondary: "glass-control border text-zinc-800 hover:bg-zinc-50",
   ghost: "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
   danger: "bg-red-600 text-white shadow-xs hover:bg-red-700",
 };

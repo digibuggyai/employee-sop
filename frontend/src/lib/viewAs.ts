@@ -19,11 +19,11 @@ export function startViewAs(person: ViewAs) {
   window.location.assign(`${window.location.origin}/`);
 }
 
-export function stopViewAs() {
+export function stopViewAs(path = "/admin") {
   try {
     sessionStorage.removeItem(KEY);
   } catch {}
-  window.location.assign(`${window.location.origin}/admin`);
+  window.location.assign(`${window.location.origin}${path}`);
 }
 
 export function viewAsSnapshot(): string {
