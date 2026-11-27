@@ -27,9 +27,18 @@ export function payFigures(person: Exclude<WorkType, string | null | undefined>,
   const employedLeft = employed.filter(notYet).length;
   const offDaysWorked = days.filter((d) => d.checkIn && !d.noReport && isOffDay(d.date, person)).length;
   const extraDays = fullTime ? 0 : days.filter((d) => d.extraDay).length;
-  const extraHoursMin = days.filter((d) => d.extraMin && !d.extraDay).reduce((sum, d) => sum + d.extraMin!, 0);
+  const extraOn = (place: string) => days.filter((d) => d.extraMin && !d.extraDay && d.place === place).reduce((sum, d) => sum + d.extraMin!, 0);
+  const extraOfficeMin = extraOn("IN_OFFICE");
+  const extraWfhMin = extraOn("WFH");
+  const extraHoursMin = extraOfficeMin + extraWfhMin;
   const extraHourDays = fullTime ? 0 : Math.floor(extraHoursMin / (EXTRA_HOURS_PER_DAY * 60));
-  const deductions = notEmployed + summary.absent + summary.latePenaltyDays + halfDayCut + unpaidLeaves + pendingLeaves;
+  const hoursTargetMin = summary.hoursTargetMin;
+  const hoursWorkedMin = Math.floor(summary.workedMs / 60000);
+  const hoursRule = hoursTargetMin > 0;
+  const hoursCovered = summary.hoursCovered;
+  const cuts = summary.absent + summary.latePenaltyDays + halfDayCut + unpaidLeaves + pendingLeaves;
+  const waived = hoursCovered ? round2(cuts) : 0;
+  const deductions = notEmployed + cuts - waived;
   const payableDays = round2(workingDays - daysLeft - deductions + extraDays + extraHourDays);
   const payPercent = workingDays ? round2((payableDays / workingDays) * 100) : 0;
 
@@ -58,7 +67,14 @@ export function payFigures(person: Exclude<WorkType, string | null | undefined>,
     leaveBalance: summary.leaveBalance,
     extraDays,
     extraHoursMin,
+    extraOfficeMin,
+    extraWfhMin,
     extraHourDays,
+    hoursRule,
+    hoursTargetMin,
+    hoursWorkedMin,
+    hoursCovered,
+    waived,
     deductions: round2(deductions),
     payableDays,
     payPercent,

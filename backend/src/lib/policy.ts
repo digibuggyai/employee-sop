@@ -11,6 +11,9 @@ export const AUTO_CHECKOUT_AT = "23:00";
 export const SIX_DAY_WEEK_FROM = "2026-11-01";
 export const EXTRA_HOURS_PER_DAY = 6;
 
+export const INTERN_DAY_MIN = 390;
+export const INTERN_HOURS_RULE_FROM = "2026-11-01";
+
 export const SHORT_LEAVE_RULE_FROM = "2026-11-01";
 export const LATE_SHORT_LEAVE_MIN = 60;
 export const EARLY_SHORT_LEAVE_MIN = 15;

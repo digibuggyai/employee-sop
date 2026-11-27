@@ -178,6 +178,8 @@ export default function PayrollPage() {
                               <p className="font-medium text-red-600 tabular-nums">−{r.deductions}</p>
                               <p className="text-xs leading-snug whitespace-normal text-zinc-500">{cuts(r).join(", ")}</p>
                             </>
+                          ) : r.waived ? (
+                            <span className="text-xs text-emerald-700">None · {r.waived} waived, 6.5h × days met</span>
                           ) : (
                             <span className="text-zinc-400">None</span>
                           )}
@@ -205,6 +207,9 @@ export default function PayrollPage() {
                             <p className="text-xs leading-snug whitespace-normal text-zinc-500">
                               {fmtDuration(r.extraHoursMin * 60000)} extra hours
                               {r.extraHourDays ? ` = ${days(r.extraHourDays)}` : ` · ${EXTRA_HOURS_PER_DAY}h = 1 day`}
+                              <span className="block">
+                                In-office {fmtDuration((r.extraOfficeMin ?? 0) * 60000)} · WFH {fmtDuration((r.extraWfhMin ?? 0) * 60000)}
+                              </span>
                             </p>
                           )}
                           {(r.paidLeaves > 0 || r.madeUpLeaves > 0) && (

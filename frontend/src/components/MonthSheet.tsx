@@ -5,7 +5,7 @@ import { Download, PencilLine } from "lucide-react";
 import { dayRequestLabels, requestTimeText, type DayRow, type MonthReport, type WeekRow } from "@/lib/api";
 import { downloadCsv, fmtDate, fmtDuration, fmtTime, todayIST } from "@/lib/format";
 import { fmtMinutes } from "@/lib/shift";
-import { fmtDays, workedDays, workedHint } from "@/lib/workdays";
+import { deducted, fmtDays, waivedNote, workedDays, workedHint } from "@/lib/workdays";
 import { currentWeek, weekProgress } from "@/lib/weeks";
 import { DayStatusBadge, Tag } from "./Badges";
 import Card from "./Card";
@@ -130,7 +130,7 @@ export default function MonthSheet({
       ["Half days", summary.halfDays, "Days worked (half days as 0.5)", summary.daysWorked],
       ["Leaves", summary.leaves, "Made up", summary.leavesCompensated, "Unauthorized absent", summary.absent],
       ["Late arrivals", summary.lateDays, "Lates counted (full-time)", summary.lateCounted, "Short leaves", summary.shortLeaves],
-      ["Days deducted", summary.absent + summary.latePenaltyDays + summary.unpaidLeaves, "Absent", summary.absent, "From lates", summary.latePenaltyDays, "Unpaid leave", summary.unpaidLeaves],
+      ["Days deducted", deducted(summary), "Absent", summary.absent, "From lates", summary.latePenaltyDays, "Unpaid leave", summary.unpaidLeaves],
       ...(summary.leaveBalance !== null ? [["Leave balance", summary.leaveBalance]] : []),
       [],
       ["Week (Mon–Sun)", "Hours", "Target"],
@@ -284,9 +284,11 @@ export default function MonthSheet({
         />
         <Stat
           label="Days deducted"
-          value={summary.absent + summary.latePenaltyDays + summary.unpaidLeaves}
+          value={deducted(summary)}
           hint={
-            summary.absent + summary.latePenaltyDays + summary.unpaidLeaves
+            summary.hoursCovered
+              ? waivedNote(summary)
+              : deducted(summary)
               ? [
                   summary.absent && `${summary.absent} absent`,
                   summary.latePenaltyDays && `${summary.latePenaltyDays} from lates`,
@@ -296,7 +298,7 @@ export default function MonthSheet({
                   .join(" · ")
               : "Absent without leave, lates or leave beyond balance"
           }
-          emphasis={summary.absent + summary.latePenaltyDays + summary.unpaidLeaves ? "danger" : undefined}
+          emphasis={deducted(summary) ? "danger" : undefined}
         />
       </div>
 

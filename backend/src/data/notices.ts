@@ -80,6 +80,15 @@ export const notices: Notice[] = [
     deduction: true,
   },
   {
+    id: "intern-hours",
+    category: "Pay",
+    title: "Daily hours and extra hours (interns)",
+    body: "Your working day is 6.5 hours of actual work (breaks not counted). Every minute you work beyond 6.5 hours on a working day counts as extra hours, and every 6 extra hours adds 1 paid day. If your total hours for the month reach 6.5 hours × your working days, nothing is deducted from your pay that month, whether for lates, short leaves, half days or leaves.",
+    audience: ["INTERN", "REMOTE_INTERN"],
+    highlight: { value: "6.5 h", label: "Work a day (interns)" },
+    link: { href: "/attendance", label: "See your hours" },
+  },
+  {
     id: "wfh-interns",
     category: "Work",
     title: "WFH policy (interns)",

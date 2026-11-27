@@ -146,6 +146,8 @@ export type MonthSummary = {
   absent: number;
   shortLeaves: number;
   extraMs: number;
+  hoursTargetMin: number;
+  hoursCovered: boolean;
   latePenaltyDays: number;
   lateDays: number;
   lateCounted: number;
@@ -269,8 +271,11 @@ export type PayrollRow = {
   leaveBalance: number | null;
   extraDays: number;
   extraHoursMin: number;
+  extraOfficeMin?: number;
+  extraWfhMin?: number;
   extraHourDays: number;
   deductions: number;
+  waived?: number;
   payableDays: number;
   payPercent: number;
   bonusPercent: number;

@@ -7,6 +7,7 @@ import Card from "@/components/Card";
 import DayEditDialog from "@/components/DayEditDialog";
 import MarkDayDialog from "@/components/MarkDay";
 import MonthSheet from "@/components/MonthSheet";
+import { deducted } from "@/lib/workdays";
 import MonthSwitcher from "@/components/MonthSwitcher";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/form";
@@ -141,7 +142,7 @@ export default function AdminAttendancePage() {
                     <p className="text-xs text-zinc-500 tabular-nums">
                       {r.present} present ({r.inOffice} office · {r.wfh} WFH){r.halfDays > 0 && ` · ${r.halfDays} half`} · WFH {r.remote ? `${r.wfh} remote` : `${r.wfh}/${r.wfhAllowance}`} · {r.leaves} leave
                       {r.lateDays > 0 && ` · ${r.lateDays} late`}
-                      {r.absent + r.latePenaltyDays + r.unpaidLeaves > 0 && <span className="text-red-600"> · {r.absent + r.latePenaltyDays + r.unpaidLeaves} deducted</span>}
+                      {deducted(r) > 0 && <span className="text-red-600"> · {deducted(r)} deducted</span>}
                     </p>
                   </div>
                   <span className="text-sm font-medium text-zinc-900 tabular-nums">{fmtDuration(r.workedMs)}</span>
@@ -193,9 +194,10 @@ export default function AdminAttendancePage() {
                       {r.lateDays}
                       {r.lateCounted > 0 && <span className="block text-xs text-amber-700">{r.lateCounted} counted · 3 = 1 day</span>}
                     </td>
-                    <td className={`${table.td} tabular-nums ${r.absent + r.latePenaltyDays + r.unpaidLeaves ? "font-medium text-red-600" : "text-zinc-400"}`}>
-                      {r.absent + r.latePenaltyDays + r.unpaidLeaves}
-                      {r.absent + r.latePenaltyDays + r.unpaidLeaves > 0 && (
+                    <td className={`${table.td} tabular-nums ${deducted(r) ? "font-medium text-red-600" : "text-zinc-400"}`}>
+                      {deducted(r)}
+                      {r.hoursCovered && <span className="block text-xs font-normal text-emerald-700">Hours met · waived</span>}
+                      {deducted(r) > 0 && (
                         <span className="block text-xs font-normal text-zinc-500">
                           {[r.absent && `${r.absent} absent`, r.latePenaltyDays && `${r.latePenaltyDays} lates`, r.unpaidLeaves && `${r.unpaidLeaves} unpaid`].filter(Boolean).join(" · ")}
                         </span>

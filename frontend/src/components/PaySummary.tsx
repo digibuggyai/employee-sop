@@ -5,6 +5,7 @@ import { employmentLabels, type EmploymentType } from "@/lib/api";
 import Avatar from "./Avatar";
 import Card from "./Card";
 import { EmptyState, table } from "./ui";
+import { fmtDuration } from "@/lib/format";
 
 export type LedgerRow = {
   userId: string;
@@ -34,7 +35,10 @@ export type LedgerRow = {
   leaveBalance: number | null;
   extraDays: number;
   extraHourDays: number;
+  extraOfficeMin?: number;
+  extraWfhMin?: number;
   deductions: number;
+  waived?: number;
   payableDays: number;
   payPercent?: number;
 };
@@ -162,6 +166,7 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                       <td className={table.td}>{cell(r.shortLeaves)}</td>
                       <td className={table.td}>
                         {cell(r.deductions, "text-red-600")}
+                        {!!r.waived && <span className="block text-xs text-emerald-700">{num(r.waived)} waived, hours met</span>}
                         {r.deductions > 0 && (
                           <span className="block max-w-44 text-xs leading-snug whitespace-normal text-zinc-500">
                             {[
@@ -178,7 +183,14 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                           </span>
                         )}
                       </td>
-                      <td className={table.td}>{cell(r.extraDays + r.extraHourDays, "text-emerald-700")}</td>
+                      <td className={table.td}>
+                        {cell(r.extraDays + r.extraHourDays, "text-emerald-700")}
+                        {!!((r.extraOfficeMin ?? 0) + (r.extraWfhMin ?? 0)) && (
+                          <span className="block text-xs whitespace-nowrap text-zinc-500">
+                            Office {fmtDuration((r.extraOfficeMin ?? 0) * 60000)} · WFH {fmtDuration((r.extraWfhMin ?? 0) * 60000)}
+                          </span>
+                        )}
+                      </td>
                       {showPay && <td className={`${table.td} font-semibold text-zinc-900 tabular-nums`}>{r.payPercent !== undefined ? `${num(r.payPercent)}%` : ""}</td>}
                     </tr>
                   );

@@ -23,3 +23,10 @@ export function workedHint(w: ReturnType<typeof workedDays>) {
     .filter(Boolean)
     .join(" · ");
 }
+
+type DeductionParts = { absent: number; latePenaltyDays: number; unpaidLeaves: number; hoursCovered?: boolean; hoursTargetMin?: number };
+
+export const deducted = (s: DeductionParts) => (s.hoursCovered ? 0 : s.absent + s.latePenaltyDays + s.unpaidLeaves);
+
+export const waivedNote = (s: DeductionParts) =>
+  s.hoursCovered ? `Waived: ${fmtDays((s.hoursTargetMin ?? 0) / 60)}h target met (6.5h × working days)` : "";

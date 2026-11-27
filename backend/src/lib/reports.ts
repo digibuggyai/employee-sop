@@ -4,6 +4,7 @@ import { holidayList, holidayOn } from "./holidays.js";
 import {
   FREE_SHORT_LEAVES, GRACE_MIN, LATES_PER_ABSENCE, LEAVE_PER_MONTH, LEAVE_POLICY_START, SHORT_LEAVE_MAX_MIN, parseTimings,
   worksSaturdays, typeOn, noTimingRules, type WorkType, SHORT_LEAVE_RULE_FROM, LATE_SHORT_LEAVE_MIN, EARLY_SHORT_LEAVE_MIN, WFH_REPORT_FROM, FORGOT_CHECKOUT_NOTE,
+  INTERN_DAY_MIN, INTERN_HOURS_RULE_FROM, isIntern,
 } from "./policy.js";
 import type { Attendance, Break } from "../generated/prisma/client.js";
 
@@ -89,6 +90,8 @@ export type MonthSummary = {
   absent: number;
   shortLeaves: number;
   extraMs: number;
+  hoursTargetMin: number;
+  hoursCovered: boolean;
   latePenaltyDays: number;
   lateDays: number;
   lateCounted: number;
@@ -173,7 +176,7 @@ export async function monthReports(userIds: string[], month: string) {
     const summary: MonthSummary = {
       present: 0, inOffice: 0, wfh: 0, wfhAllowance: person?.wfhAllowance ?? 0, halfDays: 0,
       leaves: 0, leavesCompensated: 0, leavesPending: 0, absent: 0, workedMs: 0, avgMs: 0, daysWorked: 0,
-      weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, lateDays: 0, lateCounted: 0, unpaidLeaves: 0, leaveBalance: null, extraMs: 0,
+      weeklyHours: person?.weeklyHours ?? null, shortLeaves: 0, latePenaltyDays: 0, lateDays: 0, lateCounted: 0, unpaidLeaves: 0, leaveBalance: null, extraMs: 0, hoursTargetMin: 0, hoursCovered: false,
       remote: person?.employmentType === "REMOTE_INTERN",
     };
 
@@ -276,6 +279,7 @@ export async function monthReports(userIds: string[], month: string) {
     });
 
     const autoShort = new Set<string>();
+    const internHours = (date: string) => date >= INTERN_HOURS_RULE_FROM && isIntern(typeOn(person, date) ?? "");
     const shift = noTimingRules(person?.employmentType) ? null : parseTimings(person?.timings);
     if (shift) {
       const shiftLength = shift.end - shift.start;
@@ -312,7 +316,7 @@ export async function monthReports(userIds: string[], month: string) {
         if (d.halfDay) continue;
 
         const short = shiftLength - (minuteOf(d.checkOut) - minuteOf(d.checkIn));
-        if (-short >= GRACE_MIN) {
+        if (-short >= GRACE_MIN && !internHours(d.date)) {
           d.extraMin = -short;
           summary.extraMs += -short * 60000;
         }
@@ -339,6 +343,14 @@ export async function monthReports(userIds: string[], month: string) {
       summary.shortLeaves++;
       d.shortLeave = summary.shortLeaves <= FREE_SHORT_LEAVES ? "FREE" : "COUNTED";
     }
+    for (const d of days) {
+      if (!internHours(d.date) || !d.checkOut || !d.workedMs || d.halfDay || d.noReport || isOffDay(d.date, person)) continue;
+      const over = Math.floor(d.workedMs / 60000) - INTERN_DAY_MIN;
+      if (over > 0) {
+        d.extraMin = over;
+        summary.extraMs += over * 60000;
+      }
+    }
     summary.latePenaltyDays =
       Math.floor(Math.max(0, summary.shortLeaves - FREE_SHORT_LEAVES) / LATES_PER_ABSENCE) + Math.floor(summary.lateCounted / LATES_PER_ABSENCE);
 
@@ -361,6 +373,14 @@ export async function monthReports(userIds: string[], month: string) {
       });
     summary.daysWorked = summary.present - summary.halfDays / 2;
 
+    const lastDate = dates.at(-1)!;
+    if (lastDate >= INTERN_HOURS_RULE_FROM && isIntern(typeOn(person, lastDate) ?? "")) {
+      const due = days.filter(
+        (d) => !isOffDay(d.date, person) && d.status !== "NOT_JOINED" && d.status !== "LEFT" && d.status !== "UPCOMING" && !(d.date === today && !d.checkIn) && d.date <= today,
+      ).length;
+      summary.hoursTargetMin = due * INTERN_DAY_MIN;
+      summary.hoursCovered = due > 0 && summary.workedMs >= summary.hoursTargetMin * 60000;
+    }
     summary.avgMs = summary.present ? Math.round(summary.workedMs / summary.present) : 0;
 
     const weeks: WeekRow[] = [];
