@@ -31,7 +31,9 @@ export function payFigures(person: Exclude<WorkType, string | null | undefined>,
   const extraOfficeMin = extraOn("IN_OFFICE");
   const extraWfhMin = extraOn("WFH");
   const extraHoursMin = extraOfficeMin + extraWfhMin;
-  const extraHourDays = fullTime ? 0 : Math.floor(extraHoursMin / (EXTRA_HOURS_PER_DAY * 60));
+  const extraOverLimitMin = days.filter((d) => d.extraMin && !d.extraDay && d.halfDay === "EXTRA_WFH").reduce((sum, d) => sum + d.extraMin!, 0);
+  const perDay = EXTRA_HOURS_PER_DAY * 60;
+  const extraHourDays = fullTime ? 0 : Math.floor((extraHoursMin - extraOverLimitMin) / perDay) + Math.floor(extraOverLimitMin / perDay) * 0.5;
   const hoursTargetMin = summary.hoursTargetMin;
   const hoursWorkedMin = Math.floor(summary.workedMs / 60000);
   const hoursRule = hoursTargetMin > 0;
@@ -70,6 +72,7 @@ export function payFigures(person: Exclude<WorkType, string | null | undefined>,
     extraHoursMin,
     extraOfficeMin,
     extraWfhMin,
+    extraOverLimitMin,
     extraHourDays,
     hoursRule,
     hoursTargetMin,

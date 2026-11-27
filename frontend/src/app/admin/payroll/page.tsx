@@ -210,6 +210,11 @@ export default function PayrollPage() {
                               <span className="block">
                                 In-office {fmtDuration((r.extraOfficeMin ?? 0) * 60000)} · WFH {fmtDuration((r.extraWfhMin ?? 0) * 60000)}
                               </span>
+                              {!!r.extraOverLimitMin && (
+                                <span className="block text-amber-700">
+                                  {fmtDuration(r.extraOverLimitMin * 60000)} on WFH-over-limit days counts half ({EXTRA_HOURS_PER_DAY}h = ½ day)
+                                </span>
+                              )}
                             </p>
                           )}
                           {(r.paidLeaves > 0 || r.madeUpLeaves > 0) && (

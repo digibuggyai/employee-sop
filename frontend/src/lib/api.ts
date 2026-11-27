@@ -273,6 +273,7 @@ export type PayrollRow = {
   extraHoursMin: number;
   extraOfficeMin?: number;
   extraWfhMin?: number;
+  extraOverLimitMin?: number;
   extraHourDays: number;
   deductions: number;
   waived?: number;

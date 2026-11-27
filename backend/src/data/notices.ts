@@ -92,7 +92,7 @@ export const notices: Notice[] = [
     id: "intern-hours",
     category: "Pay",
     title: "Daily hours and extra hours (interns)",
-    body: "Your working day is 6.5 hours of actual work (breaks not counted), in the office or from home. Working less than 6.5 hours is a short day: up to 2 hours short is a short leave, more than 2 hours short is a half day. Every minute beyond 6.5 hours counts as extra hours, shown separately for in-office and WFH, and every 6 extra hours adds 1 paid day. If your total hours for the month reach 6.5 hours × your working days, lates, short leaves, half days and leaves are not deducted that month. WFH days beyond your allowance still count as half days.",
+    body: "Your working day is 6.5 hours of actual work (breaks not counted), in the office or from home. Working less than 6.5 hours is a short day: up to 2 hours short is a short leave, more than 2 hours short is a half day. Every minute beyond 6.5 hours counts as extra hours, shown separately for in-office and WFH, and every 6 extra hours adds 1 paid day. If your total hours for the month reach 6.5 hours × your working days, lates, short leaves, half days and leaves are not deducted that month. WFH days beyond your allowance still count as half days, and extra hours worked on those days count half too (6 extra hours there = half a day).",
     audience: ["INTERN", "REMOTE_INTERN"],
     highlight: { value: "6.5 h", label: "Work a day (interns)" },
     link: { href: "/attendance", label: "See your hours" },

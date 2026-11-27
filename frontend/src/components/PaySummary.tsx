@@ -37,6 +37,7 @@ export type LedgerRow = {
   extraHourDays: number;
   extraOfficeMin?: number;
   extraWfhMin?: number;
+  extraOverLimitMin?: number;
   deductions: number;
   waived?: number;
   payableDays: number;
@@ -189,6 +190,9 @@ export default function PaySummary({ rows, title }: { rows: LedgerRow[]; title: 
                           <span className="block text-xs whitespace-nowrap text-zinc-500">
                             Office {fmtDuration((r.extraOfficeMin ?? 0) * 60000)} · WFH {fmtDuration((r.extraWfhMin ?? 0) * 60000)}
                           </span>
+                        )}
+                        {!!r.extraOverLimitMin && (
+                          <span className="block text-xs whitespace-nowrap text-amber-700">{fmtDuration(r.extraOverLimitMin * 60000)} on WFH over limit counts half</span>
                         )}
                       </td>
                       {showPay && <td className={`${table.td} font-semibold text-zinc-900 tabular-nums`}>{r.payPercent !== undefined ? `${num(r.payPercent)}%` : ""}</td>}
